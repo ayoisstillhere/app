@@ -36,7 +36,7 @@ TextTheme textTheme() {
     bodyMedium: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.normal,
-      letterSpacing: 0,
+      letterSpacing: -0.5,
     ),
     bodySmall: TextStyle(
       fontSize: 12,

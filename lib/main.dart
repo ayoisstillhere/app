@@ -16,7 +16,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: theme(),
-      home: const OnboardingScreen(),
+      home: const OnboardingScreen(
+        title: "Connect Freely",
+        subtitle: "Share your thoughts, ideas, and moments — without limits",
+        bgImage: "assets/images/Onboarding1.png",
+        currentPage: 0,
+      ),
     );
   }
 }
