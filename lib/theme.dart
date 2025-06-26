@@ -47,5 +47,9 @@ TextTheme textTheme() {
 }
 
 AppBarTheme appBarTheme() {
-  return const AppBarTheme(centerTitle: true, elevation: 0, color: kWhite);
+  return const AppBarTheme(
+    centerTitle: true,
+    elevation: 0,
+    color: Colors.transparent,
+  );
 }
