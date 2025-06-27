@@ -44,7 +44,7 @@ class SignInScreen extends StatelessWidget {
               children: <Widget>[
                 SizedBox(height: getProportionateScreenHeight(48)),
                 FormHeader(
-                  isSignin: true,
+                  isSignUp: false,
                   title: 'Log in to your account',
                   subtitle: 'Welcome back!👋 Please enter your details.',
                 ),
@@ -84,8 +84,9 @@ class SignInScreen extends StatelessWidget {
                         ),
                         decoration: InputDecoration(
                           hintText: "••••••••",
-                          hintStyle: Theme.of(context).textTheme.displayLarge!
-                              .copyWith(color: kGreyFormHint),
+                          hintStyle: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge!.copyWith(color: kGreyFormHint),
                         ),
                       ),
                       SizedBox(height: getProportionateScreenHeight(24)),

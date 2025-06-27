@@ -6,12 +6,12 @@ import '../../../../size_config.dart';
 class FormHeader extends StatelessWidget {
   const FormHeader({
     super.key,
-    required this.isSignin,
+    required this.isSignUp,
     required this.title,
     required this.subtitle,
   });
 
-  final bool isSignin;
+  final bool isSignUp;
   final String title;
   final String subtitle;
 
@@ -19,9 +19,9 @@ class FormHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final subTextColor =
         MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? isSignin
-              ? kGreyText
-              : kGreenAccent
+        ? isSignUp
+              ? kGreenAccent
+              : kGreyText
         : kGreyFormSubtitle;
     return Column(
       children: <Widget>[

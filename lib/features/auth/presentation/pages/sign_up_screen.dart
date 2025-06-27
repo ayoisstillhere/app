@@ -1,15 +1,14 @@
-import 'package:app/features/auth/presentation/pages/sign_in_screen.dart';
-import 'package:app/features/auth/presentation/widgets/custom_check_box.dart';
-import 'package:app/features/auth/presentation/widgets/facebook_button.dart';
-import 'package:app/features/auth/presentation/widgets/form_header.dart';
-import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
-import '../widgets/apple_button.dart';
+import '../widgets/custom_check_box.dart';
+import '../widgets/form_header.dart';
+import '../widgets/google_button.dart';
+import 'email_verification_screen.dart';
+import 'sign_in_screen.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -47,7 +46,7 @@ class SignUpScreen extends StatelessWidget {
               children: <Widget>[
                 SizedBox(height: getProportionateScreenHeight(31.5)),
                 FormHeader(
-                  isSignin: false,
+                  isSignUp: true,
                   title: 'Create an account',
                   subtitle: 'Join the conversation',
                 ),
@@ -87,12 +86,24 @@ class SignUpScreen extends StatelessWidget {
                         ),
                         decoration: InputDecoration(
                           hintText: "••••••••",
-                          hintStyle: Theme.of(context).textTheme.displayLarge!
-                              .copyWith(color: kGreyFormHint),
+                          hintStyle: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge!.copyWith(color: kGreyFormHint),
                         ),
                       ),
                       SizedBox(height: getProportionateScreenHeight(16)),
-                      DefaultButton(press: () {}, text: 'Continue with email'),
+                      DefaultButton(
+                        press: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const EmailVerificationScreen(),
+                            ),
+                          );
+                        },
+                        text: 'Continue with email',
+                      ),
                       SizedBox(height: getProportionateScreenHeight(24)),
                       SizedBox(
                         width: double.infinity,
@@ -103,10 +114,10 @@ class SignUpScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(24)),
                       GoogleButton(press: () {}, isSignin: false),
-                      SizedBox(height: getProportionateScreenHeight(12)),
-                      FacebookButton(press: () {}, isSignin: false),
-                      SizedBox(height: getProportionateScreenHeight(12)),
-                      AppleButton(press: () {}, isSignin: false),
+                      // SizedBox(height: getProportionateScreenHeight(12)),
+                      // FacebookButton(press: () {}, isSignin: false),
+                      // SizedBox(height: getProportionateScreenHeight(12)),
+                      // AppleButton(press: () {}, isSignin: false),
                       SizedBox(height: getProportionateScreenHeight(32)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

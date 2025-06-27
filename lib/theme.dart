@@ -37,7 +37,7 @@ InputDecorationTheme inputDecorationTheme() {
     borderSide: const BorderSide(color: Colors.red),
   );
   return InputDecorationTheme(
-    contentPadding: const EdgeInsets.all(16),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     enabledBorder: defaultInputBorder,
     focusedBorder: focusInputBorder,
     errorBorder: errorInputBorder,
@@ -64,7 +64,7 @@ InputDecorationTheme darkInputDecorationTheme() {
     borderSide: const BorderSide(color: Colors.red),
   );
   return InputDecorationTheme(
-    contentPadding: const EdgeInsets.all(16),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     enabledBorder: defaultInputBorder,
     focusedBorder: focusInputBorder,
     errorBorder: errorInputBorder,
