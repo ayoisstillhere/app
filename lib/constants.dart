@@ -14,3 +14,4 @@ const kGreyFormHint = Color(0xFF717680);
 const kGreyDarkInputBorder = Color(0xFF5B5B5B);
 const kGreyInputFillDark = Color(0xFF2C2C2C);
 const kGreyText = Color(0xFFD7D7D7);
+const kGreenAccent = Color(0xFF22C55E);

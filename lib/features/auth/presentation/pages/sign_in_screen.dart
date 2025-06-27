@@ -1,9 +1,11 @@
 import 'package:app/components/default_button.dart';
 import 'package:app/constants.dart';
+import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../size_config.dart';
+import '../widgets/custom_check_box.dart';
 import '../widgets/form_header.dart';
 
 class SignInScreen extends StatelessWidget {
@@ -40,7 +42,7 @@ class SignInScreen extends StatelessWidget {
             ),
             child: Column(
               children: <Widget>[
-                FormHeader(),
+                FormHeader(isSignin: false),
                 SizedBox(height: getProportionateScreenHeight(32)),
                 Form(
                   child: Column(
@@ -116,13 +118,23 @@ class SignInScreen extends StatelessWidget {
                                 .copyWith(fontWeight: FontWeight.w500),
                           ),
                           SizedBox(width: getProportionateScreenWidth(4)),
-                          Text(
-                            "Sign Up",
-                            style: Theme.of(context).textTheme.bodyMedium!
-                                .copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: kLightPurple,
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignUpScreen(),
                                 ),
+                              );
+                            },
+                            child: Text(
+                              "Sign Up",
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    color: kLightPurple,
+                                  ),
+                            ),
                           ),
                         ],
                       ),
@@ -130,50 +142,6 @@ class SignInScreen extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomCheckbox extends StatefulWidget {
-  const CustomCheckbox({super.key});
-
-  @override
-  State<CustomCheckbox> createState() => _CustomCheckboxState();
-}
-
-class _CustomCheckboxState extends State<CustomCheckbox> {
-  bool isChecked = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: getProportionateScreenWidth(16),
-      height: getProportionateScreenHeight(16),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: kWhite, // Background color
-          border: Border.all(
-            color: kGreyInputBorder, // Border color
-            width: 1.0,
-          ),
-          borderRadius: BorderRadius.circular(
-            getProportionateScreenWidth(4),
-          ), // Corner radius
-        ),
-        child: Checkbox(
-          value: isChecked,
-          onChanged: (bool? value) {
-            setState(() {
-              isChecked = value!;
-            });
-          },
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(getProportionateScreenWidth(4)),
             ),
           ),
         ),
