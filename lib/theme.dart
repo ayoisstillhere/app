@@ -8,6 +8,7 @@ ThemeData theme() {
     appBarTheme: appBarTheme(),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     textTheme: textTheme(),
+    inputDecorationTheme: inputDecorationTheme(),
   );
 }
 
@@ -18,8 +19,65 @@ ThemeData darkTheme() {
     appBarTheme: appBarTheme(),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     textTheme: textTheme(),
+    inputDecorationTheme: darkInputDecorationTheme(),
   );
 }
+
+
+InputDecorationTheme inputDecorationTheme() {
+  OutlineInputBorder focusInputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(16),
+    borderSide: const BorderSide(color: kBlack),
+  );
+  OutlineInputBorder defaultInputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(16),
+    borderSide: const BorderSide(color: kGreyInputBorder),
+  );
+  OutlineInputBorder errorInputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(16),
+    borderSide: const BorderSide(color: Colors.red),
+  );
+  return InputDecorationTheme(
+    contentPadding: const EdgeInsets.all(16),
+    enabledBorder: defaultInputBorder,
+    focusedBorder: focusInputBorder,
+    errorBorder: errorInputBorder,
+    border: defaultInputBorder,
+    fillColor: Colors.transparent,
+    filled: true,
+    suffixIconColor: kGreyInputBorder,
+    hintStyle: const TextStyle(color: kGreyFormHint),
+    labelStyle: const TextStyle(color: kGreyFormLabel),
+  );
+}
+
+InputDecorationTheme darkInputDecorationTheme() {
+  OutlineInputBorder focusInputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(16),
+    borderSide: const BorderSide(color: kBlack),
+  );
+  OutlineInputBorder defaultInputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(16),
+    borderSide: const BorderSide(color: kGreyDarkInputBorder),
+  );
+  OutlineInputBorder errorInputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(16),
+    borderSide: const BorderSide(color: Colors.red),
+  );
+  return InputDecorationTheme(
+    contentPadding: const EdgeInsets.all(16),
+    enabledBorder: defaultInputBorder,
+    focusedBorder: focusInputBorder,
+    errorBorder: errorInputBorder,
+    border: defaultInputBorder,
+    fillColor: kGreyInputFillDark,
+    filled: true,
+    suffixIconColor: kGreyDarkInputBorder,
+    hintStyle: const TextStyle(color: kGreyFormHint),
+    labelStyle: const TextStyle(color: kGreyFormLabel),
+  );
+}
+
 
 TextTheme textTheme() {
   return const TextTheme(
