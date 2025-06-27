@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/svg.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
 
-class GoogleButton extends StatelessWidget {
-  const GoogleButton({
+class AppleButton extends StatelessWidget {
+  const AppleButton({
     super.key,
     required this.press,
     required this.isSignin,
@@ -33,10 +33,10 @@ class GoogleButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Center(child: SvgPicture.asset("assets/icons/google_icon.svg")),
+                Center(child: SvgPicture.asset("assets/icons/apple_icon.svg")),
                 SizedBox(width: getProportionateScreenWidth(12)),
                 Text(
-                  isSignin ? "Sign in with Google" : "Sign up with Google",
+                  isSignin ? "Sign in with Apple" : "Sign up with Apple",
                   textAlign: TextAlign.center,
                   style: Theme.of(
                     context,

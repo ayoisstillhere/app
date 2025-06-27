@@ -42,7 +42,12 @@ class SignInScreen extends StatelessWidget {
             ),
             child: Column(
               children: <Widget>[
-                FormHeader(isSignin: false),
+                SizedBox(height: getProportionateScreenHeight(48)),
+                FormHeader(
+                  isSignin: true,
+                  title: 'Log in to your account',
+                  subtitle: 'Welcome back!👋 Please enter your details.',
+                ),
                 SizedBox(height: getProportionateScreenHeight(32)),
                 Form(
                   child: Column(
@@ -107,13 +112,13 @@ class SignInScreen extends StatelessWidget {
                       SizedBox(height: getProportionateScreenHeight(24)),
                       DefaultButton(press: () {}, text: 'Sign In'),
                       SizedBox(height: getProportionateScreenHeight(16)),
-                      GoogleButton(press: () {}),
+                      GoogleButton(press: () {}, isSignin: true),
                       SizedBox(height: getProportionateScreenHeight(32)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account? ",
+                            "Don't have an account?",
                             style: Theme.of(context).textTheme.bodyMedium!
                                 .copyWith(fontWeight: FontWeight.w500),
                           ),

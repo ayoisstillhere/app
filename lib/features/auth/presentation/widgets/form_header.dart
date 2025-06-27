@@ -4,21 +4,27 @@ import '../../../../constants.dart';
 import '../../../../size_config.dart';
 
 class FormHeader extends StatelessWidget {
-  const FormHeader({super.key, required this.isSignin});
+  const FormHeader({
+    super.key,
+    required this.isSignin,
+    required this.title,
+    required this.subtitle,
+  });
 
   final bool isSignin;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     final subTextColor =
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? isSignin
-              ? kGreenAccent
-              : kGreyText
+              ? kGreyText
+              : kGreenAccent
         : kGreyFormSubtitle;
     return Column(
       children: <Widget>[
-        SizedBox(height: getProportionateScreenHeight(48)),
         Container(
           decoration: BoxDecoration(color: kLightPurple),
           height: getProportionateScreenHeight(30),
@@ -26,7 +32,7 @@ class FormHeader extends StatelessWidget {
         ),
         SizedBox(height: getProportionateScreenHeight(24)),
         Text(
-          isSignin ? "Log in to your account" : "Create an account",
+          title,
           textAlign: TextAlign.center,
           style: Theme.of(
             context,
@@ -34,9 +40,7 @@ class FormHeader extends StatelessWidget {
         ),
         SizedBox(height: getProportionateScreenHeight(8)),
         Text(
-          isSignin
-              ? "Welcome back! Please enter your details."
-              : "Add your details to create an account.",
+          subtitle,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
             fontWeight: FontWeight.w400,
