@@ -1,4 +1,4 @@
-
+import 'package:app/features/auth/presentation/pages/sign_in_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../components/default_button.dart';
@@ -49,14 +49,20 @@ class Body extends StatelessWidget {
                   automaticallyImplyLeading: false,
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SignInScreen(),
+                          ),
+                        );
+                      },
                       child: Text(
                         "Skip",
-                        style: Theme.of(context).textTheme.bodyLarge!
-                            .copyWith(
-                              color: kWhite,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                          color: kWhite,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -86,7 +92,17 @@ class Body extends StatelessWidget {
                 SliderIndicator(currentPage: currentPage),
                 SizedBox(height: getProportionateScreenHeight(33.32)),
                 currentPage == 2
-                    ? DefaultButton(text: "Get Started", press: () {})
+                    ? DefaultButton(
+                        text: "Get Started",
+                        press: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SignInScreen(),
+                            ),
+                          );
+                        },
+                      )
                     : DefaultButton(
                         text: "Next",
                         press: () {
