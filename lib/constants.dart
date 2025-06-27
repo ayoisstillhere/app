@@ -13,3 +13,4 @@ const kGreyFormLabel = Color(0xFF414651);
 const kGreyFormHint = Color(0xFF717680);
 const kGreyDarkInputBorder = Color(0xFF5B5B5B);
 const kGreyInputFillDark = Color(0xFF2C2C2C);
+const kGreyText = Color(0xFFD7D7D7);

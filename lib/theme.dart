@@ -23,18 +23,17 @@ ThemeData darkTheme() {
   );
 }
 
-
 InputDecorationTheme inputDecorationTheme() {
   OutlineInputBorder focusInputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(8),
     borderSide: const BorderSide(color: kBlack),
   );
   OutlineInputBorder defaultInputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(8),
     borderSide: const BorderSide(color: kGreyInputBorder),
   );
   OutlineInputBorder errorInputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(8),
     borderSide: const BorderSide(color: Colors.red),
   );
   return InputDecorationTheme(
@@ -53,15 +52,15 @@ InputDecorationTheme inputDecorationTheme() {
 
 InputDecorationTheme darkInputDecorationTheme() {
   OutlineInputBorder focusInputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(8),
     borderSide: const BorderSide(color: kBlack),
   );
   OutlineInputBorder defaultInputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(8),
     borderSide: const BorderSide(color: kGreyDarkInputBorder),
   );
   OutlineInputBorder errorInputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(8),
     borderSide: const BorderSide(color: Colors.red),
   );
   return InputDecorationTheme(
@@ -77,7 +76,6 @@ InputDecorationTheme darkInputDecorationTheme() {
     labelStyle: const TextStyle(color: kGreyFormLabel),
   );
 }
-
 
 TextTheme textTheme() {
   return const TextTheme(

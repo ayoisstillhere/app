@@ -14,10 +14,11 @@ class DefaultButton extends StatelessWidget {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kDarkPurple
         : kLightPurple;
-    final textColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kWhite
-        : kBlack;
+    // final textColor =
+    //     MediaQuery.of(context).platformBrightness == Brightness.dark
+    //     ? kWhite
+    //     : kBlack;
+    final textColor = kBlack;
     return GestureDetector(
       onTap: press,
       child: Container(
