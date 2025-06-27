@@ -25,10 +25,10 @@ class FormHeader extends StatelessWidget {
         : kGreyFormSubtitle;
     return Column(
       children: <Widget>[
-        Container(
-          decoration: BoxDecoration(color: kLightPurple),
-          height: getProportionateScreenHeight(30),
-          width: getProportionateScreenWidth(85),
+        Image.asset(
+          'assets/images/hira_logo.png',
+          width: getProportionateScreenWidth(50),
+          height: getProportionateScreenWidth(50),
         ),
         SizedBox(height: getProportionateScreenHeight(24)),
         Text(
