@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: theme(),
+      darkTheme: darkTheme(),
       home: const OnboardingScreen(
         title: "Connect Freely",
         subtitle: "Share your thoughts, ideas, and moments — without limits",

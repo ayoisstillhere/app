@@ -11,6 +11,16 @@ ThemeData theme() {
   );
 }
 
+ThemeData darkTheme() {
+  return ThemeData(
+    scaffoldBackgroundColor: kBlackBg,
+    colorScheme: const ColorScheme.dark(),
+    appBarTheme: appBarTheme(),
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    textTheme: textTheme(),
+  );
+}
+
 TextTheme textTheme() {
   return const TextTheme(
     displayLarge: TextStyle(
