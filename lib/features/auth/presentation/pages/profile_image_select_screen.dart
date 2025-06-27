@@ -1,4 +1,5 @@
 import 'package:app/components/default_button.dart';
+import 'package:app/features/home/presentation/pages/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -110,9 +111,25 @@ class ProfileImageSelectScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: getProportionateScreenHeight(43.5)),
-                DefaultButton(text: 'Continue', press: () {}),
+                DefaultButton(
+                  text: 'Continue',
+                  press: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                    );
+                  },
+                ),
                 SizedBox(height: getProportionateScreenHeight(16)),
-                SkipButon(text: 'Skip', press: () {}),
+                SkipButon(
+                  text: 'Skip',
+                  press: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                    );
+                  },
+                ),
               ],
             ),
           ),
