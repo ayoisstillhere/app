@@ -91,9 +91,12 @@ class _HomeScreenState extends State<HomeScreen>
                 child: SizedBox(
                   height: getProportionateScreenHeight(24),
                   width: getProportionateScreenWidth(24),
-                  child: SvgPicture.asset(
-                    "assets/icons/bell.svg",
-                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  child: InkWell(
+                    onTap: () {},
+                    child: SvgPicture.asset(
+                      "assets/icons/bell.svg",
+                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    ),
                   ),
                 ),
               ),
@@ -131,28 +134,40 @@ class _HomeScreenState extends State<HomeScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              SvgPicture.asset(
-                "assets/icons/home.svg",
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              InkWell(
+                onTap: () {},
+                child: SvgPicture.asset(
+                  "assets/icons/home.svg",
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                ),
               ),
-              SvgPicture.asset(
-                "assets/icons/search.svg",
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              InkWell(
+                onTap: () {},
+                child: SvgPicture.asset(
+                  "assets/icons/search.svg",
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                ),
               ),
-              SvgPicture.asset(
-                "assets/icons/message_icon.svg",
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              InkWell(
+                onTap: () {},
+                child: SvgPicture.asset(
+                  "assets/icons/message_icon.svg",
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                ),
               ),
-              Container(
-                height: getProportionateScreenHeight(34),
-                width: getProportionateScreenWidth(34),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+              InkWell(
+                onTap: () {},
+                child: Container(
+                  height: getProportionateScreenHeight(34),
+                  width: getProportionateScreenWidth(34),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: NetworkImage(
+                        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                      ),
+                      fit: BoxFit.cover,
                     ),
-                    fit: BoxFit.cover,
                   ),
                 ),
               ),
