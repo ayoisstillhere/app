@@ -3,11 +3,16 @@ import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-import '../widgets/bottom_nav_bar.dart';
 import '../widgets/post_Card.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    required this.dividerColor,
+    required this.iconColor,
+  });
+  final Color dividerColor;
+  final Color iconColor;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -99,14 +104,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kGreyInputFillDark
-        : kGreyInputBorder;
-    final iconColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kWhite
-        : kBlack;
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(getProportionateScreenHeight(100)),
@@ -131,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen>
             bottom: TabBar(
               controller: controller,
               indicatorColor: kLightPurple,
-              dividerColor: dividerColor,
+              dividerColor: widget.dividerColor,
               labelStyle: Theme.of(
                 context,
               ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
@@ -166,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen>
                     onTap: () {},
                     child: SvgPicture.asset(
                       "assets/icons/bell.svg",
-                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                      colorFilter: ColorFilter.mode(widget.iconColor, BlendMode.srcIn),
                     ),
                   ),
                 ),
@@ -184,8 +181,8 @@ class _HomeScreenState extends State<HomeScreen>
               final post = mockPosts[index];
 
               return PostCard(
-                dividerColor: dividerColor,
-                iconColor: iconColor,
+                dividerColor: widget.dividerColor,
+                iconColor: widget.iconColor,
                 authorName: post["userName"],
                 authorHandle: post["handle"],
                 imageUrl: post["userImage"],
@@ -205,8 +202,8 @@ class _HomeScreenState extends State<HomeScreen>
               final post = mockPosts[index];
 
               return PostCard(
-                dividerColor: dividerColor,
-                iconColor: iconColor,
+                dividerColor: widget.dividerColor,
+                iconColor: widget.iconColor,
                 authorName: post["userName"],
                 authorHandle: post["handle"],
                 imageUrl: post["userImage"],
@@ -230,10 +227,6 @@ class _HomeScreenState extends State<HomeScreen>
         highlightElevation: 0,
         backgroundColor: kLightPurple,
         child: Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        dividerColor: dividerColor,
-        iconColor: iconColor,
       ),
     );
   }

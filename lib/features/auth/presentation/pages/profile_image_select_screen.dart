@@ -1,5 +1,5 @@
 import 'package:app/components/default_button.dart';
-import 'package:app/features/home/presentation/pages/home_screen.dart';
+import 'package:app/components/nav_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -116,7 +116,7 @@ class ProfileImageSelectScreen extends StatelessWidget {
                   press: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                      MaterialPageRoute(builder: (context) => NavPage()),
                     );
                   },
                 ),
@@ -126,7 +126,7 @@ class ProfileImageSelectScreen extends StatelessWidget {
                   press: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                      MaterialPageRoute(builder: (context) => NavPage()),
                     );
                   },
                 ),

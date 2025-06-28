@@ -1,0 +1,128 @@
+import 'package:app/features/chat/presentation/pages/chat_screen.dart';
+import 'package:app/features/home/presentation/pages/home_screen.dart';
+import 'package:app/features/profile/presentation/pages/profile_screen.dart';
+import 'package:app/features/search/presentation/pages/search_screen.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+
+import '../constants.dart';
+import '../size_config.dart';
+
+class NavPage extends StatefulWidget {
+  const NavPage({super.key});
+
+  @override
+  State<NavPage> createState() => _NavPageState();
+}
+
+class _NavPageState extends State<NavPage> {
+  int _page = 0;
+  late PageController pageController;
+
+  @override
+  void initState() {
+    pageController = PageController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  void navigationTapped(int page) {
+    pageController.jumpToPage(page);
+  }
+
+  void onPageChanged(int page) {
+    setState(() {
+      _page = page;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: _navBody(context));
+  }
+
+  Scaffold _navBody(BuildContext context) {
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
+    final iconColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kWhite
+        : kBlack;
+    final bgColor = MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kBlackBg
+        : kWhite;
+    List<Widget> navPages = [
+      HomeScreen(dividerColor: dividerColor, iconColor: iconColor),
+      SearchScreen(),
+      ChatScreen(),
+      ProfileScreen(),
+    ];
+    return Scaffold(
+      body: PageView(
+        physics: const NeverScrollableScrollPhysics(),
+        controller: pageController,
+        onPageChanged: onPageChanged,
+        children: navPages,
+      ),
+      bottomNavigationBar: CupertinoTabBar(
+        border: Border(top: BorderSide(color: dividerColor, width: 1)),
+        activeColor: kLightPurple,
+        // inactiveColor: ,
+        currentIndex: _page,
+        backgroundColor: bgColor,
+        height: getProportionateScreenHeight(60),
+        iconSize: getProportionateScreenHeight(24),
+        items: [
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset(
+              "assets/icons/home.svg",
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              width: getProportionateScreenWidth(24),
+              height: getProportionateScreenHeight(24),
+            ),
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset(
+              "assets/icons/search.svg",
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              width: getProportionateScreenWidth(24),
+              height: getProportionateScreenHeight(24),
+            ),
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset(
+              "assets/icons/message_icon.svg",
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              width: getProportionateScreenWidth(24),
+              height: getProportionateScreenHeight(24),
+            ),
+          ),
+          BottomNavigationBarItem(
+            icon: Container(
+              height: getProportionateScreenHeight(34),
+              width: getProportionateScreenWidth(34),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: NetworkImage(
+                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        ],
+        onTap: navigationTapped,
+      ),
+    );
+  }
+}
