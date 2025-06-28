@@ -60,6 +60,25 @@ List<Map<String, dynamic>> mockPosts = [
       "https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     ],
   },
+  {
+    "handle": "ayoisstillhere",
+    "userName": "Ayodele Fagbami",
+    "userImage":
+        "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "2h",
+    "likes": 5,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 2,
+    "content":
+        "Just visited the new bakery on Elm Street with @sweettooth, and their chocolate croissant is to die for! 🥐❤️ #PastryLover",
+    "pictures": [
+      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    ],
+  },
 ];
 
 class _HomeScreenState extends State<HomeScreen>
@@ -231,6 +250,20 @@ class _HomeScreenState extends State<HomeScreen>
                   bookmarks: mockPosts[0]["bookmarks"],
                   content: mockPosts[0]["content"],
                   pictures: mockPosts[0]["pictures"],
+                ),
+                PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: mockPosts[3]["userName"],
+                  authorHandle: mockPosts[3]["handle"],
+                  imageUrl: mockPosts[3]["userImage"],
+                  postTime: mockPosts[3]["postTime"],
+                  likes: mockPosts[3]["likes"],
+                  comments: mockPosts[3]["comments"],
+                  reposts: mockPosts[3]["reposts"],
+                  bookmarks: mockPosts[3]["bookmarks"],
+                  content: mockPosts[3]["content"],
+                  pictures: mockPosts[3]["pictures"],
                 ),
               ],
             ),

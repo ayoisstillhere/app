@@ -5,7 +5,7 @@ import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import 'social_text.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   const PostCard({
     super.key,
     required this.dividerColor,
@@ -36,6 +36,26 @@ class PostCard extends StatelessWidget {
   final List<dynamic> pictures;
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> {
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -45,7 +65,9 @@ class PostCard extends StatelessWidget {
       ),
       margin: EdgeInsets.only(top: getProportionateScreenHeight(6)),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: dividerColor, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: widget.dividerColor, width: 1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,7 +82,7 @@ class PostCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(imageUrl),
+                      image: NetworkImage(widget.imageUrl),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -68,7 +90,7 @@ class PostCard extends StatelessWidget {
               ),
               SizedBox(width: getProportionateScreenWidth(10)),
               Text(
-                authorName,
+                widget.authorName,
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.w500,
                   fontSize: getProportionateScreenHeight(13),
@@ -76,7 +98,7 @@ class PostCard extends StatelessWidget {
               ),
               SizedBox(width: getProportionateScreenWidth(2)),
               Text(
-                '@$authorHandle',
+                '@${widget.authorHandle}',
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.normal,
                   fontSize: getProportionateScreenHeight(13),
@@ -94,7 +116,7 @@ class PostCard extends StatelessWidget {
               ),
               SizedBox(width: getProportionateScreenWidth(2)),
               Text(
-                postTime,
+                widget.postTime,
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.w500,
                   fontSize: getProportionateScreenHeight(12),
@@ -108,7 +130,10 @@ class PostCard extends StatelessWidget {
                   "assets/icons/more-vertical.svg",
                   height: getProportionateScreenHeight(17),
                   width: getProportionateScreenWidth(17),
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  colorFilter: ColorFilter.mode(
+                    widget.iconColor,
+                    BlendMode.srcIn,
+                  ),
                 ),
               ),
             ],
@@ -120,7 +145,7 @@ class PostCard extends StatelessWidget {
               right: getProportionateScreenWidth(10),
             ),
             child: PostText(
-              text: content,
+              text: widget.content,
               baseStyle: Theme.of(context).textTheme.bodyLarge!.copyWith(
                 fontSize: getProportionateScreenHeight(15),
               ),
@@ -128,12 +153,12 @@ class PostCard extends StatelessWidget {
               onMentionTap: (p0) {},
             ),
           ),
-          pictures.isEmpty
+          widget.pictures.isEmpty
               ? Container()
               : SizedBox(height: getProportionateScreenHeight(10)),
-          pictures.isEmpty
+          widget.pictures.isEmpty
               ? Container()
-              : pictures.length == 1
+              : widget.pictures.length == 1
               ? Padding(
                   padding: EdgeInsets.only(
                     left: getProportionateScreenWidth(37),
@@ -147,35 +172,70 @@ class PostCard extends StatelessWidget {
                         getProportionateScreenWidth(10),
                       ),
                       image: DecorationImage(
-                        image: NetworkImage(pictures[0]),
+                        image: NetworkImage(widget.pictures[0]),
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
                 )
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (var picture in pictures)
-                        Container(
-                          width: getProportionateScreenWidth(309),
-                          height: getProportionateScreenHeight(193),
-                          margin: EdgeInsets.only(
-                            right: getProportionateScreenWidth(10),
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              getProportionateScreenWidth(10),
+              : Column(
+                  children: [
+                    Container(
+                      height: getProportionateScreenHeight(193),
+                      margin: EdgeInsets.only(
+                        left: getProportionateScreenWidth(37),
+                        right: getProportionateScreenWidth(10),
+                      ),
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (int page) {
+                          setState(() {
+                            _currentPage = page;
+                          });
+                        },
+                        itemCount: widget.pictures.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            margin: EdgeInsets.only(
+                              right: getProportionateScreenWidth(5),
                             ),
-                            image: DecorationImage(
-                              image: NetworkImage(picture),
-                              fit: BoxFit.cover,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                getProportionateScreenWidth(10),
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(widget.pictures[index]),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: getProportionateScreenHeight(12)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        widget.pictures.length,
+                        (index) => AnimatedContainer(
+                          duration: Duration(milliseconds: 300),
+                          margin: EdgeInsets.symmetric(
+                            horizontal: getProportionateScreenWidth(2),
+                          ),
+                          height: getProportionateScreenHeight(6),
+                          width: getProportionateScreenWidth(6),
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? kLightPurple
+                                : kLightPurple.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(
+                              getProportionateScreenWidth(3),
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
           SizedBox(height: getProportionateScreenHeight(24)),
           Padding(
@@ -194,13 +254,13 @@ class PostCard extends StatelessWidget {
                         height: getProportionateScreenHeight(15.55),
                         width: getProportionateScreenWidth(15.55),
                         colorFilter: ColorFilter.mode(
-                          iconColor,
+                          widget.iconColor,
                           BlendMode.srcIn,
                         ),
                       ),
                     ),
                     SizedBox(width: getProportionateScreenWidth(5)),
-                    Text('$likes'),
+                    Text('${widget.likes}'),
                   ],
                 ),
                 Spacer(),
@@ -213,13 +273,13 @@ class PostCard extends StatelessWidget {
                         height: getProportionateScreenHeight(15.55),
                         width: getProportionateScreenWidth(15.55),
                         colorFilter: ColorFilter.mode(
-                          iconColor,
+                          widget.iconColor,
                           BlendMode.srcIn,
                         ),
                       ),
                     ),
                     SizedBox(width: getProportionateScreenWidth(5)),
-                    Text('$comments'),
+                    Text('${widget.comments}'),
                   ],
                 ),
                 Spacer(),
@@ -232,13 +292,13 @@ class PostCard extends StatelessWidget {
                         height: getProportionateScreenHeight(15.55),
                         width: getProportionateScreenWidth(15.55),
                         colorFilter: ColorFilter.mode(
-                          iconColor,
+                          widget.iconColor,
                           BlendMode.srcIn,
                         ),
                       ),
                     ),
                     SizedBox(width: getProportionateScreenWidth(5)),
-                    Text('$reposts'),
+                    Text('${widget.reposts}'),
                   ],
                 ),
                 Spacer(),
@@ -251,13 +311,13 @@ class PostCard extends StatelessWidget {
                         height: getProportionateScreenHeight(15.55),
                         width: getProportionateScreenWidth(15.55),
                         colorFilter: ColorFilter.mode(
-                          iconColor,
+                          widget.iconColor,
                           BlendMode.srcIn,
                         ),
                       ),
                     ),
                     SizedBox(width: getProportionateScreenWidth(5)),
-                    Text('$bookmarks'),
+                    Text('${widget.bookmarks}'),
                   ],
                 ),
               ],
