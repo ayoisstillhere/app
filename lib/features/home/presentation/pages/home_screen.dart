@@ -234,6 +234,27 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
               ),
+              body: Padding(
+                padding: EdgeInsets.only(top: getProportionateScreenHeight(8)),
+                child: Column(
+                  children: [
+                    PostCard(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      authorName: selectedPost["userName"],
+                      authorHandle: selectedPost["handle"],
+                      imageUrl: selectedPost["userImage"],
+                      postTime: selectedPost["postTime"],
+                      likes: selectedPost["likes"],
+                      comments: selectedPost["comments"],
+                      reposts: selectedPost["reposts"],
+                      bookmarks: selectedPost["bookmarks"],
+                      content: selectedPost["content"],
+                      pictures: selectedPost["pictures"],
+                    ),
+                  ],
+                ),
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
