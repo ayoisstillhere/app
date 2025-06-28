@@ -89,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   bool isHome = true;
   Map<String, dynamic> selectedPost = {};
+  String dropDownValue = "Most Liked";
 
   @override
   void initState() {
@@ -237,6 +238,7 @@ class _HomeScreenState extends State<HomeScreen>
               body: Padding(
                 padding: EdgeInsets.only(top: getProportionateScreenHeight(8)),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     PostCard(
                       dividerColor: dividerColor,
@@ -251,6 +253,35 @@ class _HomeScreenState extends State<HomeScreen>
                       bookmarks: selectedPost["bookmarks"],
                       content: selectedPost["content"],
                       pictures: selectedPost["pictures"],
+                    ),
+                    SizedBox(height: getProportionateScreenHeight(11.09)),
+                    Container(
+                      padding: EdgeInsets.only(
+                        left: getProportionateScreenWidth(21),
+                      ),
+                      child: DropdownButton<String>(
+                        value: dropDownValue,
+                        icon: null,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            dropDownValue = newValue!;
+                          });
+                        },
+                        underline: Container(),
+                        items: <String>['Most Liked', 'Most Recent'].map((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                              style: TextStyle(
+                                fontSize: getProportionateScreenHeight(14),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
                 ),
