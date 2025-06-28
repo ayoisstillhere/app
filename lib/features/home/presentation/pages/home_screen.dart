@@ -1,18 +1,15 @@
-import 'package:app/constants.dart';
-import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
+import 'package:app/constants.dart';
+import 'package:app/size_config.dart';
+
 import '../widgets/post_Card.dart';
 
+// ignore: must_be_immutable
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-    required this.dividerColor,
-    required this.iconColor,
-  });
-  final Color dividerColor;
-  final Color iconColor;
+  HomeScreen({super.key, this.onHomeButtonPressed});
+  VoidCallback? onHomeButtonPressed;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -90,10 +87,14 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
 
+  bool isHome = true;
+  Map<String, dynamic> selectedPost = {};
+
   @override
   void initState() {
     super.initState();
     controller = TabController(length: 2, vsync: this);
+    widget.onHomeButtonPressed = resetHome;
   }
 
   @override
@@ -102,123 +103,138 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  void _toggleHome() {
+    setState(() {
+      isHome = !isHome;
+    });
+  }
+
+  void resetHome() {
+    if (!isHome) {
+      setState(() {
+        isHome = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
+    final iconColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kWhite
+        : kBlack;
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(getProportionateScreenHeight(100)),
-        child: SafeArea(
-          child: AppBar(
-            leading: Padding(
-              padding: EdgeInsets.only(left: getProportionateScreenWidth(16)),
-              child: Container(
-                height: getProportionateScreenHeight(34),
-                width: getProportionateScreenWidth(34),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      body: isHome
+          ? Scaffold(
+              appBar: _homeAppBar(context),
+              body: TabBarView(
+                controller: controller,
+                children: [
+                  ListView.builder(
+                    itemCount: mockPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = mockPosts[index];
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedPost = post;
+                          });
+                          _toggleHome();
+                        },
+                        child: PostCard(
+                          dividerColor: dividerColor,
+                          iconColor: iconColor,
+                          authorName: post["userName"],
+                          authorHandle: post["handle"],
+                          imageUrl: post["userImage"],
+                          postTime: post["postTime"],
+                          likes: post["likes"],
+                          comments: post["comments"],
+                          reposts: post["reposts"],
+                          bookmarks: post["bookmarks"],
+                          content: post["content"],
+                          pictures: post["pictures"],
+                        ),
+                      );
+                    },
+                  ),
+                  ListView.builder(
+                    itemCount: mockPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = mockPosts[index];
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedPost = post;
+                          });
+                          _toggleHome();
+                        },
+                        child: PostCard(
+                          dividerColor: dividerColor,
+                          iconColor: iconColor,
+                          authorName: post["userName"],
+                          authorHandle: post["handle"],
+                          imageUrl: post["userImage"],
+                          postTime: post["postTime"],
+                          likes: post["likes"],
+                          comments: post["comments"],
+                          reposts: post["reposts"],
+                          bookmarks: post["bookmarks"],
+                          content: post["content"],
+                          pictures: post["pictures"],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            )
+          : Scaffold(
+              appBar: PreferredSize(
+                preferredSize: Size.fromHeight(
+                  getProportionateScreenHeight(70),
+                ),
+                child: SafeArea(
+                  child: AppBar(
+                    title: Text(
+                      "Post",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: getProportionateScreenHeight(20),
+                      ),
                     ),
-                    fit: BoxFit.cover,
+                    centerTitle: false,
+                    shape: Border(
+                      bottom: BorderSide(color: dividerColor, width: 1),
+                    ),
+                    leading: InkWell(
+                      onTap: () {
+                        _toggleHome();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: getProportionateScreenHeight(12),
+                          vertical: getProportionateScreenHeight(12),
+                        ),
+                        child: SvgPicture.asset(
+                          "assets/icons/back_button.svg",
+                          colorFilter: ColorFilter.mode(
+                            iconColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-            bottom: TabBar(
-              controller: controller,
-              indicatorColor: kLightPurple,
-              dividerColor: widget.dividerColor,
-              labelStyle: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
-              unselectedLabelStyle: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
-              tabs: [
-                Tab(
-                  child: SizedBox(
-                    width: getProportionateScreenWidth(143),
-                    child: Center(child: Text("Recomended")),
-                  ),
-                ),
-                Tab(
-                  child: SizedBox(
-                    width: getProportionateScreenWidth(143),
-                    child: Center(child: Text("Following")),
-                  ),
-                ),
-              ],
-              indicatorSize: TabBarIndicatorSize.label,
-            ),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(
-                  right: getProportionateScreenWidth(22),
-                ),
-                child: SizedBox(
-                  height: getProportionateScreenHeight(24),
-                  width: getProportionateScreenWidth(24),
-                  child: InkWell(
-                    onTap: () {},
-                    child: SvgPicture.asset(
-                      "assets/icons/bell.svg",
-                      colorFilter: ColorFilter.mode(widget.iconColor, BlendMode.srcIn),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: TabBarView(
-        controller: controller,
-        children: [
-          ListView.builder(
-            itemCount: mockPosts.length,
-            itemBuilder: (context, index) {
-              final post = mockPosts[index];
-
-              return PostCard(
-                dividerColor: widget.dividerColor,
-                iconColor: widget.iconColor,
-                authorName: post["userName"],
-                authorHandle: post["handle"],
-                imageUrl: post["userImage"],
-                postTime: post["postTime"],
-                likes: post["likes"],
-                comments: post["comments"],
-                reposts: post["reposts"],
-                bookmarks: post["bookmarks"],
-                content: post["content"],
-                pictures: post["pictures"],
-              );
-            },
-          ),
-          ListView.builder(
-            itemCount: mockPosts.length,
-            itemBuilder: (context, index) {
-              final post = mockPosts[index];
-
-              return PostCard(
-                dividerColor: widget.dividerColor,
-                iconColor: widget.iconColor,
-                authorName: post["userName"],
-                authorHandle: post["handle"],
-                imageUrl: post["userImage"],
-                postTime: post["postTime"],
-                likes: post["likes"],
-                comments: post["comments"],
-                reposts: post["reposts"],
-                bookmarks: post["bookmarks"],
-                content: post["content"],
-                pictures: post["pictures"],
-              );
-            },
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         shape: const CircleBorder(),
@@ -227,6 +243,82 @@ class _HomeScreenState extends State<HomeScreen>
         highlightElevation: 0,
         backgroundColor: kLightPurple,
         child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  PreferredSize _homeAppBar(BuildContext context) {
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
+    final iconColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kWhite
+        : kBlack;
+    return PreferredSize(
+      preferredSize: Size.fromHeight(getProportionateScreenHeight(100)),
+      child: SafeArea(
+        child: AppBar(
+          leading: Padding(
+            padding: EdgeInsets.only(left: getProportionateScreenWidth(16)),
+            child: Container(
+              height: getProportionateScreenHeight(34),
+              width: getProportionateScreenWidth(34),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: NetworkImage(
+                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          bottom: TabBar(
+            controller: controller,
+            indicatorColor: kLightPurple,
+            dividerColor: dividerColor,
+            labelStyle: Theme.of(
+              context,
+            ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+            unselectedLabelStyle: Theme.of(
+              context,
+            ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+            tabs: [
+              Tab(
+                child: SizedBox(
+                  width: getProportionateScreenWidth(143),
+                  child: Center(child: Text("Recomended")),
+                ),
+              ),
+              Tab(
+                child: SizedBox(
+                  width: getProportionateScreenWidth(143),
+                  child: Center(child: Text("Following")),
+                ),
+              ),
+            ],
+            indicatorSize: TabBarIndicatorSize.label,
+          ),
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: getProportionateScreenWidth(22)),
+              child: SizedBox(
+                height: getProportionateScreenHeight(24),
+                width: getProportionateScreenWidth(24),
+                child: InkWell(
+                  onTap: () {},
+                  child: SvgPicture.asset(
+                    "assets/icons/bell.svg",
+                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

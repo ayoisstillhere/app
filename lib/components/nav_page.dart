@@ -19,6 +19,12 @@ class NavPage extends StatefulWidget {
 class _NavPageState extends State<NavPage> {
   int _page = 0;
   late PageController pageController;
+  List<Widget> navPages = [
+    HomeScreen(),
+    SearchScreen(),
+    ChatScreen(),
+    ProfileScreen(),
+  ];
 
   @override
   void initState() {
@@ -33,6 +39,12 @@ class _NavPageState extends State<NavPage> {
   }
 
   void navigationTapped(int page) {
+    if (page == 0) {
+      // Assuming 0 is the index of the home button
+      // Access the HomeScreen and call the callback
+      final homeScreen = navPages[0] as HomeScreen;
+      homeScreen.onHomeButtonPressed?.call();
+    }
     pageController.jumpToPage(page);
   }
 
@@ -59,12 +71,7 @@ class _NavPageState extends State<NavPage> {
     final bgColor = MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kBlackBg
         : kWhite;
-    List<Widget> navPages = [
-      HomeScreen(dividerColor: dividerColor, iconColor: iconColor),
-      SearchScreen(),
-      ChatScreen(),
-      ProfileScreen(),
-    ];
+
     return Scaffold(
       body: PageView(
         physics: const NeverScrollableScrollPhysics(),
