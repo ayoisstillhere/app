@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -19,6 +21,7 @@ class PostCard extends StatelessWidget {
     required this.reposts,
     required this.bookmarks,
     required this.content,
+    this.pictures = const [],
   });
 
   final Color dividerColor;
@@ -32,6 +35,7 @@ class PostCard extends StatelessWidget {
   final int reposts;
   final int bookmarks;
   final String content;
+  final List<dynamic> pictures;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +130,56 @@ class PostCard extends StatelessWidget {
               onMentionTap: (p0) {},
             ),
           ),
-          SizedBox(height: getProportionateScreenHeight(36)),
+          pictures.isEmpty
+              ? Container()
+              : SizedBox(height: getProportionateScreenHeight(10)),
+          pictures.isEmpty
+              ? Container()
+              : pictures.length == 1
+              ? Padding(
+                  padding: EdgeInsets.only(
+                    left: getProportionateScreenWidth(37),
+                    right: getProportionateScreenWidth(10),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    height: getProportionateScreenHeight(193),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(
+                        getProportionateScreenWidth(10),
+                      ),
+                      image: DecorationImage(
+                        image: NetworkImage(pictures[0]),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (var picture in pictures)
+                        Container(
+                          width: getProportionateScreenWidth(309),
+                          height: getProportionateScreenHeight(193),
+                          margin: EdgeInsets.only(
+                            right: getProportionateScreenWidth(10),
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              getProportionateScreenWidth(10),
+                            ),
+                            image: DecorationImage(
+                              image: NetworkImage(picture),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+          SizedBox(height: getProportionateScreenHeight(24)),
           Padding(
             padding: EdgeInsets.symmetric(
               horizontal: getProportionateScreenWidth(37),
