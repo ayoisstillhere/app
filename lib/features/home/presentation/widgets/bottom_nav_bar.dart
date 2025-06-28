@@ -27,7 +27,7 @@ class BottomNavBar extends StatelessWidget {
           border: Border(top: BorderSide(color: dividerColor, width: 1)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             InkWell(
               onTap: () {},

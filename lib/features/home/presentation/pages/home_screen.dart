@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/post_Card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +12,49 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
+
+List<Map<String, dynamic>> mockPosts = [
+  {
+    "handle": "user1",
+    "userName": "John Doe",
+    "userImage":
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "10m",
+    "likes": 10,
+    "comments": 5,
+    "reposts": 2,
+    "bookmarks": 1,
+    "content":
+        "Just tried the new café downtown with @themachine, and their caramel macchiato is a game changer! ☕️✨ #CoffeeLover",
+    "pictures": [],
+  },
+  {
+    "handle": "user2",
+    "userName": "Jane Smith",
+    "userImage":
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "1h",
+    "likes": 8,
+    "comments": 2,
+    "reposts": 1,
+    "bookmarks": 0,
+    "content": "This is another sample post",
+    "pictures": [],
+  },
+  {
+    "handle": "user3",
+    "userName": "Bob Johnson",
+    "userImage":
+        "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "2h",
+    "likes": 5,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 2,
+    "content": "This is a third sample post",
+    "pictures": [],
+  },
+];
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
@@ -109,7 +153,77 @@ class _HomeScreenState extends State<HomeScreen>
       body: TabBarView(
         controller: controller,
         children: [
-          Center(child: Text("Recomended")),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: mockPosts[0]["userName"],
+                  authorHandle: mockPosts[0]["handle"],
+                  imageUrl: mockPosts[0]["userImage"],
+                  postTime: mockPosts[0]["postTime"],
+                  likes: mockPosts[0]["likes"],
+                  comments: mockPosts[0]["comments"],
+                  reposts: mockPosts[0]["reposts"],
+                  bookmarks: mockPosts[0]["bookmarks"],
+                  content: mockPosts[0]["content"],
+                ),
+                PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: mockPosts[1]["userName"],
+                  authorHandle: mockPosts[1]["handle"],
+                  imageUrl: mockPosts[1]["userImage"],
+                  postTime: mockPosts[1]["postTime"],
+                  likes: mockPosts[1]["likes"],
+                  comments: mockPosts[1]["comments"],
+                  reposts: mockPosts[1]["reposts"],
+                  bookmarks: mockPosts[1]["bookmarks"],
+                  content: mockPosts[1]["content"],
+                ),
+                PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: mockPosts[2]["userName"],
+                  authorHandle: mockPosts[2]["handle"],
+                  imageUrl: mockPosts[2]["userImage"],
+                  postTime: mockPosts[2]["postTime"],
+                  likes: mockPosts[2]["likes"],
+                  comments: mockPosts[2]["comments"],
+                  reposts: mockPosts[2]["reposts"],
+                  bookmarks: mockPosts[2]["bookmarks"],
+                  content: mockPosts[2]["content"],
+                ),
+                PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: mockPosts[0]["userName"],
+                  authorHandle: mockPosts[0]["handle"],
+                  imageUrl: mockPosts[0]["userImage"],
+                  postTime: mockPosts[0]["postTime"],
+                  likes: mockPosts[0]["likes"],
+                  comments: mockPosts[0]["comments"],
+                  reposts: mockPosts[0]["reposts"],
+                  bookmarks: mockPosts[0]["bookmarks"],
+                  content: mockPosts[0]["content"],
+                ),
+                PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: mockPosts[0]["userName"],
+                  authorHandle: mockPosts[0]["handle"],
+                  imageUrl: mockPosts[0]["userImage"],
+                  postTime: mockPosts[0]["postTime"],
+                  likes: mockPosts[0]["likes"],
+                  comments: mockPosts[0]["comments"],
+                  reposts: mockPosts[0]["reposts"],
+                  bookmarks: mockPosts[0]["bookmarks"],
+                  content: mockPosts[0]["content"],
+                ),
+              ],
+            ),
+          ),
           Center(child: Text("Following")),
         ],
       ),
