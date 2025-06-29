@@ -17,3 +17,225 @@ const kGreyText = Color(0xFFD7D7D7);
 const kGreenAccent = Color(0xFF22C55E);
 const kGreyHandleText = Color(0xFFAAAAAA);
 const kGreyTimeText = Color(0xFF858585);
+
+// Test Constants
+List<Map<String, dynamic>> mockPosts = [
+  {
+    "handle": "user1",
+    "userName": "John Doe",
+    "userImage":
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "10m",
+    "likes": 10,
+    "comments": 5,
+    "reposts": 2,
+    "bookmarks": 1,
+    "content":
+        "Just tried the new café downtown with @themachine, and their caramel macchiato is a game changer! ☕️✨ #CoffeeLover",
+    "pictures": [],
+  },
+  {
+    "handle": "user2",
+    "userName": "Jane Smith",
+    "userImage":
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "1h",
+    "likes": 8,
+    "comments": 2,
+    "reposts": 1,
+    "bookmarks": 0,
+    "content": "This is another sample post",
+    "pictures": [
+      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    ],
+  },
+  {
+    "handle": "user3",
+    "userName": "Bob Johnson",
+    "userImage":
+        "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "2h",
+    "likes": 5,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 2,
+    "content":
+        "Just visited the new bakery on Elm Street with @sweettooth, and their chocolate croissant is to die for! 🥐❤️ #PastryLover",
+    "pictures": [
+      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    ],
+  },
+  {
+    "handle": "ayoisstillhere",
+    "userName": "Ayodele Fagbami",
+    "userImage":
+        "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "postTime": "2h",
+    "likes": 5,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 2,
+    "content":
+        "Just visited the new bakery on Elm Street with @sweettooth, and their chocolate croissant is to die for! 🥐❤️ #PastryLover",
+    "pictures": [
+      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    ],
+  },
+];
+
+List<Map<String, dynamic>> mockReplies = [
+  {
+    "handle": "coffeelover23",
+    "userName": "Sarah Wilson",
+    "userImage":
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "5m",
+    "likes": 2,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "Totally agree! Their barista knows how to make the perfect foam art too ☕️",
+    "parentPostId": "user1_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "downtown_foodie",
+    "userName": "Mike Chen",
+    "userImage":
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "8m",
+    "likes": 4,
+    "comments": 2,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "I've been meaning to check that place out! Is their wifi good for working?",
+    "parentPostId": "user1_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "themachine",
+    "userName": "Alex Rodriguez",
+    "userImage":
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "12m",
+    "likes": 6,
+    "comments": 2,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "Thanks for dragging me there! Already planning our next coffee adventure 😄",
+    "parentPostId": "user1_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "naturelover88",
+    "userName": "Emma Thompson",
+    "userImage":
+        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "45m",
+    "likes": 1,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content": "Beautiful shot! Where was this taken?",
+    "parentPostId": "user2_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "photographer_pro",
+    "userName": "David Kim",
+    "userImage":
+        "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "50m",
+    "likes": 3,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "The lighting in this is perfect! What camera settings did you use?",
+    "parentPostId": "user2_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "sweettooth",
+    "userName": "Lisa Park",
+    "userImage":
+        "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "1h",
+    "likes": 8,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "I'm still dreaming about that croissant! We need to go back tomorrow 🥐✨",
+    "parentPostId": "user3_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "bakerybuff",
+    "userName": "Carlos Martinez",
+    "userImage":
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "1h",
+    "likes": 2,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "Elm Street bakery is amazing! Try their almond danish next time",
+    "parentPostId": "user3_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "localfoodie",
+    "userName": "Rachel Green",
+    "userImage":
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "2h",
+    "likes": 5,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "Just added this to my weekend plans! Thanks for the recommendation 🙌",
+    "parentPostId": "ayoisstillhere_post_1",
+    "pictures": [],
+  },
+  {
+    "handle": "pastry_chef_anna",
+    "userName": "Anna Kowalski",
+    "userImage":
+        "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "2h",
+    "likes": 12,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "As a pastry chef, I can confirm their technique is spot on! The lamination on those croissants is *chef's kiss* 👌",
+    "parentPostId": "ayoisstillhere_post_1",
+    "pictures": [
+      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    ],
+  },
+  {
+    "handle": "neighborhood_guy",
+    "userName": "Tom Williams",
+    "userImage":
+        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "3h",
+    "likes": 1,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content": "Thanks for the recommendation! I'll definitely check it out",
+    "parentPostId": "ayoisstillhere_post_1",
+    "pictures": [],
+  },
+];

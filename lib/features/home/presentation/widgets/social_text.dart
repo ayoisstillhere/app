@@ -48,7 +48,7 @@ class PostText extends StatelessWidget {
         TextSpan(
           text: matchedText,
           style: (baseStyle ?? Theme.of(context).textTheme.bodyLarge)?.copyWith(
-            color: kLightPurple,
+            color: kAccentColor,
             fontWeight: FontWeight.w600,
           ),
           recognizer: TapGestureRecognizer()

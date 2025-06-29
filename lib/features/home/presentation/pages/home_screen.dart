@@ -1,3 +1,4 @@
+import 'package:app/features/home/presentation/widgets/reply_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -14,74 +15,6 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
-List<Map<String, dynamic>> mockPosts = [
-  {
-    "handle": "user1",
-    "userName": "John Doe",
-    "userImage":
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "postTime": "10m",
-    "likes": 10,
-    "comments": 5,
-    "reposts": 2,
-    "bookmarks": 1,
-    "content":
-        "Just tried the new café downtown with @themachine, and their caramel macchiato is a game changer! ☕️✨ #CoffeeLover",
-    "pictures": [],
-  },
-  {
-    "handle": "user2",
-    "userName": "Jane Smith",
-    "userImage":
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "postTime": "1h",
-    "likes": 8,
-    "comments": 2,
-    "reposts": 1,
-    "bookmarks": 0,
-    "content": "This is another sample post",
-    "pictures": [
-      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    ],
-  },
-  {
-    "handle": "user3",
-    "userName": "Bob Johnson",
-    "userImage":
-        "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "postTime": "2h",
-    "likes": 5,
-    "comments": 1,
-    "reposts": 0,
-    "bookmarks": 2,
-    "content":
-        "Just visited the new bakery on Elm Street with @sweettooth, and their chocolate croissant is to die for! 🥐❤️ #PastryLover",
-    "pictures": [
-      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    ],
-  },
-  {
-    "handle": "ayoisstillhere",
-    "userName": "Ayodele Fagbami",
-    "userImage":
-        "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "postTime": "2h",
-    "likes": 5,
-    "comments": 1,
-    "reposts": 0,
-    "bookmarks": 2,
-    "content":
-        "Just visited the new bakery on Elm Street with @sweettooth, and their chocolate croissant is to die for! 🥐❤️ #PastryLover",
-    "pictures": [
-      "https://images.unsplash.com/photo-1471922694854-ff1b63b20054?q=80&w=1744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "https://images.unsplash.com/photo-1519046904884-53103b34b206?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "https://plus.unsplash.com/premium_photo-1690407617542-2f210cf20d7e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    ],
-  },
-];
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
@@ -237,53 +170,77 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               body: Padding(
                 padding: EdgeInsets.only(top: getProportionateScreenHeight(8)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: selectedPost["userName"],
-                      authorHandle: selectedPost["handle"],
-                      imageUrl: selectedPost["userImage"],
-                      postTime: selectedPost["postTime"],
-                      likes: selectedPost["likes"],
-                      comments: selectedPost["comments"],
-                      reposts: selectedPost["reposts"],
-                      bookmarks: selectedPost["bookmarks"],
-                      content: selectedPost["content"],
-                      pictures: selectedPost["pictures"],
-                    ),
-                    SizedBox(height: getProportionateScreenHeight(11.09)),
-                    Container(
-                      padding: EdgeInsets.only(
-                        left: getProportionateScreenWidth(21),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      PostCard(
+                        dividerColor: dividerColor,
+                        iconColor: iconColor,
+                        authorName: selectedPost["userName"],
+                        authorHandle: selectedPost["handle"],
+                        imageUrl: selectedPost["userImage"],
+                        postTime: selectedPost["postTime"],
+                        likes: selectedPost["likes"],
+                        comments: selectedPost["comments"],
+                        reposts: selectedPost["reposts"],
+                        bookmarks: selectedPost["bookmarks"],
+                        content: selectedPost["content"],
+                        pictures: selectedPost["pictures"],
                       ),
-                      child: DropdownButton<String>(
-                        value: dropDownValue,
-                        icon: null,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            dropDownValue = newValue!;
-                          });
-                        },
-                        underline: Container(),
-                        items: <String>['Most Liked', 'Most Recent'].map((
-                          String value,
-                        ) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(
-                              value,
-                              style: TextStyle(
-                                fontSize: getProportionateScreenHeight(14),
+                      SizedBox(height: getProportionateScreenHeight(11.09)),
+                      Container(
+                        padding: EdgeInsets.only(
+                          left: getProportionateScreenWidth(21),
+                        ),
+                        child: DropdownButton<String>(
+                          value: dropDownValue,
+                          icon: null,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropDownValue = newValue!;
+                            });
+                          },
+                          underline: Container(),
+                          items: <String>['Most Liked', 'Most Recent'].map((
+                            String value,
+                          ) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: TextStyle(
+                                  fontSize: getProportionateScreenHeight(14),
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
-                  ],
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: mockReplies.length,
+                        itemBuilder: (context, index) {
+                          return ReplyCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            replyerName: mockReplies[index]["userName"],
+                            replyerHandle: mockReplies[index]["handle"],
+                            imageUrl: mockReplies[index]["userImage"],
+                            postTime: mockReplies[index]["replyTime"],
+                            likes: mockReplies[index]["likes"],
+                            comments: mockReplies[index]["comments"],
+                            reposts: mockReplies[index]["reposts"],
+                            bookmarks: mockReplies[index]["bookmarks"],
+                            content: mockReplies[index]["content"],
+                            pictures: mockReplies[index]["pictures"],
+                            authorHandle: selectedPost["handle"],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
