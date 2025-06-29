@@ -417,9 +417,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                 Tab(
                   child: SizedBox(
                     width: getProportionateScreenWidth(143),
-                    child: Center(
-                      child: Text("People"),
-                    ),
+                    child: Center(child: Text("People")),
                   ),
                 ),
               ],
@@ -477,16 +475,16 @@ class _ExploreScreenState extends State<ExploreScreen>
               ListView.builder(
                 itemCount: mockReplies.length,
                 itemBuilder: (context, index) {
-                  final reply = mockPosts[index];
+                  final reply = mockReplies[index];
 
                   return GestureDetector(
                     onTap: () {},
                     child: ReplyCard(
                       dividerColor: dividerColor,
                       iconColor: iconColor,
-                      authorHandle: reply["handle"],
+                      authorHandle: reply["parentPostId"],
                       imageUrl: reply["userImage"],
-                      postTime: reply["postTime"],
+                      postTime: reply["replyTime"],
                       likes: reply["likes"],
                       comments: reply["comments"],
                       reposts: reply["reposts"],
