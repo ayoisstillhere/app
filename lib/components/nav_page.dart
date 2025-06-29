@@ -42,6 +42,9 @@ class _NavPageState extends State<NavPage> {
     if (page == 0) {
       final homeScreen = navPages[0] as HomeScreen;
       homeScreen.onHomeButtonPressed?.call();
+    } else if (page == 1) {
+      final exploreScreen = navPages[1] as ExploreScreen;
+      exploreScreen.onExploreButtonPressed?.call();
     }
     pageController.jumpToPage(page);
   }

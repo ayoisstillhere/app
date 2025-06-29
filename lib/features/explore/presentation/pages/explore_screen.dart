@@ -8,8 +8,10 @@ import '../../../home/presentation/widgets/post_Card.dart';
 import '../widgets/follow_suggestions_list.dart';
 import '../widgets/trending_topic.dart';
 
+// ignore: must_be_immutable
 class ExploreScreen extends StatefulWidget {
-  const ExploreScreen({super.key});
+  ExploreScreen({super.key});
+  VoidCallback? onExploreButtonPressed;
 
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
@@ -28,6 +30,7 @@ class _ExploreScreenState extends State<ExploreScreen>
     super.initState();
     _searchFocusNode.addListener(_onSearchFocusChange);
     controller = TabController(length: 4, vsync: this);
+    widget.onExploreButtonPressed = resetExplore;
   }
 
   @override
@@ -43,6 +46,17 @@ class _ExploreScreenState extends State<ExploreScreen>
       _isSearchFocused = _searchFocusNode.hasFocus;
     });
   }
+
+  void resetExplore() {
+  if (_isSearchFocused || _isSearchQueried) {
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _isSearchFocused = false;
+      _isSearchQueried = false;
+    });
+  }
+}
 
   void _cancelSearch() {
     _searchController.clear();
