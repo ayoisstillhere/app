@@ -18,6 +18,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
+  bool _isSearchQueried = false;
 
   @override
   void initState() {
@@ -43,6 +44,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _searchFocusNode.unfocus();
     setState(() {
       _isSearchFocused = false;
+      _isSearchQueried = false;
+    });
+  }
+
+  void _clearSearchResults() {
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _isSearchQueried = false;
+      _isSearchFocused = false;
     });
   }
 
@@ -60,6 +71,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
       }
       // Handle the search logic here
       print("Searching for: $query");
+      setState(() {
+        _isSearchQueried = true;
+      });
     }
   }
 
@@ -96,9 +110,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildSearchHeader(context),
+              _isSearchQueried ? Container() : _buildSearchHeader(context),
               _isSearchFocused
                   ? _buildSearchView(context)
+                  : _isSearchQueried
+                  ? _buildSearchResultsView(context)
                   : _buildExploreView(context, dividerColor, iconColor),
             ],
           ),
@@ -324,6 +340,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildSearchResultsView(BuildContext context) {
+    return Center(child: Text("Search Results"));
   }
 
   InputDecoration _buildExploreSearchFieldInputDecoration(
