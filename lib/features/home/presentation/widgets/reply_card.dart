@@ -1,9 +1,9 @@
+import 'package:app/components/social_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
-import 'social_text.dart';
 
 class ReplyCard extends StatefulWidget {
   const ReplyCard({
@@ -175,7 +175,7 @@ class _ReplyCardState extends State<ReplyCard> {
               left: getProportionateScreenWidth(37),
               right: getProportionateScreenWidth(10),
             ),
-            child: PostText(
+            child: SocialText(
               text: widget.content,
               baseStyle: Theme.of(context).textTheme.bodyLarge!.copyWith(
                 fontSize: getProportionateScreenHeight(15),

@@ -2,13 +2,13 @@ import 'package:app/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
-class PostText extends StatelessWidget {
+class SocialText extends StatelessWidget {
   final String text;
   final TextStyle? baseStyle;
   final Function(String)? onMentionTap;
   final Function(String)? onHashtagTap;
 
-  const PostText({
+  const SocialText({
     super.key,
     required this.text,
     this.baseStyle,
