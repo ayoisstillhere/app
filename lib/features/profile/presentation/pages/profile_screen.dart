@@ -6,8 +6,28 @@ import 'package:intl/intl.dart';
 
 import '../../../../constants.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TabController(length: 6, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +35,10 @@ class ProfileScreen extends StatelessWidget {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kWhite
         : kBlack;
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -210,6 +234,59 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              SizedBox(height: getProportionateScreenHeight(18)),
+              TabBar(
+                controller: controller,
+                tabAlignment: TabAlignment.start,
+                isScrollable: true,
+                indicatorColor: kLightPurple,
+                dividerColor: dividerColor,
+                labelStyle: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+                unselectedLabelStyle: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+                tabs: [
+                  Tab(
+                    child: SizedBox(
+                      width: getProportionateScreenWidth(70),
+                      child: Center(child: Text("Posts")),
+                    ),
+                  ),
+                  Tab(
+                    child: SizedBox(
+                      width: getProportionateScreenWidth(70),
+                      child: Center(child: Text("Reposts")),
+                    ),
+                  ),
+                  Tab(
+                    child: SizedBox(
+                      width: getProportionateScreenWidth(70),
+                      child: Center(child: Text("Media")),
+                    ),
+                  ),
+                  Tab(
+                    child: SizedBox(
+                      width: getProportionateScreenWidth(70),
+                      child: Center(child: Text("Comments")),
+                    ),
+                  ),
+                  Tab(
+                    child: SizedBox(
+                      width: getProportionateScreenWidth(70),
+                      child: Center(child: Text("Saved")),
+                    ),
+                  ),
+                  Tab(
+                    child: SizedBox(
+                      width: getProportionateScreenWidth(70),
+                      child: Center(child: Text("Liked")),
+                    ),
+                  ),
+                ],
+                indicatorSize: TabBarIndicatorSize.label,
               ),
             ],
           ),

@@ -419,7 +419,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                     width: getProportionateScreenWidth(143),
                     child: Center(
                       child: Text("People"),
-                    ), // Fixed typo: "Peaople" -> "People"
+                    ),
                   ),
                 ),
               ],
