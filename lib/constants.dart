@@ -17,7 +17,7 @@ const kGreyText = Color(0xFFD7D7D7);
 const kGreenAccent = Color(0xFF22C55E);
 const kGreyHandleText = Color(0xFFAAAAAA);
 const kGreyTimeText = Color(0xFF858585);
-
+const kGreySearchInput = Color(0xFF1F1F1F);
 // Test Constants
 List<Map<String, dynamic>> mockPosts = [
   {
@@ -88,6 +88,21 @@ List<Map<String, dynamic>> mockPosts = [
 ];
 
 List<Map<String, dynamic>> mockReplies = [
+  {
+    "handle": "neighborhood_guy",
+    "userName": "Tom Williams",
+    "userImage":
+        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "replyTime": "3h",
+    "likes": 1,
+    "comments": 1,
+    "reposts": 0,
+    "bookmarks": 0,
+    "content":
+        "Absolutely! Sci-fi has a way of transporting us to incredible worlds. Just finished \"Galactic Odyssey\" and I can't stop thinking about it! 🚀✨ #SciFiFan",
+    "parentPostId": "JordanLee",
+    "pictures": [],
+  },
   {
     "handle": "coffeelover23",
     "userName": "Sarah Wilson",
@@ -238,4 +253,51 @@ List<Map<String, dynamic>> mockReplies = [
     "parentPostId": "ayoisstillhere_post_1",
     "pictures": [],
   },
+];
+
+List<Map<String, dynamic>> mockFollowerSuggestions = [
+  {
+    "handle": "user1",
+    "userName": "John Doe",
+    "followers": 100,
+    "bio": "Problem Solver, UI desinger. Tech boy",
+    "userImage":
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    "handle": "user2",
+    "userName": "Jane Smith",
+    "followers": 1000,
+    "bio": "Web Developer, UI desinger. Tech girl",
+    "userImage":
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    "handle": "user3",
+    "userName": "Alice Johnson",
+    "followers": 15000000,
+    "bio": "",
+    "userImage":
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+];
+
+List trendingImages = [
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+];
+
+List<Map<String, dynamic>> mockTrendingTopics = [
+  {"topic": "Cristiano Ronaldo", "postNumber": 4000},
+  {"topic": "Barcelona", "postNumber": 3000},
+  {"topic": "Messi", "postNumber": 2000},
+  {"topic": "Neymar", "postNumber": 1500},
+  {"topic": "Manchester United", "postNumber": 1000},
 ];

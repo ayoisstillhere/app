@@ -26,7 +26,7 @@ ThemeData darkTheme() {
 InputDecorationTheme inputDecorationTheme() {
   OutlineInputBorder focusInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(8),
-    borderSide: const BorderSide(color: kBlack),
+    borderSide: const BorderSide(color: kGreyInputBorder),
   );
   OutlineInputBorder defaultInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(8),
@@ -53,7 +53,7 @@ InputDecorationTheme inputDecorationTheme() {
 InputDecorationTheme darkInputDecorationTheme() {
   OutlineInputBorder focusInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(8),
-    borderSide: const BorderSide(color: kBlack),
+    borderSide: const BorderSide(color: kGreyDarkInputBorder),
   );
   OutlineInputBorder defaultInputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(8),
