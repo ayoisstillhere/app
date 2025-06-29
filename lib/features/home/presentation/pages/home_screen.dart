@@ -165,6 +165,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     ),
+                    scrolledUnderElevation: 0.0,
+                    surfaceTintColor: Colors.transparent,
                   ),
                 ),
               ),
@@ -327,6 +329,8 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ],
+          scrolledUnderElevation: 0.0,
+          surfaceTintColor: Colors.transparent,
         ),
       ),
     );
