@@ -48,15 +48,15 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 
   void resetExplore() {
-  if (_isSearchFocused || _isSearchQueried) {
-    _searchController.clear();
-    _searchFocusNode.unfocus();
-    setState(() {
-      _isSearchFocused = false;
-      _isSearchQueried = false;
-    });
+    if (_isSearchFocused || _isSearchQueried) {
+      _searchController.clear();
+      _searchFocusNode.unfocus();
+      setState(() {
+        _isSearchFocused = false;
+        _isSearchQueried = false;
+      });
+    }
   }
-}
 
   void _cancelSearch() {
     _searchController.clear();
