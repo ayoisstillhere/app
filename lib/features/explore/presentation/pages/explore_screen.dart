@@ -134,9 +134,10 @@ class _ExploreScreenState extends State<ExploreScreen>
 
   Widget _buildSearchHeader(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: getProportionateScreenWidth(16),
-        vertical: getProportionateScreenHeight(16),
+      padding: EdgeInsets.only(
+        left: getProportionateScreenWidth(16),
+        right: getProportionateScreenWidth(16),
+        bottom: getProportionateScreenHeight(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

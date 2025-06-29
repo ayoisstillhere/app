@@ -54,10 +54,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   void resetHome() {
     if (!isHome) {
-      setState(() {
-        isHome = true;
-        isNotifications = false;
-      });
+      if (mounted) {
+        setState(() {
+          isHome = true;
+          isNotifications = false;
+        });
+      }
     }
   }
 
