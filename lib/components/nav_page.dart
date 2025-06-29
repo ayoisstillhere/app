@@ -40,8 +40,6 @@ class _NavPageState extends State<NavPage> {
 
   void navigationTapped(int page) {
     if (page == 0) {
-      // Assuming 0 is the index of the home button
-      // Access the HomeScreen and call the callback
       final homeScreen = navPages[0] as HomeScreen;
       homeScreen.onHomeButtonPressed?.call();
     }
