@@ -14,22 +14,26 @@ class ExploreScreen extends StatefulWidget {
   State<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+class _ExploreScreenState extends State<ExploreScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
   bool _isSearchQueried = false;
+  late TabController controller;
 
   @override
   void initState() {
     super.initState();
     _searchFocusNode.addListener(_onSearchFocusChange);
+    controller = TabController(length: 4, vsync: this);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -45,15 +49,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     setState(() {
       _isSearchFocused = false;
       _isSearchQueried = false;
-    });
-  }
-
-  void _clearSearchResults() {
-    _searchController.clear();
-    _searchFocusNode.unfocus();
-    setState(() {
-      _isSearchQueried = false;
-      _isSearchFocused = false;
     });
   }
 
@@ -107,18 +102,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _isSearchQueried ? Container() : _buildSearchHeader(context),
-              _isSearchFocused
-                  ? _buildSearchView(context)
-                  : _isSearchQueried
-                  ? _buildSearchResultsView(context)
-                  : _buildExploreView(context, dividerColor, iconColor),
-            ],
-          ),
-        ),
+        child: _isSearchQueried
+            ? _buildSearchResultsView(context)
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildSearchHeader(context),
+                    _isSearchFocused
+                        ? _buildSearchView(context)
+                        : _buildExploreView(context, dividerColor, iconColor),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -343,7 +338,110 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildSearchResultsView(BuildContext context) {
-    return Center(child: Text("Search Results"));
+    final iconColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kWhite
+        : kBlack;
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
+    
+    return Column(
+      children: [
+        SizedBox(
+          height: getProportionateScreenHeight(113),
+          child: AppBar(
+            leading: InkWell(
+              onTap: () {
+                _cancelSearch();
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: getProportionateScreenHeight(12),
+                ),
+                child: SvgPicture.asset(
+                  "assets/icons/back_button.svg",
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                ),
+              ),
+            ),
+            title: TextFormField(
+              controller: _searchController,
+              decoration: _buildExploreSearchFieldInputDecoration(context),
+            ),
+            bottom: TabBar(
+              controller: controller,
+              indicatorColor: kLightPurple,
+              dividerColor: dividerColor,
+              labelStyle: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+              unselectedLabelStyle: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+              tabs: [
+                Tab(
+                  child: SizedBox(
+                    width: getProportionateScreenWidth(143),
+                    child: Center(child: Text("Top")),
+                  ),
+                ),
+                Tab(
+                  child: SizedBox(
+                    width: getProportionateScreenWidth(143),
+                    child: Center(child: Text("Recent")),
+                  ),
+                ),
+                Tab(
+                  child: SizedBox(
+                    width: getProportionateScreenWidth(143),
+                    child: Center(child: Text("Media")),
+                  ),
+                ),
+                Tab(
+                  child: SizedBox(
+                    width: getProportionateScreenWidth(143),
+                    child: Center(child: Text("People")), // Fixed typo: "Peaople" -> "People"
+                  ),
+                ),
+              ],
+              indicatorSize: TabBarIndicatorSize.label,
+            ),
+            actions: [
+              Padding(
+                padding: EdgeInsets.only(
+                  right: getProportionateScreenWidth(22),
+                ),
+                child: SizedBox(
+                  height: getProportionateScreenHeight(24),
+                  width: getProportionateScreenWidth(24),
+                  child: InkWell(
+                    onTap: () {},
+                    child: SvgPicture.asset(
+                      "assets/icons/more-vertical.svg",
+                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Wrap TabBarView with Expanded to give it bounded height
+        Expanded(
+          child: TabBarView(
+            controller: controller,
+            children: [
+              Center(child: Text("Top")),
+              Center(child: Text("Recent")),
+              Center(child: Text("Media")),
+              Center(child: Text("People")), // Fixed typo here too
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   InputDecoration _buildExploreSearchFieldInputDecoration(
