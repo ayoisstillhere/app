@@ -1,7 +1,7 @@
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 import 'package:app/features/home/presentation/pages/home_screen.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
-import 'package:app/features/search/presentation/pages/search_screen.dart';
+import 'package:app/features/explore/presentation/pages/explore_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -21,7 +21,7 @@ class _NavPageState extends State<NavPage> {
   late PageController pageController;
   List<Widget> navPages = [
     HomeScreen(),
-    SearchScreen(),
+    ExploreScreen(),
     ChatScreen(),
     ProfileScreen(),
   ];
