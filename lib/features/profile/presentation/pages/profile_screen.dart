@@ -419,7 +419,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: Row(
         children: [
           InkWell(
-            onTap: () {},
+            onTap: () {
+              Navigator.pop(context);
+            },
             child: SvgPicture.asset(
               "assets/icons/back_button.svg",
               colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),

@@ -1,4 +1,5 @@
 import 'package:app/components/social_text.dart';
+import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -75,7 +76,12 @@ class _PostCardState extends State<PostCard> {
           Row(
             children: [
               InkWell(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfileScreen()),
+                  );
+                },
                 child: Container(
                   height: getProportionateScreenHeight(25),
                   width: getProportionateScreenWidth(25),
