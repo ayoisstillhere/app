@@ -134,7 +134,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   child: Text(
                     "Cancel",
                     style: TextStyle(
-                      fontSize: getProportionateScreenHeight(16),
+                      fontSize: getProportionateScreenHeight(14),
                     ),
                   ),
                 ),
@@ -157,6 +157,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: getProportionateScreenHeight(12)),
         if (mockRecentSearches.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.symmetric(
