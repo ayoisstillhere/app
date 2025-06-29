@@ -1,3 +1,4 @@
+import 'package:app/features/home/presentation/pages/create_post_screen.dart';
 import 'package:app/features/home/presentation/widgets/reply_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -76,15 +77,24 @@ class _HomeScreenState extends State<HomeScreen>
           : isNotifications
           ? _buildNotificationsView(context)
           : _buildPostDetailsView(dividerColor, iconColor),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        shape: const CircleBorder(),
-        mini: false,
-        elevation: 0,
-        highlightElevation: 0,
-        backgroundColor: kLightPurple,
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: isHome
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreatePostScreen(),
+                  ),
+                );
+              },
+              shape: const CircleBorder(),
+              mini: false,
+              elevation: 0,
+              highlightElevation: 0,
+              backgroundColor: kLightPurple,
+              child: Icon(Icons.add),
+            )
+          : null,
     );
   }
 

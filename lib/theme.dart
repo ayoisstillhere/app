@@ -117,5 +117,7 @@ AppBarTheme appBarTheme() {
     centerTitle: true,
     elevation: 0,
     color: Colors.transparent,
+    scrolledUnderElevation: 0.0,
+    surfaceTintColor: Colors.transparent,
   );
 }
