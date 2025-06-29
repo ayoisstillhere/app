@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../../../home/presentation/widgets/post_Card.dart';
 import '../widgets/follow_suggestions_list.dart';
 import '../widgets/trending_topic.dart';
 
@@ -64,8 +65,7 @@ class _ExploreScreenState extends State<ExploreScreen>
           }
         });
       }
-      // Handle the search logic here
-      print("Searching for: $query");
+
       setState(() {
         _isSearchQueried = true;
       });
@@ -346,7 +346,7 @@ class _ExploreScreenState extends State<ExploreScreen>
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-    
+
     return Column(
       children: [
         SizedBox(
@@ -402,7 +402,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                 Tab(
                   child: SizedBox(
                     width: getProportionateScreenWidth(143),
-                    child: Center(child: Text("People")), // Fixed typo: "Peaople" -> "People"
+                    child: Center(
+                      child: Text("People"),
+                    ), // Fixed typo: "Peaople" -> "People"
                   ),
                 ),
               ],
@@ -433,8 +435,55 @@ class _ExploreScreenState extends State<ExploreScreen>
           child: TabBarView(
             controller: controller,
             children: [
-              Center(child: Text("Top")),
-              Center(child: Text("Recent")),
+              ListView.builder(
+                itemCount: mockPosts.length,
+                itemBuilder: (context, index) {
+                  final post = mockPosts[index];
+
+                  return GestureDetector(
+                    onTap: () {},
+                    child: PostCard(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      authorName: post["userName"],
+                      authorHandle: post["handle"],
+                      imageUrl: post["userImage"],
+                      postTime: post["postTime"],
+                      likes: post["likes"],
+                      comments: post["comments"],
+                      reposts: post["reposts"],
+                      bookmarks: post["bookmarks"],
+                      content: post["content"],
+                      pictures: post["pictures"],
+                    ),
+                  );
+                },
+              ),
+              ListView.builder(
+                itemCount: mockReplies.length,
+                itemBuilder: (context, index) {
+                  final reply = mockPosts[index];
+
+                  return GestureDetector(
+                    onTap: () {},
+                    child: ReplyCard(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      authorHandle: reply["handle"],
+                      imageUrl: reply["userImage"],
+                      postTime: reply["postTime"],
+                      likes: reply["likes"],
+                      comments: reply["comments"],
+                      reposts: reply["reposts"],
+                      bookmarks: reply["bookmarks"],
+                      content: reply["content"],
+                      pictures: reply["pictures"],
+                      replyerName: reply["userName"],
+                      replyerHandle: mockPosts[index]["handle"],
+                    ),
+                  );
+                },
+              ),
               Center(child: Text("Media")),
               Center(child: Text("People")), // Fixed typo here too
             ],
