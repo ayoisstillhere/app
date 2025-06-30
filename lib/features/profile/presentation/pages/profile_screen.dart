@@ -547,47 +547,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
           InkWell(
-            onTap: () async {
-              final selected = await showMenu<String>(
-                context: context,
-                color: Theme.of(context).scaffoldBackgroundColor,
-                position: RelativeRect.fromLTRB(
-                  getProportionateScreenWidth(1000),
-                  getProportionateScreenHeight(80),
-                  getProportionateScreenWidth(10),
-                  getProportionateScreenHeight(100),
-                ),
-                items: [
-                  PopupMenuItem<String>(
-                    value: 'Settings',
-                    child: Text(
-                      'Settings',
-                      style: TextStyle(
-                        fontSize: getProportionateScreenWidth(15),
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'Account',
-                    child: Text(
-                      'Account',
-                      style: TextStyle(
-                        fontSize: getProportionateScreenWidth(15),
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-
-              if (selected == 'Settings' && mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SettingsScreen()),
-                );
-              }
-            },
+            onTap: widget.isMe ? _onMoreButtonTap : () {},
             child: SvgPicture.asset(
               "assets/icons/more-vertical.svg",
               colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
@@ -598,6 +558,48 @@ class _ProfileScreenState extends State<ProfileScreen>
         ],
       ),
     );
+  }
+
+  void _onMoreButtonTap() async {
+    final selected = await showMenu<String>(
+      context: context,
+      color: Theme.of(context).scaffoldBackgroundColor,
+      position: RelativeRect.fromLTRB(
+        getProportionateScreenWidth(1000),
+        getProportionateScreenHeight(80),
+        getProportionateScreenWidth(10),
+        getProportionateScreenHeight(100),
+      ),
+      items: [
+        PopupMenuItem<String>(
+          value: 'Settings',
+          child: Text(
+            'Settings',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'Account',
+          child: Text(
+            'Account',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (selected == 'Settings' && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SettingsScreen()),
+      );
+    }
   }
 }
 
