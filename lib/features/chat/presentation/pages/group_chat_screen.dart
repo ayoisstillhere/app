@@ -4,10 +4,9 @@ import 'package:flutter_svg/svg.dart';
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import '../widgets/chat_suggestion_tile.dart';
-import 'group_chat_screen.dart';
 
-class NewChatScreen extends StatelessWidget {
-  const NewChatScreen({super.key});
+class GroupChatScreen extends StatelessWidget {
+  const GroupChatScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,23 +14,14 @@ class NewChatScreen extends StatelessWidget {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kWhite
         : kBlack;
-    final circleColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kGreyInputFillDark
-        : Colors.transparent;
-    final circleBorder =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kGreySearchInput
-        : kGreyInputBorder;
     final dividerColor =
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Messages",
+          "New Group",
           style: TextStyle(
             fontSize: getProportionateScreenHeight(24),
             fontWeight: FontWeight.w500,
@@ -61,7 +51,37 @@ class NewChatScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: getProportionateScreenHeight(40)),
+            Column(
+              children: [
+                Padding(
+                  padding: EdgeInsetsGeometry.symmetric(
+                    horizontal: getProportionateScreenWidth(22),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: getProportionateScreenHeight(30)),
+                      Text(
+                        "Group name",
+                        style: TextStyle(
+                          fontSize: getProportionateScreenHeight(14),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      SizedBox(height: getProportionateScreenHeight(16)),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          hintText: "Enter group name",
+                        ),
+                      ),
+                      SizedBox(height: getProportionateScreenHeight(16)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: getProportionateScreenWidth(16),
@@ -70,61 +90,12 @@ class NewChatScreen extends StatelessWidget {
                 decoration: _buildChatSearchFieldDecoration(context),
               ),
             ),
-            SizedBox(height: getProportionateScreenHeight(36)),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const GroupChatScreen(),
-                  ),
-                );
-              },
-              child: Padding(
-                padding: EdgeInsetsGeometry.symmetric(
-                  horizontal: getProportionateScreenWidth(30),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      height: getProportionateScreenHeight(64),
-                      width: getProportionateScreenWidth(64),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: getProportionateScreenWidth(20),
-                        vertical: getProportionateScreenHeight(20),
-                      ),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: circleColor,
-                        border: Border.all(color: circleBorder, width: 1.0),
-                      ),
-                      child: SvgPicture.asset("assets/icons/users-round.svg"),
-                    ),
-                    SizedBox(width: getProportionateScreenWidth(14)),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Group Chat",
-                          style: TextStyle(
-                            fontSize: getProportionateScreenHeight(15),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          "Add multiple people",
-                          style: TextStyle(
-                            fontSize: getProportionateScreenHeight(12),
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: getProportionateScreenHeight(47)),
+            SizedBox(
+              height: getProportionateScreenHeight(24),
+            ), // Spacer Before Selecxted List
+            SizedBox(
+              height: getProportionateScreenHeight(24),
+            ), // Spacer After Selecxted List
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: getProportionateScreenWidth(18),
