@@ -21,6 +21,12 @@ const kGreyTimeText = Color(0xFF858585);
 const kGreySearchInput = Color(0xFF1F1F1F);
 const kPrimPurple = Color(0xFF9500FF);
 const kProfileText = Color(0xFF727272);
+const kChatBubbleGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  stops: [0.0, 1.0],
+  colors: [Color(0xFF6366F1), Color(0xFF9500FF)],
+);
 
 // UI Constants
 List<Map<String, dynamic>> settingsDetails = [
