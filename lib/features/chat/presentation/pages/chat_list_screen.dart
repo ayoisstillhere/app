@@ -6,14 +6,14 @@ import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import '../widgets/chat_tile.dart';
 
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+class ChatListScreen extends StatefulWidget {
+  const ChatListScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatListScreenState extends State<ChatListScreen> {
   String selectedChip = "All";
   final List<Map<String, dynamic>> filters = [
     {'label': 'All', 'count': 15},

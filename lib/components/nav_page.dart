@@ -1,4 +1,4 @@
-import 'package:app/features/chat/presentation/pages/chat_screen.dart';
+import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:app/features/home/presentation/pages/home_screen.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:app/features/explore/presentation/pages/explore_screen.dart';
@@ -22,7 +22,7 @@ class _NavPageState extends State<NavPage> {
   List<Widget> navPages = [
     HomeScreen(),
     ExploreScreen(),
-    ChatScreen(),
+    ChatListScreen(),
     ProfileScreen(
       isMe: true,
       iAmFollowing: false,
