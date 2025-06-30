@@ -223,7 +223,67 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                           ),
 
                           InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(
+                                      "Block User",
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          18,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    content: Text(
+                                      "Are you sure you want to Block Ayodele?",
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          16,
+                                        ),
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Cancel",
+                                          style: TextStyle(
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  16,
+                                                ),
+                                            fontWeight: FontWeight.normal,
+                                            color: kAccentColor,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Block",
+                                          style: TextStyle(
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  16,
+                                                ),
+                                            fontWeight: FontWeight.normal,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -352,12 +412,14 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                   controller: controller,
                   dividerColor: dividerColor,
                   indicatorSize: TabBarIndicatorSize.label,
-                  labelStyle: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
-                  unselectedLabelStyle: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
+                  labelStyle: TextStyle(
+                    fontSize: getProportionateScreenHeight(15),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  unselectedLabelStyle: TextStyle(
+                    fontSize: getProportionateScreenHeight(15),
+                    fontWeight: FontWeight.w500,
+                  ),
                   tabs: [
                     Tab(
                       child: Text(
