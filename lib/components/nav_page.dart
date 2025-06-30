@@ -23,7 +23,13 @@ class _NavPageState extends State<NavPage> {
     HomeScreen(),
     ExploreScreen(),
     ChatScreen(),
-    ProfileScreen(),
+    ProfileScreen(
+      isMe: true,
+      iAmFollowing: false,
+      followsMe: false,
+      isVerified: true,
+      isFromNav: true,
+    ),
   ];
 
   @override

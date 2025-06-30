@@ -79,7 +79,14 @@ class _PostCardState extends State<PostCard> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ProfileScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => ProfileScreen(
+                        isMe: false,
+                        iAmFollowing: false,
+                        followsMe: false,
+                        isVerified: true,
+                      ),
+                    ),
                   );
                 },
                 child: Container(

@@ -1,15 +1,28 @@
-import 'package:app/components/social_text.dart';
-import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
+
+import 'package:app/components/social_text.dart';
+import 'package:app/size_config.dart';
 
 import '../../../../constants.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
 import '../../../home/presentation/widgets/reply_card.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({
+    super.key,
+    required this.isMe,
+    required this.iAmFollowing,
+    required this.followsMe,
+    required this.isVerified,
+    this.isFromNav = false,
+  });
+  final bool isMe;
+  final bool iAmFollowing;
+  final bool followsMe;
+  final bool isVerified;
+  final bool isFromNav;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -87,11 +100,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SvgPicture.asset(
-                                    "assets/icons/verified.svg",
-                                    height: getProportionateScreenHeight(19.14),
-                                    width: getProportionateScreenWidth(19.14),
-                                  ),
+                                  if (widget.isVerified)
+                                    SvgPicture.asset(
+                                      "assets/icons/verified.svg",
+                                      height: getProportionateScreenHeight(
+                                        19.14,
+                                      ),
+                                      width: getProportionateScreenWidth(19.14),
+                                    ),
                                 ],
                               ),
                               Text(
@@ -211,23 +227,76 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       child: Row(
                         children: [
-                          InkWell(
-                            onTap: () {},
-                            child: Container(
-                              height: getProportionateScreenHeight(27),
-                              width: getProportionateScreenWidth(163.5),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  width: 1,
-                                  color: kProfileText,
+                          if (widget.isMe)
+                            InkWell(
+                              onTap: () {},
+                              child: Container(
+                                height: getProportionateScreenHeight(27),
+                                width: getProportionateScreenWidth(163.5),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    width: 1,
+                                    color: kProfileText,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    getProportionateScreenWidth(10),
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(
-                                  getProportionateScreenWidth(10),
-                                ),
+                                child: Center(child: Text("Edit Profile")),
                               ),
-                              child: Center(child: Text("Edit Profile")),
                             ),
-                          ),
+                          if (!widget.isMe &&
+                              !widget.iAmFollowing &&
+                              !widget.followsMe)
+                            InkWell(
+                              onTap: () {},
+                              child: Container(
+                                height: getProportionateScreenHeight(27),
+                                width: getProportionateScreenWidth(163.5),
+                                decoration: BoxDecoration(
+                                  color: kAccentColor,
+                                  borderRadius: BorderRadius.circular(
+                                    getProportionateScreenWidth(10),
+                                  ),
+                                ),
+                                child: Center(child: Text("Follow")),
+                              ),
+                            ),
+                          if (!widget.isMe && widget.iAmFollowing)
+                            InkWell(
+                              onTap: () {},
+                              child: Container(
+                                height: getProportionateScreenHeight(27),
+                                width: getProportionateScreenWidth(163.5),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    width: 1,
+                                    color: kProfileText,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    getProportionateScreenWidth(10),
+                                  ),
+                                ),
+                                child: Center(child: Text("Unfollow")),
+                              ),
+                            ),
+                          if (!widget.isMe &&
+                              widget.followsMe &&
+                              !widget.iAmFollowing)
+                            InkWell(
+                              onTap: () {},
+                              child: Container(
+                                height: getProportionateScreenHeight(27),
+                                width: getProportionateScreenWidth(163.5),
+                                decoration: BoxDecoration(
+                                  color: kAccentColor,
+                                  borderRadius: BorderRadius.circular(
+                                    getProportionateScreenWidth(10),
+                                  ),
+                                ),
+                                child: Center(child: Text("Follow Back")),
+                              ),
+                            ),
                           Spacer(),
                           InkWell(
                             onTap: () {},
@@ -418,17 +487,18 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       child: Row(
         children: [
-          InkWell(
-            onTap: () {
-              Navigator.pop(context);
-            },
-            child: SvgPicture.asset(
-              "assets/icons/back_button.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
+          if (!widget.isFromNav)
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: SvgPicture.asset(
+                "assets/icons/back_button.svg",
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                width: getProportionateScreenWidth(24),
+                height: getProportionateScreenHeight(24),
+              ),
             ),
-          ),
           Spacer(),
           InkWell(
             onTap: () {},
