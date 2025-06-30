@@ -98,7 +98,13 @@ class NewChatScreen extends StatelessWidget {
                         color: circleColor,
                         border: Border.all(color: circleBorder, width: 1.0),
                       ),
-                      child: SvgPicture.asset("assets/icons/users-round.svg"),
+                      child: SvgPicture.asset(
+                        "assets/icons/users-round.svg",
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
                     ),
                     SizedBox(width: getProportionateScreenWidth(14)),
                     Column(

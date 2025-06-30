@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../size_config.dart';
 
-// ignore: must_be_immutable
 class ChatSuggestionTile extends StatefulWidget {
-  ChatSuggestionTile({
+  const ChatSuggestionTile({
     super.key,
     required this.dividerColor,
     required this.image,
@@ -13,14 +12,16 @@ class ChatSuggestionTile extends StatefulWidget {
     required this.handle,
     required this.isSelected,
     this.showCheckbox = false,
+    this.onSelectionChanged,
   });
 
   final Color dividerColor;
   final String image;
   final String name;
   final String handle;
-  bool isSelected;
+  final bool isSelected;
   final bool showCheckbox;
+  final Function(bool)? onSelectionChanged;
 
   @override
   State<ChatSuggestionTile> createState() => _ChatSuggestionTileState();
@@ -37,7 +38,7 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             height: getProportionateScreenHeight(56),
@@ -51,10 +52,10 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
             ),
           ),
           SizedBox(width: getProportionateScreenWidth(16)),
-          SizedBox(
-            height: getProportionateScreenHeight(47),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   widget.name,
@@ -63,34 +64,27 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
                     fontSize: getProportionateScreenHeight(16),
                   ),
                 ),
-                Spacer(),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: getProportionateScreenWidth(228),
-                      child: Text(
-                        '@${widget.handle}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: getProportionateScreenHeight(12),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
+                SizedBox(height: getProportionateScreenHeight(4)),
+                Text(
+                  '@${widget.handle}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: getProportionateScreenHeight(12),
+                    color: Colors.grey,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
           ),
-          Spacer(),
           if (widget.showCheckbox)
             Checkbox(
               value: widget.isSelected,
               onChanged: (value) {
-                setState(() {
-                  widget.isSelected = value!;
-                });
+                if (widget.onSelectionChanged != null) {
+                  widget.onSelectionChanged!(value ?? false);
+                }
               },
               checkColor: Colors.white,
               activeColor: kAccentColor,
