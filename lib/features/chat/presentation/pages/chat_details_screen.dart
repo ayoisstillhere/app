@@ -4,9 +4,14 @@ import 'package:flutter_svg/svg.dart';
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
 
-class ChatDetailsScreen extends StatelessWidget {
+class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({super.key});
 
+  @override
+  State<ChatDetailsScreen> createState() => _ChatDetailsScreenState();
+}
+
+class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final iconColor =
