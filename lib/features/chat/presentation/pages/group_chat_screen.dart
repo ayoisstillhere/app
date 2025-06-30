@@ -133,7 +133,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       final user = selectedUsers[index];
                       return Padding(
                         padding: EdgeInsets.only(
-                          right: getProportionateScreenWidth(12),
+                          right: getProportionateScreenWidth(22),
                         ),
                         child: _buildSelectedUserChip(user),
                       );
@@ -236,8 +236,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           clipBehavior: Clip.none,
           children: [
             Container(
-              height: getProportionateScreenHeight(56),
-              width: getProportionateScreenWidth(56),
+              height: getProportionateScreenHeight(62),
+              width: getProportionateScreenWidth(62),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
@@ -260,11 +260,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             ),
           ],
         ),
-        SizedBox(height: getProportionateScreenHeight(4)),
         SizedBox(
-          width: getProportionateScreenWidth(56),
+          width: getProportionateScreenWidth(62),
           child: Text(
-            user["name"].split(' ')[0], // First name only
+            user["name"],
             style: TextStyle(
               fontSize: getProportionateScreenHeight(12),
               fontWeight: FontWeight.w500,
