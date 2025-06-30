@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../widgets/chat_tile.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -138,6 +139,27 @@ class _ChatScreenState extends State<ChatScreen> {
                     }),
                   ],
                 ),
+              ),
+            ),
+            SizedBox(height: getProportionateScreenHeight(34)),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: getProportionateScreenWidth(18),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: mockListTile.length,
+                itemBuilder: (context, index) {
+                  return ChatTile(
+                    dividerColor: dividerColor,
+                    image: mockListTile[index]['image'],
+                    name: mockListTile[index]['name'],
+                    lastMessage: mockListTile[index]['lastMessage'],
+                    time: mockListTile[index]['time'],
+                    unreadMessages: mockListTile[index]['unreadMessages'],
+                  );
+                },
               ),
             ),
           ],
