@@ -163,102 +163,122 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/chat_details_user-round.svg",
-                                colorFilter: ColorFilter.mode(
-                                  iconColor,
-                                  BlendMode.srcIn,
+                          InkWell(
+                            onTap: () {},
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/icons/chat_details_user-round.svg",
+                                  colorFilter: ColorFilter.mode(
+                                    iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  width: getProportionateScreenWidth(18.38),
+                                  height: getProportionateScreenHeight(18.38),
                                 ),
-                                width: getProportionateScreenWidth(18.38),
-                                height: getProportionateScreenHeight(18.38),
-                              ),
-                              SizedBox(
-                                height: getProportionateScreenHeight(4.6),
-                              ),
-                              Text(
-                                "Profile",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(11.49),
-                                  fontWeight: FontWeight.w500,
+                                SizedBox(
+                                  height: getProportionateScreenHeight(4.6),
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  "Profile",
+                                  style: TextStyle(
+                                    fontSize: getProportionateScreenHeight(
+                                      11.49,
+                                    ),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/chat_details_bell.svg",
-                                colorFilter: ColorFilter.mode(
-                                  iconColor,
-                                  BlendMode.srcIn,
+                          InkWell(
+                            onTap: () {},
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/icons/chat_details_bell.svg",
+                                  colorFilter: ColorFilter.mode(
+                                    iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  width: getProportionateScreenWidth(18.38),
+                                  height: getProportionateScreenHeight(18.38),
                                 ),
-                                width: getProportionateScreenWidth(18.38),
-                                height: getProportionateScreenHeight(18.38),
-                              ),
-                              SizedBox(
-                                height: getProportionateScreenHeight(4.6),
-                              ),
-                              Text(
-                                "Mute",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(11.49),
-                                  fontWeight: FontWeight.w500,
+                                SizedBox(
+                                  height: getProportionateScreenHeight(4.6),
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  "Mute",
+                                  style: TextStyle(
+                                    fontSize: getProportionateScreenHeight(
+                                      11.49,
+                                    ),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
 
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/chat_block.svg",
-                                colorFilter: ColorFilter.mode(
-                                  iconColor,
-                                  BlendMode.srcIn,
+                          InkWell(
+                            onTap: () {},
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/icons/chat_block.svg",
+                                  colorFilter: ColorFilter.mode(
+                                    iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  width: getProportionateScreenWidth(18.38),
+                                  height: getProportionateScreenHeight(18.38),
                                 ),
-                                width: getProportionateScreenWidth(18.38),
-                                height: getProportionateScreenHeight(18.38),
-                              ),
-                              SizedBox(
-                                height: getProportionateScreenHeight(4.6),
-                              ),
-                              Text(
-                                "Block",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(11.49),
-                                  fontWeight: FontWeight.w500,
+                                SizedBox(
+                                  height: getProportionateScreenHeight(4.6),
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  "Block",
+                                  style: TextStyle(
+                                    fontSize: getProportionateScreenHeight(
+                                      11.49,
+                                    ),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/chat_report.svg",
-                                colorFilter: ColorFilter.mode(
-                                  iconColor,
-                                  BlendMode.srcIn,
+                          InkWell(
+                            onTap: () {},
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/icons/chat_report.svg",
+                                  colorFilter: ColorFilter.mode(
+                                    iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  width: getProportionateScreenWidth(18.38),
+                                  height: getProportionateScreenHeight(18.38),
                                 ),
-                                width: getProportionateScreenWidth(18.38),
-                                height: getProportionateScreenHeight(18.38),
-                              ),
-                              SizedBox(
-                                height: getProportionateScreenHeight(4.6),
-                              ),
-                              Text(
-                                "Report",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(11.49),
-                                  fontWeight: FontWeight.w500,
+                                SizedBox(
+                                  height: getProportionateScreenHeight(4.6),
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  "Report",
+                                  style: TextStyle(
+                                    fontSize: getProportionateScreenHeight(
+                                      11.49,
+                                    ),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
