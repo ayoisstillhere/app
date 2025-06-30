@@ -31,6 +31,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
+  bool canMessage = false;
 
   @override
   void initState() {
@@ -54,7 +55,11 @@ class _ProfileScreenState extends State<ProfileScreen>
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-
+    if (!widget.isMe && (widget.iAmFollowing || widget.followsMe)) {
+      setState(() {
+        canMessage = true;
+      });
+    }
     return Scaffold(
       body: SafeArea(
         child: NestedScrollView(
@@ -222,9 +227,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                     SizedBox(height: getProportionateScreenHeight(18)),
                     Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: getProportionateScreenWidth(30),
-                      ),
+                      padding: canMessage
+                          ? EdgeInsets.symmetric(
+                              horizontal: getProportionateScreenWidth(20),
+                            )
+                          : EdgeInsets.symmetric(
+                              horizontal: getProportionateScreenWidth(30),
+                            ),
                       child: Row(
                         children: [
                           if (widget.isMe)
@@ -232,7 +241,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                               onTap: () {},
                               child: Container(
                                 height: getProportionateScreenHeight(27),
-                                width: getProportionateScreenWidth(163.5),
+                                width: canMessage
+                                    ? getProportionateScreenWidth(158.5)
+                                    : getProportionateScreenWidth(163.5),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     width: 1,
@@ -252,7 +263,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                               onTap: () {},
                               child: Container(
                                 height: getProportionateScreenHeight(27),
-                                width: getProportionateScreenWidth(163.5),
+                                width: canMessage
+                                    ? getProportionateScreenWidth(158.5)
+                                    : getProportionateScreenWidth(163.5),
                                 decoration: BoxDecoration(
                                   color: kAccentColor,
                                   borderRadius: BorderRadius.circular(
@@ -267,7 +280,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                               onTap: () {},
                               child: Container(
                                 height: getProportionateScreenHeight(27),
-                                width: getProportionateScreenWidth(163.5),
+                                width: canMessage
+                                    ? getProportionateScreenWidth(158.5)
+                                    : getProportionateScreenWidth(163.5),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     width: 1,
@@ -287,7 +302,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                               onTap: () {},
                               child: Container(
                                 height: getProportionateScreenHeight(27),
-                                width: getProportionateScreenWidth(163.5),
+                                width: canMessage
+                                    ? getProportionateScreenWidth(158.5)
+                                    : getProportionateScreenWidth(163.5),
                                 decoration: BoxDecoration(
                                   color: kAccentColor,
                                   borderRadius: BorderRadius.circular(
@@ -302,7 +319,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                             onTap: () {},
                             child: Container(
                               height: getProportionateScreenHeight(27),
-                              width: getProportionateScreenWidth(163.5),
+                              width: canMessage
+                                  ? getProportionateScreenWidth(158.5)
+                                  : getProportionateScreenWidth(163.5),
                               decoration: BoxDecoration(
                                 border: Border.all(
                                   width: 1,
@@ -315,6 +334,22 @@ class _ProfileScreenState extends State<ProfileScreen>
                               child: Center(child: Text("Share Profile")),
                             ),
                           ),
+                          if (!widget.isMe &&
+                              (widget.iAmFollowing || widget.followsMe))
+                            Spacer(),
+                          if (canMessage)
+                            InkWell(
+                              onTap: () {},
+                              child: SvgPicture.asset(
+                                "assets/icons/mail.svg",
+                                height: getProportionateScreenHeight(24),
+                                width: getProportionateScreenWidth(24),
+                                colorFilter: ColorFilter.mode(
+                                  kProfileText,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),

@@ -83,7 +83,7 @@ class _PostCardState extends State<PostCard> {
                       builder: (context) => ProfileScreen(
                         isMe: false,
                         iAmFollowing: false,
-                        followsMe: false,
+                        followsMe: true,
                         isVerified: true,
                       ),
                     ),
