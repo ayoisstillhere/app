@@ -331,7 +331,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                   indicatorColor: kLightPurple,
                   controller: controller,
                   dividerColor: dividerColor,
-                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicatorSize: TabBarIndicatorSize.label,
                   labelStyle: Theme.of(
                     context,
                   ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
