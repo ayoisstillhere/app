@@ -81,7 +81,9 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: EdgeInsets.symmetric(
                 horizontal: getProportionateScreenWidth(16),
               ),
-              child: TextFormField(decoration: _buildChatSearchField(context)),
+              child: TextFormField(
+                decoration: _buildChatSearchFieldDecoration(context),
+              ),
             ),
             SizedBox(height: getProportionateScreenHeight(34)),
             Padding(
@@ -174,7 +176,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  InputDecoration _buildChatSearchField(BuildContext context) {
+  InputDecoration _buildChatSearchFieldDecoration(BuildContext context) {
     return InputDecoration(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
