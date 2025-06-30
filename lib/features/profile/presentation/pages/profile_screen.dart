@@ -547,7 +547,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
           InkWell(
-            onTap: widget.isMe ? _onMoreButtonTap : () {},
+            onTap: widget.isMe ? _onMyMoreButtonTap : _onMoreButtonTap,
             child: SvgPicture.asset(
               "assets/icons/more-vertical.svg",
               colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
@@ -560,7 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _onMoreButtonTap() async {
+  void _onMyMoreButtonTap() async {
     final selected = await showMenu<String>(
       context: context,
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -600,6 +600,52 @@ class _ProfileScreenState extends State<ProfileScreen>
         MaterialPageRoute(builder: (context) => SettingsScreen()),
       );
     }
+  }
+
+  void _onMoreButtonTap() async {
+    final selected = await showMenu<String>(
+      context: context,
+      color: Theme.of(context).scaffoldBackgroundColor,
+      position: RelativeRect.fromLTRB(
+        getProportionateScreenWidth(1000),
+        getProportionateScreenHeight(80),
+        getProportionateScreenWidth(10),
+        getProportionateScreenHeight(100),
+      ),
+      items: [
+        if (widget.iAmFollowing)
+          PopupMenuItem<String>(
+            value: 'Unfollow',
+            child: Text(
+              'Unfollow',
+              style: TextStyle(
+                fontSize: getProportionateScreenWidth(15),
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+        PopupMenuItem<String>(
+          value: 'Mute',
+          child: Text(
+            'Mute',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'Block',
+          child: Text(
+            'Block',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
