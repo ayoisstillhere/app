@@ -646,6 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ],
     );
+    if (selected == 'Unfollow' && mounted) {}
   }
 }
 
