@@ -152,6 +152,7 @@ class NewChatScreen extends StatelessWidget {
                     image: mockListTile[index]["image"],
                     name: mockListTile[index]["name"],
                     handle: mockListTile[index]["handle"],
+                    isSelected: false,
                   ),
                 );
               },

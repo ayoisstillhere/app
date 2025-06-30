@@ -5,9 +5,14 @@ import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import '../widgets/chat_suggestion_tile.dart';
 
-class GroupChatScreen extends StatelessWidget {
+class GroupChatScreen extends StatefulWidget {
   const GroupChatScreen({super.key});
 
+  @override
+  State<GroupChatScreen> createState() => _GroupChatScreenState();
+}
+
+class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   Widget build(BuildContext context) {
     final iconColor =
@@ -18,6 +23,20 @@ class GroupChatScreen extends StatelessWidget {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
+
+    final TextEditingController groupNameController = TextEditingController();
+    final List<Map<String, dynamic>> selectedUsers = [];
+
+    void toggleUserSelection(Map<String, dynamic> user) {
+      setState(() {
+        if (selectedUsers.contains(user)) {
+          selectedUsers.remove(user);
+        } else {
+          selectedUsers.add(user);
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -75,6 +94,7 @@ class GroupChatScreen extends StatelessWidget {
                           fillColor: Colors.transparent,
                           hintText: "Enter group name",
                         ),
+                        controller: groupNameController,
                       ),
                       SizedBox(height: getProportionateScreenHeight(16)),
                     ],
@@ -114,6 +134,7 @@ class GroupChatScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: mockListTile.length,
               itemBuilder: (context, index) {
+                bool isSelected = selectedUsers.contains(mockListTile[index]);
                 return Padding(
                   padding: EdgeInsetsGeometry.symmetric(
                     horizontal: getProportionateScreenWidth(18),
@@ -123,6 +144,8 @@ class GroupChatScreen extends StatelessWidget {
                     image: mockListTile[index]["image"],
                     name: mockListTile[index]["name"],
                     handle: mockListTile[index]["handle"],
+                    isSelected: isSelected,
+                    showCheckbox: true,
                   ),
                 );
               },
