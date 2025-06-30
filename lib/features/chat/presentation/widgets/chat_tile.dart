@@ -1,3 +1,4 @@
+import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../constants.dart';
@@ -23,93 +24,103 @@ class ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(10)),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: dividerColor, width: 1.0)),
-      ),
-      child: Row(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                height: getProportionateScreenHeight(56),
-                width: getProportionateScreenWidth(56),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage(image),
-                    fit: BoxFit.cover,
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: getProportionateScreenHeight(10),
+        ),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: dividerColor, width: 1.0)),
+        ),
+        child: Row(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  height: getProportionateScreenHeight(56),
+                  width: getProportionateScreenWidth(56),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: NetworkImage(image),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: getProportionateScreenWidth(16)),
-              SizedBox(
-                height: getProportionateScreenHeight(47),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: getProportionateScreenHeight(16),
+                SizedBox(width: getProportionateScreenWidth(16)),
+                SizedBox(
+                  height: getProportionateScreenHeight(47),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: getProportionateScreenHeight(16),
+                        ),
                       ),
-                    ),
-                    Spacer(),
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: getProportionateScreenWidth(228),
-                          child: Text(
-                            lastMessage,
+                      Spacer(),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: getProportionateScreenWidth(228),
+                            child: Text(
+                              lastMessage,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: getProportionateScreenHeight(12),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          SizedBox(width: getProportionateScreenWidth(3)),
+                          Text(
+                            time,
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               fontSize: getProportionateScreenHeight(12),
+                              color: kGreyTimeText,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
-                        ),
-                        SizedBox(width: getProportionateScreenWidth(3)),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: getProportionateScreenHeight(12),
-                            color: kGreyTimeText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Spacer(),
-          unreadMessages > 0
-              ? Container(
-                  height: getProportionateScreenHeight(25),
-                  width: getProportionateScreenWidth(25),
-                  decoration: BoxDecoration(
-                    color: kAccentColor,
-                    shape: BoxShape.circle,
+                        ],
+                      ),
+                    ],
                   ),
-                  child: Center(
-                    child: Text(
-                      '$unreadMessages',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: getProportionateScreenHeight(12),
-                        color: Colors.black,
+                ),
+              ],
+            ),
+            Spacer(),
+            unreadMessages > 0
+                ? Container(
+                    height: getProportionateScreenHeight(25),
+                    width: getProportionateScreenWidth(25),
+                    decoration: BoxDecoration(
+                      color: kAccentColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$unreadMessages',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: getProportionateScreenHeight(12),
+                          color: Colors.black,
+                        ),
                       ),
                     ),
-                  ),
-                )
-              : Container(),
-        ],
+                  )
+                : Container(),
+          ],
+        ),
       ),
     );
   }
