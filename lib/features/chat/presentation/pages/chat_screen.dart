@@ -1,3 +1,4 @@
+import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -84,7 +85,14 @@ class ChatScreen extends StatelessWidget {
               height: getProportionateScreenHeight(24),
               width: getProportionateScreenWidth(24),
               child: InkWell(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ChatDetailsScreen(),
+                    ),
+                  );
+                },
                 child: SvgPicture.asset(
                   "assets/icons/chat_more-vertical.svg",
                   colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
