@@ -1,3 +1,4 @@
+import 'package:app/features/chat/presentation/pages/new_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -55,7 +56,12 @@ class _ChatScreenState extends State<ChatScreen> {
               height: getProportionateScreenHeight(24),
               width: getProportionateScreenWidth(24),
               child: InkWell(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => NewChatScreen()),
+                  );
+                },
                 child: SvgPicture.asset(
                   "assets/icons/edit.svg",
                   colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
