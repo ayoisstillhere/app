@@ -371,19 +371,31 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                               ),
                             ),
                             SizedBox(height: getProportionateScreenHeight(26)),
-                            Text(
-                              "Dissapearing Messages",
-                              style: TextStyle(
-                                fontSize: getProportionateScreenHeight(15),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              "Off",
-                              style: TextStyle(
-                                fontSize: getProportionateScreenHeight(13),
-                                fontWeight: FontWeight.normal,
-                                color: kProfileText,
+                            InkWell(
+                              onTap: _onMoreButtonTap,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Dissapearing Messages",
+                                    style: TextStyle(
+                                      fontSize: getProportionateScreenHeight(
+                                        15,
+                                      ),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Off",
+                                    style: TextStyle(
+                                      fontSize: getProportionateScreenHeight(
+                                        13,
+                                      ),
+                                      fontWeight: FontWeight.normal,
+                                      color: kProfileText,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             SizedBox(height: getProportionateScreenHeight(26)),
@@ -465,6 +477,72 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
         ),
       ),
     );
+  }
+
+  void _onMoreButtonTap() async {
+    final selected = await showMenu<String>(
+      context: context,
+      color: Theme.of(context).scaffoldBackgroundColor,
+      position: RelativeRect.fromLTRB(
+        getProportionateScreenWidth(1000),
+        getProportionateScreenHeight(400),
+        getProportionateScreenWidth(10),
+        getProportionateScreenHeight(300),
+      ),
+      items: [
+        PopupMenuItem<String>(
+          value: 'Off',
+          child: Text(
+            'Off',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'Once they have been seen',
+          child: Text(
+            'Once they have been seen',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: '24 hours',
+          child: Text(
+            '24 hours',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: '3 days',
+          child: Text(
+            '3 days',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: '7 days',
+          child: Text(
+            '7 days',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    );
+    if (selected == 'Off' && mounted) {}
   }
 }
 
