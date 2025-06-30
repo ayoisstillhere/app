@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// Color Constants
 const kLightPurple = Color(0xFFAB9FF2);
 const kDarkPurple = Color(0xFFAB9FF2);
 // const kDarkPurple = Color(0xFF9500FF);
@@ -20,6 +21,40 @@ const kGreyTimeText = Color(0xFF858585);
 const kGreySearchInput = Color(0xFF1F1F1F);
 const kPrimPurple = Color(0xFF9500FF);
 const kProfileText = Color(0xFF727272);
+
+// UI Constants
+List<Map<String, dynamic>> settingsDetails = [
+  {
+    "title": "Account",
+    "icon": "assets/icons/settings_account.svg",
+    "subItems": [
+      "Email/Phome Number",
+      "Password",
+      "Username",
+      "Notification Settings",
+    ],
+  },
+  {
+    "title": "Privacy & Security",
+    "icon": "assets/icons/settings_privacy.svg",
+    "subItems": [
+      "Privacy Controls",
+      "Two-Step Verification",
+      "Blocked Users",
+      "Start Secret Chat Defaults",
+    ],
+  },
+  {
+    "title": "App Preferences",
+    "icon": "assets/icons/settings_preferences.svg",
+    "subItems": ["Theme", "Language & Region", "Push Notifications"],
+  },
+  {
+    "title": "Support & Feedback",
+    "icon": "assets/icons/settings_support.svg",
+    "subItems": ["Terms & Privacy Policy", "Report a Problem", "Rate Us"],
+  },
+];
 
 // Test Constants
 List<Map<String, dynamic>> mockPosts = [
@@ -691,4 +726,3 @@ List<Map<String, dynamic>> mockListTile = [
     "time": "45m",
   },
 ];
-

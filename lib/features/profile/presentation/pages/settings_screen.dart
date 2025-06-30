@@ -3,12 +3,22 @@ import 'package:flutter_svg/svg.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../widgets/settings_tile.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
+    final iconColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kWhite
+        : kBlack;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -24,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: getProportionateScreenHeight(40)),
+            SizedBox(height: getProportionateScreenHeight(30)),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: getProportionateScreenWidth(16),
@@ -33,6 +43,65 @@ class SettingsScreen extends StatelessWidget {
                 decoration: _buildChatSearchFieldDecoration(context),
               ),
             ),
+            SizedBox(height: getProportionateScreenHeight(34)),
+            ...List.generate(
+              settingsDetails.length,
+              (index) => Column(
+                children: [
+                  SettingsTile(
+                    dividerColor: dividerColor,
+                    iconColor: iconColor,
+                    settings: settingsDetails[index],
+                  ),
+                  SizedBox(height: getProportionateScreenHeight(16)),
+                ],
+              ),
+            ),
+            SizedBox(height: getProportionateScreenHeight(32)),
+            Padding(
+              padding: EdgeInsets.only(left: getProportionateScreenWidth(21)),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    "assets/icons/settings_log-out.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  ),
+                  SizedBox(width: getProportionateScreenWidth(10)),
+                  Text(
+                    "Log out",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: getProportionateScreenHeight(15),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: getProportionateScreenHeight(24)),
+            Padding(
+              padding: EdgeInsets.only(left: getProportionateScreenWidth(21)),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    "assets/icons/settings_delete.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
+                  SizedBox(width: getProportionateScreenWidth(10)),
+                  Text(
+                    "Delete account",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: getProportionateScreenHeight(15),
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: getProportionateScreenHeight(102)),
           ],
         ),
       ),

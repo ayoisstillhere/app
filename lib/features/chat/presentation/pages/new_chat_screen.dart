@@ -61,7 +61,7 @@ class NewChatScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: getProportionateScreenHeight(40)),
+            SizedBox(height: getProportionateScreenHeight(30)),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: getProportionateScreenWidth(16),
