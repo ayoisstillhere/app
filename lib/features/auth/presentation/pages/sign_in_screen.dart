@@ -1,15 +1,42 @@
-import 'package:app/components/default_button.dart';
+import 'dart:convert';
+
 import 'package:app/constants.dart';
 import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../../components/default_button.dart';
+import '../../../../components/nav_page.dart';
 import '../../../../size_config.dart';
 import '../widgets/custom_check_box.dart';
 import '../widgets/form_header.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final _signinFormKey = GlobalKey<FormState>();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,10 +73,11 @@ class SignInScreen extends StatelessWidget {
                 FormHeader(
                   isSignUp: false,
                   title: 'Log in to your account',
-                  subtitle: 'Welcome back!👋 Please enter your details.',
+                  subtitle: 'Welcome back! Please enter your details.',
                 ),
                 SizedBox(height: getProportionateScreenHeight(32)),
                 Form(
+                  key: _signinFormKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -62,12 +90,19 @@ class SignInScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(6)),
                       TextFormField(
+                        controller: _emailController,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
                           hintText: "Enter your Email",
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter an email';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: getProportionateScreenHeight(20)),
                       Text(
@@ -79,6 +114,8 @@ class SignInScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(6)),
                       TextFormField(
+                        obscureText: true,
+                        controller: _passwordController,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -88,6 +125,12 @@ class SignInScreen extends StatelessWidget {
                             context,
                           ).textTheme.bodyLarge!.copyWith(color: kGreyFormHint),
                         ),
+                        validator: (value) {
+                          if (value == null || value.length < 8) {
+                            return 'Please enter a valid password';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: getProportionateScreenHeight(24)),
                       Row(
@@ -111,7 +154,42 @@ class SignInScreen extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: getProportionateScreenHeight(24)),
-                      DefaultButton(press: () {}, text: 'Sign In'),
+                      DefaultButton(
+                        press: () async {
+                          if (_signinFormKey.currentState!.validate()) {
+                            _signinFormKey.currentState!.save();
+                            final response = await http.post(
+                              Uri.parse('$baseUrl/api/v1/auth/login'),
+                              headers: {'Content-Type': 'application/json'},
+                              body: jsonEncode({
+                                'email': _emailController.text.trim(),
+                                'password': _passwordController.text.trim(),
+                              }),
+                            );
+                            if (response.statusCode == 200) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NavPage(),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.red,
+                                  content: Text(
+                                    jsonDecode(response.body)['message']
+                                        .toString()
+                                        .replaceAll(RegExp(r'\[|\]'), ''),
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        text: 'Sign In',
+                      ),
                       SizedBox(height: getProportionateScreenHeight(16)),
                       GoogleButton(press: () {}, isSignin: true),
                       SizedBox(height: getProportionateScreenHeight(32)),
