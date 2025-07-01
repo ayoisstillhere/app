@@ -1,6 +1,8 @@
+import 'package:app/components/nav_page.dart';
 import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'features/onboarding/presentation/pages/onboarding_screen.dart';
 
@@ -30,6 +32,7 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       );
     });
+    _checkAuthAndNavigate();
   }
 
   @override
@@ -90,5 +93,35 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Add a delay for splash screen display
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Check for stored token
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    // Navigate based on token presence
+    if (token != null && token.isNotEmpty) {
+      // User is logged in, go to NavPage
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const NavPage()),
+      );
+    } else {
+      // User is not logged in, go to OnboardingScreen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const OnboardingScreen(
+            title: "Connect Freely",
+            subtitle:
+                "Share your thoughts, ideas, and moments — without limits",
+            bgImage: "assets/images/Onboarding1.png",
+            currentPage: 0,
+          ),
+        ),
+      );
+    }
   }
 }
