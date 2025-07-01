@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 ThemeData theme() {
   return ThemeData(
+    fontFamily: 'Satoshi',
     scaffoldBackgroundColor: kWhite,
     colorScheme: const ColorScheme.light(),
     appBarTheme: appBarTheme(),
@@ -14,6 +15,7 @@ ThemeData theme() {
 
 ThemeData darkTheme() {
   return ThemeData(
+    fontFamily: 'Satoshi',
     scaffoldBackgroundColor: kBlackBg,
     colorScheme: const ColorScheme.dark(),
     appBarTheme: appBarTheme(),
