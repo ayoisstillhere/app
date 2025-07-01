@@ -1,4 +1,3 @@
-import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/body.dart';
@@ -19,9 +18,13 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SizeConfig().init(context);
     return Scaffold(
-      body: Body(bgImage: bgImage, title: title, subtitle: subtitle, currentPage: currentPage),
+      body: Body(
+        bgImage: bgImage,
+        title: title,
+        subtitle: subtitle,
+        currentPage: currentPage,
+      ),
     );
   }
 }

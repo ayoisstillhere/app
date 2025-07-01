@@ -1,4 +1,4 @@
-import 'package:app/features/onboarding/presentation/pages/onboarding_screen.dart';
+import 'package:app/splash_screen.dart';
 import 'package:app/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -17,12 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: theme(),
       darkTheme: darkTheme(),
-      home: const OnboardingScreen(
-        title: "Connect Freely",
-        subtitle: "Share your thoughts, ideas, and moments — without limits",
-        bgImage: "assets/images/Onboarding1.png",
-        currentPage: 0,
-      ),
+      home: const SplashScreen(),
     );
   }
 }
