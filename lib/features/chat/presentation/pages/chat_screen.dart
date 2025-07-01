@@ -58,7 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final backgroundColor = isDark ? kBlack : kWhite;
     final inputFillColor = isDark
         ? kGreyInputFillDark
-        : kGreyInputBorder.withOpacity(0.1);
+        : kGreyInputBorder.withValues(alpha: 0.3);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -193,101 +193,98 @@ class _ChatScreenState extends State<ChatScreen> {
           // Message Input
           Container(
             padding: EdgeInsets.only(bottom: getProportionateScreenHeight(16)),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              border: Border(top: BorderSide(color: dividerColor, width: 1)),
-            ),
+            decoration: BoxDecoration(color: backgroundColor),
             child: SafeArea(
-              child: Row(
-                children: [
-                  // Camera button
-                  InkWell(
-                    onTap: () {
-                      // Handle camera action
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(getProportionateScreenWidth(8)),
-                      child: Icon(
-                        Icons.photo_camera,
-                        color: iconColor,
-                        size: getProportionateScreenWidth(24),
-                      ),
-                    ),
+              child: Container(
+                margin: EdgeInsets.only(
+                  left: getProportionateScreenWidth(15),
+                  right: getProportionateScreenWidth(14),
+                ),
+                decoration: BoxDecoration(
+                  // color: inputFillColor,
+                  borderRadius: BorderRadius.circular(
+                    getProportionateScreenWidth(40),
                   ),
-
-                  SizedBox(width: getProportionateScreenWidth(8)),
-
-                  // Message input field
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: inputFillColor,
-                        borderRadius: BorderRadius.circular(
-                          getProportionateScreenWidth(22),
+                  color: inputFillColor,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: getProportionateScreenWidth(5),
+                    top: getProportionateScreenHeight(8),
+                    bottom: getProportionateScreenHeight(7),
+                    right: getProportionateScreenWidth(15),
+                  ),
+                  child: Row(
+                    children: [
+                      // Camera button
+                      InkWell(
+                        onTap: () {
+                          // Handle camera action
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(
+                            getProportionateScreenWidth(8),
+                          ),
+                          height: getProportionateScreenHeight(39),
+                          width: getProportionateScreenWidth(39),
+                          decoration: BoxDecoration(
+                            gradient: kChatBubbleGradient,
+                            shape: BoxShape.circle,
+                          ),
+                          child: SvgPicture.asset(
+                            "assets/icons/chat_camera.svg",
+                            height: getProportionateScreenHeight(21.27),
+                            width: getProportionateScreenWidth(21.27),
+                          ),
                         ),
-                        border: Border.all(color: dividerColor, width: 1),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _messageController,
-                              decoration: InputDecoration(
-                                hintText: "Message...",
-                                hintStyle: TextStyle(
-                                  color: iconColor.withOpacity(0.5),
-                                  fontSize: getProportionateScreenHeight(14),
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: getProportionateScreenWidth(16),
-                                  vertical: getProportionateScreenHeight(12),
-                                ),
-                              ),
-                              style: TextStyle(
-                                color: iconColor,
-                                fontSize: getProportionateScreenHeight(14),
-                              ),
-                              onSubmitted: (_) => _sendMessage(),
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: "Message...",
+                            hintStyle: TextStyle(
+                              fontSize: getProportionateScreenHeight(14),
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            fillColor: Colors.transparent,
+                            filled: false,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: getProportionateScreenWidth(16),
+                              vertical: getProportionateScreenHeight(12),
                             ),
                           ),
-
-                          // Emoji button
-                          InkWell(
-                            onTap: () {
-                              // Handle emoji picker
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.all(
-                                getProportionateScreenWidth(8),
-                              ),
-                              child: Icon(
-                                Icons.emoji_emotions_outlined,
-                                color: iconColor.withOpacity(0.6),
-                                size: getProportionateScreenWidth(20),
-                              ),
-                            ),
+                          style: TextStyle(
+                            color: iconColor,
+                            fontSize: getProportionateScreenHeight(14),
                           ),
-                        ],
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
                       ),
-                    ),
-                  ),
-
-                  SizedBox(width: getProportionateScreenWidth(8)),
-
-                  // Send button
-                  InkWell(
-                    onTap: _sendMessage,
-                    child: Container(
-                      padding: EdgeInsets.all(getProportionateScreenWidth(8)),
-                      child: Icon(
-                        Icons.send,
-                        color: Colors.blue,
-                        size: getProportionateScreenWidth(24),
+                      SvgPicture.asset(
+                        "assets/icons/chat_paperclip.svg",
+                        height: getProportionateScreenHeight(21.27),
+                        width: getProportionateScreenWidth(21.27),
                       ),
-                    ),
+                      SizedBox(width: getProportionateScreenWidth(8)),
+                      SvgPicture.asset(
+                        "assets/icons/chat_mic.svg",
+                        height: getProportionateScreenHeight(21.27),
+                        width: getProportionateScreenWidth(21.27),
+                      ),
+                      SizedBox(width: getProportionateScreenWidth(8)),
+                      SvgPicture.asset(
+                        "assets/icons/chat_image.svg",
+                        height: getProportionateScreenHeight(21.27),
+                        width: getProportionateScreenWidth(21.27),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
