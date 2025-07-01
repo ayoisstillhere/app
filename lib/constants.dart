@@ -65,6 +65,10 @@ List<Map<String, dynamic>> settingsDetails = [
   },
 ];
 
+
+// API Constants
+const String baseUrl = 'https://api.hiraofficial.com';
+
 // Test Constants
 List<Map<String, dynamic>> mockPosts = [
   {
