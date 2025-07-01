@@ -1,15 +1,27 @@
-import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../size_config.dart';
+
 class OtpTextFormField extends StatelessWidget {
-  const OtpTextFormField({super.key});
+  final FocusNode? focusNode;
+  final FocusNode? nextFocusNode;
+  final TextEditingController? controller;
+
+  const OtpTextFormField({
+    super.key,
+    this.focusNode,
+    this.nextFocusNode,
+    this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: getProportionateScreenWidth(50),
       child: TextFormField(
+        controller: controller,
+        focusNode: focusNode,
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.displayMedium,
@@ -25,6 +37,11 @@ class OtpTextFormField extends StatelessWidget {
           FilteringTextInputFormatter.digitsOnly,
           LengthLimitingTextInputFormatter(1),
         ],
+        onChanged: (value) {
+          if (value.length == 1 && nextFocusNode != null) {
+            nextFocusNode!.requestFocus();
+          }
+        },
       ),
     );
   }
