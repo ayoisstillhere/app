@@ -25,26 +25,16 @@ class NavPage extends StatefulWidget {
 class _NavPageState extends State<NavPage> {
   int _page = 0;
   late PageController pageController;
-  List<Widget> navPages = [
-    HomeScreen(),
-    ExploreScreen(),
-    ChatListScreen(),
-    ProfileScreen(
-      isMe: true,
-      iAmFollowing: false,
-      followsMe: false,
-      isVerified: true,
-      isFromNav: true,
-    ),
-  ];
   bool isUserLoaded = false;
-  late UserEntity currentUser;
+  List<Widget> navPages = [];
+  UserEntity? currentUser;
 
   @override
   void initState() {
     pageController = PageController();
     super.initState();
     _getProfile();
+    navPages = [];
   }
 
   @override
@@ -77,9 +67,22 @@ class _NavPageState extends State<NavPage> {
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
-      currentUser = UserModel.fromJson(jsonDecode(response.body));
+      final UserEntity user = UserModel.fromJson(jsonDecode(response.body));
+      navPages = [
+        HomeScreen(currentUser: user),
+        ExploreScreen(),
+        ChatListScreen(),
+        ProfileScreen(
+          iAmFollowing: false,
+          followsMe: false,
+          isVerified: true,
+          isFromNav: true,
+          currentUser: user,
+        ),
+      ];
       setState(() {
         isUserLoaded = true;
+        currentUser = user;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -165,9 +168,7 @@ class _NavPageState extends State<NavPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                  ),
+                  image: NetworkImage(currentUser!.profileImage),
                   fit: BoxFit.cover,
                 ),
               ),

@@ -21,25 +21,25 @@ class UserModel extends UserEntity {
     required bool isOwnProfile,
     required DateTime updatedAt,
   }) : super(
-          id,
-          email,
-          username,
-          fullName,
-          bio,
-          location,
-          profileImage,
-          bannerImage,
-          isEmailVerified,
-          followerCount,
-          followingCount,
-          friendCount,
-          dateJoined,
-          relationshipStatus,
-          isFollowing,
-          followsYou,
-          isOwnProfile,
-          updatedAt,
-        );
+         id,
+         email,
+         username,
+         fullName,
+         bio,
+         location,
+         profileImage,
+         bannerImage,
+         isEmailVerified,
+         followerCount,
+         followingCount,
+         friendCount,
+         dateJoined,
+         relationshipStatus,
+         isFollowing,
+         followsYou,
+         isOwnProfile,
+         updatedAt,
+       );
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -52,18 +52,18 @@ class UserModel extends UserEntity {
       profileImage: json['profileImage'] ?? '',
       bannerImage: json['bannerImage'],
       isEmailVerified: json['isEmailVerified'] ?? false,
-      followerCount: json['followerCount'] ?? 0,
-      followingCount: json['followingCount'] ?? 0,
-      friendCount: json['friendCount'] ?? 0,
-      dateJoined: json['dateJoined'] != null 
-          ? DateTime.parse(json['dateJoined']) 
+      followerCount: json['follower_count'] ?? 0,
+      followingCount: json['following_count'] ?? 0,
+      friendCount: json['friend_count'] ?? 0,
+      dateJoined: json['date_joined'] != null
+          ? DateTime.parse(json['date_joined'])
           : DateTime.now(),
-      relationshipStatus: json['relationshipStatus'] ?? '',
-      isFollowing: json['isFollowing'] ?? false,
-      followsYou: json['followsYou'] ?? false,
-      isOwnProfile: json['isOwnProfile'] ?? false,
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt']) 
+      relationshipStatus: json['relationship_status'] ?? '',
+      isFollowing: json['is_following'] ?? false,
+      followsYou: json['follows_you'] ?? false,
+      isOwnProfile: json['is_own_profile'] ?? false,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
     );
   }

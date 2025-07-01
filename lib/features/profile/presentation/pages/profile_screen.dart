@@ -1,3 +1,4 @@
+import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -13,17 +14,18 @@ import '../../../home/presentation/widgets/reply_card.dart';
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     super.key,
-    required this.isMe,
     required this.iAmFollowing,
     required this.followsMe,
     required this.isVerified,
     this.isFromNav = false,
+    required this.currentUser,
   });
-  final bool isMe;
+  // final bool isMe;
   final bool iAmFollowing;
   final bool followsMe;
   final bool isVerified;
   final bool isFromNav;
+  final UserEntity? currentUser;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -56,7 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-    if (!widget.isMe && (widget.iAmFollowing || widget.followsMe)) {
+    if (!widget.currentUser!.isOwnProfile &&
+        (widget.iAmFollowing || widget.followsMe)) {
       setState(() {
         canMessage = true;
       });
@@ -84,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               shape: BoxShape.circle,
                               image: DecorationImage(
                                 image: NetworkImage(
-                                  "https://butwhytho.net/wp-content/uploads/2023/09/Gojo-Jujutsu-Kaisen-But-Why-Tho-2.jpg",
+                                  widget.currentUser!.profileImage,
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -98,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Row(
                                 children: [
                                   Text(
-                                    "Kenny Da Engine",
+                                    widget.currentUser!.fullName,
                                     style: TextStyle(
                                       fontSize: getProportionateScreenHeight(
                                         16,
@@ -117,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ],
                               ),
                               Text(
-                                "@kennydaengine",
+                                "@${widget.currentUser!.username}",
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(13),
                                   color: kProfileText,
@@ -131,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             children: [
                               Text(
                                 NumberFormat.compact().format(
-                                  mockUsers[0]["followers"],
+                                  widget.currentUser!.followerCount,
                                 ),
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(16),
@@ -154,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             children: [
                               Text(
                                 NumberFormat.compact().format(
-                                  mockUsers[0]["following"],
+                                  widget.currentUser!.followingCount,
                                 ),
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(16),
@@ -180,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         left: getProportionateScreenWidth(30),
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
@@ -205,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               SizedBox(width: getProportionateScreenWidth(10)),
                               Text(
-                                'Since ${mockUsers[0]["dateJoined"]}',
+                                'Since ${DateFormat('MMMM yyyy').format(widget.currentUser!.dateJoined)}',
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(12),
                                   fontWeight: FontWeight.w500,
@@ -216,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           SizedBox(height: getProportionateScreenHeight(9)),
                           SocialText(
-                            text: mockUsers[0]["bio"],
+                            text: widget.currentUser!.bio,
                             baseStyle: Theme.of(context).textTheme.bodyLarge!
                                 .copyWith(
                                   fontSize: getProportionateScreenHeight(12),
@@ -237,7 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ),
                       child: Row(
                         children: [
-                          if (widget.isMe)
+                          if (widget.currentUser!.isOwnProfile)
                             InkWell(
                               onTap: () {},
                               child: Container(
@@ -257,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Center(child: Text("Edit Profile")),
                               ),
                             ),
-                          if (!widget.isMe &&
+                          if (!widget.currentUser!.isOwnProfile &&
                               !widget.iAmFollowing &&
                               !widget.followsMe)
                             InkWell(
@@ -276,7 +280,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Center(child: Text("Follow")),
                               ),
                             ),
-                          if (!widget.isMe && widget.iAmFollowing)
+                          if (!widget.currentUser!.isOwnProfile &&
+                              widget.iAmFollowing)
                             InkWell(
                               onTap: () {},
                               child: Container(
@@ -296,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Center(child: Text("Unfollow")),
                               ),
                             ),
-                          if (!widget.isMe &&
+                          if (!widget.currentUser!.isOwnProfile &&
                               widget.followsMe &&
                               !widget.iAmFollowing)
                             InkWell(
@@ -335,7 +340,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               child: Center(child: Text("Share Profile")),
                             ),
                           ),
-                          if (!widget.isMe &&
+                          if (!widget.currentUser!.isOwnProfile &&
                               (widget.iAmFollowing || widget.followsMe))
                             Spacer(),
                           if (canMessage)
@@ -547,7 +552,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
           InkWell(
-            onTap: widget.isMe ? _onMyMoreButtonTap : _onMoreButtonTap,
+            onTap: widget.currentUser!.isOwnProfile
+                ? _onMyMoreButtonTap
+                : _onMoreButtonTap,
             child: SvgPicture.asset(
               "assets/icons/more-vertical.svg",
               colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),

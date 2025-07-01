@@ -6,13 +6,15 @@ import 'package:flutter_svg/svg.dart';
 import 'package:app/constants.dart';
 import 'package:app/size_config.dart';
 
+import '../../../auth/domain/entities/user_entity.dart';
 import '../widgets/notification_tile.dart';
 import '../widgets/post_Card.dart';
 
 // ignore: must_be_immutable
 class HomeScreen extends StatefulWidget {
-  HomeScreen({super.key, this.onHomeButtonPressed});
+  HomeScreen({super.key, this.onHomeButtonPressed, required this.currentUser});
   VoidCallback? onHomeButtonPressed;
+  final UserEntity? currentUser;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -305,9 +307,7 @@ class _HomeScreenState extends State<HomeScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                  ),
+                  image: NetworkImage(widget.currentUser!.profileImage),
                   fit: BoxFit.cover,
                 ),
               ),

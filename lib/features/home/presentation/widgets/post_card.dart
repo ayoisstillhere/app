@@ -1,4 +1,5 @@
 import 'package:app/components/social_text.dart';
+import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -81,10 +82,29 @@ class _PostCardState extends State<PostCard> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProfileScreen(
-                        isMe: false,
                         iAmFollowing: false,
                         followsMe: true,
                         isVerified: true,
+                        currentUser: UserEntity(
+                          "id",
+                          "email",
+                          "username",
+                          "fullName",
+                          "bio",
+                          "location",
+                          "profileImage",
+                          "bannerImage",
+                          true,
+                          5,
+                          5,
+                          4,
+                          DateTime.now(),
+                          "sdfsf",
+                          true,
+                          true,
+                          true,
+                          DateTime.now(),
+                        ),
                       ),
                     ),
                   );
