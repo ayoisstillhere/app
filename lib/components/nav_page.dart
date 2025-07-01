@@ -1,13 +1,19 @@
+import 'dart:convert';
+
+import 'package:app/features/auth/data/models/user_model.dart';
+import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:app/features/home/presentation/pages/home_screen.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:app/features/explore/presentation/pages/explore_screen.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../constants.dart';
 import '../size_config.dart';
+import 'package:http/http.dart' as http;
 
 class NavPage extends StatefulWidget {
   const NavPage({super.key});
@@ -31,11 +37,13 @@ class _NavPageState extends State<NavPage> {
       isFromNav: true,
     ),
   ];
+  late UserEntity currentUser;
 
   @override
   void initState() {
     pageController = PageController();
     super.initState();
+    _getProfile();
   }
 
   @override
@@ -59,6 +67,29 @@ class _NavPageState extends State<NavPage> {
     setState(() {
       _page = page;
     });
+  }
+
+  Future<void> _getProfile() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/user/profile"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      currentUser = UserModel.fromJson(jsonDecode(response.body));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   @override
