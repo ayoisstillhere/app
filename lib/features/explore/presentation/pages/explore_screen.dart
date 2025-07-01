@@ -449,9 +449,9 @@ class _ExploreScreenState extends State<ExploreScreen>
             controller: controller,
             children: [
               ListView.builder(
-                itemCount: mockPosts.length,
+                itemCount: mockReplies.length,
                 itemBuilder: (context, index) {
-                  final post = mockPosts[index];
+                  final post = mockReplies[index];
 
                   return GestureDetector(
                     onTap: () {},
@@ -492,7 +492,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                       content: reply["content"],
                       pictures: reply["pictures"],
                       replyerName: reply["userName"],
-                      replyerHandle: mockPosts[index]["handle"],
+                      replyerHandle: mockReplies[index]["handle"],
                     ),
                   );
                 },

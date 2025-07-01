@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:app/features/home/data/models/post_response_model.dart';
+import 'package:app/features/home/domain/entities/post_response_entity.dart';
 import 'package:app/features/home/presentation/pages/create_post_screen.dart';
 import 'package:app/features/home/presentation/widgets/reply_card.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +9,9 @@ import 'package:flutter_svg/svg.dart';
 
 import 'package:app/constants.dart';
 import 'package:app/size_config.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../../services/auth_manager.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../widgets/notification_tile.dart';
 import '../widgets/post_Card.dart';
@@ -23,10 +29,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
+  PostResponseEntity? recommendedPostResponse;
+  PostResponseEntity? followingPostResponse;
+  bool isRecommendedLoaded = false;
+  bool isFollowingLoaded = false;
 
   bool isHome = true;
   bool isNotifications = false;
-  Map<String, dynamic> selectedPost = {};
+  Post? selectedPost;
   String dropDownValue = "Most Liked";
 
   @override
@@ -34,6 +44,8 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     controller = TabController(length: 2, vsync: this);
     widget.onHomeButtonPressed = resetHome;
+    _getFolowingPosts();
+    _getRecommendedPosts();
   }
 
   @override
@@ -62,6 +74,62 @@ class _HomeScreenState extends State<HomeScreen>
           isNotifications = false;
         });
       }
+    }
+  }
+
+  Future<void> _getFolowingPosts() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/feed/timeline"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      followingPostResponse = PostResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+      setState(() {
+        isFollowingLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _getRecommendedPosts() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/feed/recommended"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      recommendedPostResponse = PostResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+      setState(() {
+        isRecommendedLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     }
   }
 
@@ -146,16 +214,16 @@ class _HomeScreenState extends State<HomeScreen>
               PostCard(
                 dividerColor: dividerColor,
                 iconColor: iconColor,
-                authorName: selectedPost["userName"],
-                authorHandle: selectedPost["handle"],
-                imageUrl: selectedPost["userImage"],
-                postTime: selectedPost["postTime"],
-                likes: selectedPost["likes"],
-                comments: selectedPost["comments"],
-                reposts: selectedPost["reposts"],
-                bookmarks: selectedPost["bookmarks"],
-                content: selectedPost["content"],
-                pictures: selectedPost["pictures"],
+                authorName: selectedPost!.author.fullName,
+                authorHandle: selectedPost!.author.username,
+                imageUrl: selectedPost!.author.profileImage,
+                postTime: selectedPost!.createdAt,
+                likes: selectedPost!.count.likes,
+                comments: selectedPost!.count.comments,
+                reposts: selectedPost!.count.reposts,
+                bookmarks: selectedPost!.count.saves,
+                content: selectedPost!.content,
+                pictures: selectedPost!.media,
               ),
               SizedBox(height: getProportionateScreenHeight(11.09)),
               Container(
@@ -202,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen>
                     bookmarks: mockReplies[index]["bookmarks"],
                     content: mockReplies[index]["content"],
                     pictures: mockReplies[index]["pictures"],
-                    authorHandle: selectedPost["handle"],
+                    authorHandle: mockReplies[index]["handle"],
                   );
                 },
               ),
@@ -223,64 +291,68 @@ class _HomeScreenState extends State<HomeScreen>
       body: TabBarView(
         controller: controller,
         children: [
-          ListView.builder(
-            itemCount: mockPosts.length,
-            itemBuilder: (context, index) {
-              final post = mockPosts[index];
+          isRecommendedLoaded
+              ? ListView.builder(
+                  itemCount: recommendedPostResponse!.posts.length,
+                  itemBuilder: (context, index) {
+                    final post = recommendedPostResponse!.posts[index];
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedPost = post;
-                  });
-                  _toggleHome();
-                },
-                child: PostCard(
-                  dividerColor: dividerColor,
-                  iconColor: iconColor,
-                  authorName: post["userName"],
-                  authorHandle: post["handle"],
-                  imageUrl: post["userImage"],
-                  postTime: post["postTime"],
-                  likes: post["likes"],
-                  comments: post["comments"],
-                  reposts: post["reposts"],
-                  bookmarks: post["bookmarks"],
-                  content: post["content"],
-                  pictures: post["pictures"],
-                ),
-              );
-            },
-          ),
-          ListView.builder(
-            itemCount: mockPosts.length,
-            itemBuilder: (context, index) {
-              final post = mockPosts[index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedPost = post;
+                        });
+                        _toggleHome();
+                      },
+                      child: PostCard(
+                        dividerColor: dividerColor,
+                        iconColor: iconColor,
+                        authorName: post.author.fullName,
+                        authorHandle: post.author.username,
+                        imageUrl: post.author.profileImage,
+                        postTime: post.createdAt,
+                        likes: post.count.likes,
+                        comments: post.count.comments,
+                        reposts: post.count.reposts,
+                        bookmarks: post.count.saves,
+                        content: post.content,
+                        pictures: post.media,
+                      ),
+                    );
+                  },
+                )
+              : Center(child: CircularProgressIndicator()),
+          isFollowingLoaded
+              ? ListView.builder(
+                  itemCount: followingPostResponse!.posts.length,
+                  itemBuilder: (context, index) {
+                    final post = followingPostResponse!.posts[index];
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedPost = post;
-                  });
-                  _toggleHome();
-                },
-                child: PostCard(
-                  dividerColor: dividerColor,
-                  iconColor: iconColor,
-                  authorName: post["userName"],
-                  authorHandle: post["handle"],
-                  imageUrl: post["userImage"],
-                  postTime: post["postTime"],
-                  likes: post["likes"],
-                  comments: post["comments"],
-                  reposts: post["reposts"],
-                  bookmarks: post["bookmarks"],
-                  content: post["content"],
-                  pictures: post["pictures"],
-                ),
-              );
-            },
-          ),
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedPost = post;
+                        });
+                        _toggleHome();
+                      },
+                      child: PostCard(
+                        dividerColor: dividerColor,
+                        iconColor: iconColor,
+                        authorName: post.author.fullName,
+                        authorHandle: post.author.username,
+                        imageUrl: post.author.profileImage,
+                        postTime: post.createdAt,
+                        likes: post.count.likes,
+                        comments: post.count.comments,
+                        reposts: post.count.reposts,
+                        bookmarks: post.count.saves,
+                        content: post.content,
+                        pictures: post.media,
+                      ),
+                    );
+                  },
+                )
+              : Center(child: CircularProgressIndicator()),
         ],
       ),
     );

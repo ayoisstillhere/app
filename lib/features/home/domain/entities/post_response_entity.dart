@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 
-class PostResponse extends Equatable {
+class PostResponseEntity extends Equatable {
   final List<Post> posts;
   final Pagination pagination;
 
-  const PostResponse(this.posts, this.pagination);
+  const PostResponseEntity(this.posts, this.pagination);
 
   @override
   List<Object?> get props => [posts, pagination];

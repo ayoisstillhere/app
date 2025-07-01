@@ -3,6 +3,7 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -29,7 +30,7 @@ class PostCard extends StatefulWidget {
   final String authorName;
   final String authorHandle;
   final String imageUrl;
-  final String postTime;
+  final DateTime postTime;
   final int likes;
   final int comments;
   final int reposts;
@@ -149,7 +150,7 @@ class _PostCardState extends State<PostCard> {
               ),
               SizedBox(width: getProportionateScreenWidth(2)),
               Text(
-                widget.postTime,
+                timeago.format(widget.postTime),
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.w500,
                   fontSize: getProportionateScreenHeight(12),

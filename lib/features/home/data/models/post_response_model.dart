@@ -1,6 +1,6 @@
 import 'package:app/features/home/domain/entities/post_response_entity.dart';
 
-class PostResponseModel extends PostResponse {
+class PostResponseModel extends PostResponseEntity {
   const PostResponseModel({
     required List<PostModel> posts,
     required PaginationModel pagination,

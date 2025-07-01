@@ -426,9 +426,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             controller: controller,
             children: [
               ListView.builder(
-                itemCount: mockPosts.length,
+                itemCount: mockReplies.length,
                 itemBuilder: (context, index) {
-                  final post = mockPosts[index];
+                  final post = mockReplies[index];
                   return GestureDetector(
                     onTap: () {},
                     child: PostCard(
@@ -437,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       authorName: post["userName"],
                       authorHandle: post["handle"],
                       imageUrl: post["userImage"],
-                      postTime: post["postTime"],
+                      postTime: DateTime.now(),
                       likes: post["likes"],
                       comments: post["comments"],
                       reposts: post["reposts"],
@@ -468,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       content: reply["content"],
                       pictures: reply["pictures"],
                       replyerName: reply["userName"],
-                      replyerHandle: mockPosts[index]["handle"],
+                      replyerHandle: reply["handle"],
                     ),
                   );
                 },
@@ -494,7 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       content: reply["content"],
                       pictures: reply["pictures"],
                       replyerName: reply["userName"],
-                      replyerHandle: mockPosts[index]["handle"],
+                      replyerHandle: reply["handle"],
                     ),
                   );
                 },
