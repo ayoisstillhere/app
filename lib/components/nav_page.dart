@@ -37,6 +37,7 @@ class _NavPageState extends State<NavPage> {
       isFromNav: true,
     ),
   ];
+  bool isUserLoaded = false;
   late UserEntity currentUser;
 
   @override
@@ -77,6 +78,9 @@ class _NavPageState extends State<NavPage> {
     );
     if (response.statusCode == 200) {
       currentUser = UserModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isUserLoaded = true;
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -94,7 +98,11 @@ class _NavPageState extends State<NavPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: _navBody(context));
+    return Scaffold(
+      body: isUserLoaded
+          ? _navBody(context)
+          : Center(child: CircularProgressIndicator()),
+    );
   }
 
   Scaffold _navBody(BuildContext context) {
