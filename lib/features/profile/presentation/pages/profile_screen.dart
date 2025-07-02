@@ -1,13 +1,21 @@
+import 'dart:convert';
+
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/home/data/models/comment_response_model.dart';
+import 'package:app/features/home/domain/entities/comment_response_entity.dart';
+import 'package:app/features/home/domain/entities/post_response_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:app/components/social_text.dart';
 import 'package:app/size_config.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
+import '../../../home/data/models/post_response_model.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
 import '../../../home/presentation/widgets/reply_card.dart';
 
@@ -20,7 +28,6 @@ class ProfileScreen extends StatefulWidget {
     this.isFromNav = false,
     required this.currentUser,
   });
-  // final bool isMe;
   final bool iAmFollowing;
   final bool followsMe;
   final bool isVerified;
@@ -36,10 +43,28 @@ class _ProfileScreenState extends State<ProfileScreen>
   late TabController controller;
   bool canMessage = false;
 
+  PostResponseEntity? posts;
+  PostResponseEntity? reposts;
+  CommentResponseEntity? comments;
+  PostResponseEntity? savedPosts;
+  PostResponseEntity? likedPosts;
+
+  bool isPostsLoaded = false;
+  bool isRepostsLoaded = false;
+  bool isCommentsLoaded = false;
+  bool isSavedPostsLoaded = false;
+  // bool isLikedPostsLoaded = false;
+  // bool isMediaLoaded = false;
+
   @override
   void initState() {
     super.initState();
     controller = TabController(length: 6, vsync: this);
+    _getPosts();
+    _getReposts();
+    // _getComments();
+    _getSavedPosts();
+    // _getLikedPosts();
   }
 
   @override
@@ -47,6 +72,116 @@ class _ProfileScreenState extends State<ProfileScreen>
     controller.dispose();
     super.dispose();
   }
+
+  Future<void> _getPosts() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.username}"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      posts = PostResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isPostsLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _getReposts() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        "$baseUrl/api/v1/posts/user/${widget.currentUser!.username}/reposts",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      reposts = PostResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isRepostsLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _getComments() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        "$baseUrl/api/v1/posts/user/${widget.currentUser!.username}/comments",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      comments = CommentResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isCommentsLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _getSavedPosts() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        "$baseUrl/api/v1/posts/user/${widget.currentUser!.username}/saves",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      savedPosts = PostResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isSavedPostsLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+          ),
+        ),
+      );
+    }
+  }
+
+  // Future<void> _getLikedPosts() async {}
+  // Future<void> _getMedia() async {}
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               SizedBox(width: getProportionateScreenWidth(10)),
                               Text(
-                                mockUsers[0]["location"],
+                                widget.currentUser!.location,
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(12),
                                   fontWeight: FontWeight.w500,
@@ -425,81 +560,109 @@ class _ProfileScreenState extends State<ProfileScreen>
           body: TabBarView(
             controller: controller,
             children: [
-              ListView.builder(
-                itemCount: mockReplies.length,
-                itemBuilder: (context, index) {
-                  final post = mockReplies[index];
-                  return GestureDetector(
-                    onTap: () {},
-                    child: PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: post["userName"],
-                      authorHandle: post["handle"],
-                      imageUrl: post["userImage"],
-                      postTime: DateTime.now(),
-                      likes: post["likes"],
-                      comments: post["comments"],
-                      reposts: post["reposts"],
-                      bookmarks: post["bookmarks"],
-                      content: post["content"],
-                      pictures: post["pictures"],
-                    ),
-                  );
-                },
-              ),
-              ListView.builder(
-                itemCount: mockReplies.length,
-                itemBuilder: (context, index) {
-                  final reply = mockReplies[index];
+              isPostsLoaded
+                  ? ListView.builder(
+                      itemCount: posts!.posts.length,
+                      itemBuilder: (context, index) {
+                        final post = posts!.posts[index];
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName: post.author.fullName,
+                            authorHandle: post.author.username,
+                            imageUrl: post.author.profileImage,
+                            postTime: post.createdAt,
+                            likes: post.count.likes,
+                            comments: post.count.comments,
+                            reposts: post.count.reposts,
+                            bookmarks: post.count.saves,
+                            content: post.content,
+                            pictures: post.media,
+                          ),
+                        );
+                      },
+                    )
+                  : Center(child: CircularProgressIndicator()),
+              isRepostsLoaded
+                  ? ListView.builder(
+                      itemCount: reposts!.posts.length,
+                      itemBuilder: (context, index) {
+                        final repost = reposts!.posts[index];
 
-                  return GestureDetector(
-                    onTap: () {},
-                    child: ReplyCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorHandle: reply["parentPostId"],
-                      imageUrl: reply["userImage"],
-                      postTime: reply["replyTime"],
-                      likes: reply["likes"],
-                      comments: reply["comments"],
-                      reposts: reply["reposts"],
-                      bookmarks: reply["bookmarks"],
-                      content: reply["content"],
-                      pictures: reply["pictures"],
-                      replyerName: reply["userName"],
-                      replyerHandle: reply["handle"],
-                    ),
-                  );
-                },
-              ),
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName: repost.author.fullName,
+                            authorHandle: repost.author.username,
+                            imageUrl: repost.author.profileImage,
+                            postTime: repost.createdAt,
+                            likes: repost.count.likes,
+                            comments: repost.count.comments,
+                            reposts: repost.count.reposts,
+                            bookmarks: repost.count.saves,
+                            content: repost.content,
+                            pictures: repost.media,
+                          ),
+                        );
+                      },
+                    )
+                  : Center(child: CircularProgressIndicator()),
               Center(child: Text("Media")),
-              ListView.builder(
-                itemCount: mockReplies.length,
-                itemBuilder: (context, index) {
-                  final reply = mockReplies[index];
-
-                  return GestureDetector(
-                    onTap: () {},
-                    child: ReplyCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorHandle: reply["parentPostId"],
-                      imageUrl: reply["userImage"],
-                      postTime: reply["replyTime"],
-                      likes: reply["likes"],
-                      comments: reply["comments"],
-                      reposts: reply["reposts"],
-                      bookmarks: reply["bookmarks"],
-                      content: reply["content"],
-                      pictures: reply["pictures"],
-                      replyerName: reply["userName"],
-                      replyerHandle: reply["handle"],
-                    ),
-                  );
-                },
-              ),
-              Center(child: Text("Saved")),
+              isCommentsLoaded
+                  ? ListView.builder(
+                      itemCount: comments!.comments.length,
+                      itemBuilder: (context, index) {
+                        final comment = comments!.comments[index];
+                        return GestureDetector(
+                          onTap: () {},
+                          child: ReplyCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorHandle: comment.author.username,
+                            imageUrl: comment.author.profileImage,
+                            postTime: comment.createdAt,
+                            likes: comment.count.likes,
+                            comments: 0,
+                            reposts: 0,
+                            bookmarks: 0,
+                            content: comment.content,
+                            pictures: [],
+                            replyerName: comment.author.fullName,
+                            replyerHandle: comment.author.username,
+                          ),
+                        );
+                      },
+                    )
+                  : Center(child: CircularProgressIndicator()),
+              isSavedPostsLoaded
+                  ? ListView.builder(
+                      itemCount: savedPosts!.posts.length,
+                      itemBuilder: (context, index) {
+                        final savedPost = savedPosts!.posts[index];
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName: savedPost.author.fullName,
+                            authorHandle: savedPost.author.username,
+                            imageUrl: savedPost.author.profileImage,
+                            postTime: savedPost.createdAt,
+                            likes: savedPost.count.likes,
+                            comments: savedPost.count.comments,
+                            reposts: savedPost.count.reposts,
+                            bookmarks: savedPost.count.saves,
+                            content: savedPost.content,
+                            pictures: savedPost.media,
+                          ),
+                        );
+                      },
+                    )
+                  : Center(child: CircularProgressIndicator()),
               Center(child: Text("Liked")),
             ],
           ),
@@ -518,14 +681,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       alignment: Alignment.topCenter,
       width: double.infinity,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(
-            "https://static1.colliderimages.com/wordpress/wp-content/uploads/2022/08/Jujutsu-Kaisen.jpg",
-          ),
-          fit: BoxFit.cover,
-        ),
-      ),
+      decoration: widget.currentUser!.bannerImage != null
+          ? BoxDecoration(
+              image: DecorationImage(
+                image: NetworkImage(widget.currentUser!.bannerImage),
+                fit: BoxFit.cover,
+              ),
+            )
+          : null,
       child: Row(
         children: [
           if (!widget.isFromNav)

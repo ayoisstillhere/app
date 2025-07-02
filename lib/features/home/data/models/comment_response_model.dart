@@ -17,7 +17,9 @@ class CommentResponseModel extends CommentResponseEntity {
 
   Map<String, dynamic> toJson() {
     return {
-      'comments': comments.map((comment) => (comment as CommentModel).toJson()).toList(),
+      'comments': comments
+          .map((comment) => (comment as CommentModel).toJson())
+          .toList(),
       'pagination': (pagination as PaginationModel).toJson(),
     };
   }
@@ -36,17 +38,17 @@ class CommentModel extends CommentEntity {
     required bool isLiked,
     required List<dynamic> replies,
   }) : super(
-          id,
-          content,
-          postId,
-          parentId,
-          createdAt,
-          updatedAt,
-          author,
-          count,
-          isLiked,
-          replies,
-        );
+         id,
+         content,
+         postId,
+         parentId,
+         createdAt,
+         updatedAt,
+         author,
+         count,
+         isLiked,
+         replies,
+       );
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
@@ -104,23 +106,15 @@ class AuthorModel extends AuthorEntity {
 }
 
 class CountModel extends CountEntity {
-  const CountModel({
-    required int likes,
-    required int replies,
-  }) : super(likes, replies);
+  const CountModel({required int likes, required int replies})
+    : super(likes, replies);
 
   factory CountModel.fromJson(Map<String, dynamic> json) {
-    return CountModel(
-      likes: json['likes'] ?? 0,
-      replies: json['replies'] ?? 0,
-    );
+    return CountModel(likes: json['likes'] ?? 0, replies: json['replies'] ?? 0);
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'likes': likes,
-      'replies': replies,
-    };
+    return {'likes': likes, 'replies': replies};
   }
 }
 
@@ -140,10 +134,6 @@ class PaginationModel extends PaginationEntity {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'page': page,
-      'limit': limit,
-      'hasMore': hasMore,
-    };
+    return {'page': page, 'limit': limit, 'hasMore': hasMore};
   }
 }

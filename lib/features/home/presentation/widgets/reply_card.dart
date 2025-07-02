@@ -1,6 +1,7 @@
 import 'package:app/components/social_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -28,7 +29,7 @@ class ReplyCard extends StatefulWidget {
   final String replyerName;
   final String replyerHandle;
   final String imageUrl;
-  final String postTime;
+  final DateTime postTime;
   final int likes;
   final int comments;
   final int reposts;
@@ -123,7 +124,7 @@ class _ReplyCardState extends State<ReplyCard> {
                       ),
                       SizedBox(width: getProportionateScreenWidth(2)),
                       Text(
-                        widget.postTime,
+                        timeago.format(widget.postTime),
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                           fontSize: getProportionateScreenHeight(12),
