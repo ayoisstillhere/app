@@ -48,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   CommentResponseEntity? comments;
   PostResponseEntity? savedPosts;
   PostResponseEntity? likedPosts;
+  PostResponseEntity? mediaPosts;
 
   bool isPostsLoaded = false;
   bool isRepostsLoaded = false;
@@ -83,6 +84,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       posts = PostResponseModel.fromJson(jsonDecode(response.body));
       setState(() {
         isPostsLoaded = true;
+        mediaPosts = PostResponseEntity(
+          posts!.posts.where((element) => element.media.isNotEmpty).toList(),
+          posts!.pagination,
+        );
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -611,7 +616,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                       },
                     )
                   : Center(child: CircularProgressIndicator()),
-              Center(child: Text("Media")),
+              isPostsLoaded
+                  ? ListView.builder(
+                      itemCount: mediaPosts!.posts.length,
+                      itemBuilder: (context, index) {
+                        final media = mediaPosts!.posts[index];
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName: media.author.fullName,
+                            authorHandle: media.author.username,
+                            imageUrl: media.author.profileImage,
+                            postTime: media.createdAt,
+                            likes: media.count.likes,
+                            comments: media.count.comments,
+                            reposts: media.count.reposts,
+                            bookmarks: media.count.saves,
+                            content: media.content,
+                            pictures: media.media,
+                          ),
+                        );
+                      },
+                    )
+                  : Center(child: CircularProgressIndicator()),
               isCommentsLoaded
                   ? ListView.builder(
                       itemCount: comments!.comments.length,
