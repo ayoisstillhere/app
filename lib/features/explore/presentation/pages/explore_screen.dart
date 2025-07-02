@@ -319,7 +319,7 @@ class _ExploreScreenState extends State<ExploreScreen>
             replyerName: mockReplies.first["userName"],
             replyerHandle: mockReplies.first["handle"],
             imageUrl: mockReplies.first["userImage"],
-            postTime: mockReplies.first["replyTime"],
+            postTime: DateTime.now(),
             likes: mockReplies.first["likes"],
             comments: mockReplies.first["comments"],
             reposts: mockReplies.first["reposts"],
