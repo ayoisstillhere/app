@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../constants.dart';
+import '../features/onboarding/presentation/pages/onboarding_screen.dart'
+    show OnboardingScreen;
 import '../size_config.dart';
 import 'package:http/http.dart' as http;
 
@@ -85,6 +87,23 @@ class _NavPageState extends State<NavPage> {
         currentUser = user;
       });
     } else {
+      if (response.statusCode == 401) {
+        await AuthManager.logout();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const OnboardingScreen(
+              title: "Connect Freely",
+              subtitle:
+                  "Share your thoughts, ideas, and moments — without limits",
+              bgImage: "assets/images/Onboarding1.png",
+              currentPage: 0,
+            ),
+          ),
+          (route) => false,
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,

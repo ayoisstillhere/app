@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
+import '../../../onboarding/presentation/pages/onboarding_screen.dart';
 import '../widgets/settings_tile.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -58,25 +60,43 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: getProportionateScreenHeight(32)),
-            Padding(
-              padding: EdgeInsets.only(left: getProportionateScreenWidth(21)),
-              child: Row(
-                children: [
-                  SvgPicture.asset(
-                    "assets/icons/settings_log-out.svg",
-                    width: getProportionateScreenWidth(24),
-                    height: getProportionateScreenHeight(24),
-                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  ),
-                  SizedBox(width: getProportionateScreenWidth(10)),
-                  Text(
-                    "Log out",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: getProportionateScreenHeight(15),
+            InkWell(
+              onTap: () {
+                AuthManager.logout();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OnboardingScreen(
+                      title: "Connect Freely",
+                      subtitle:
+                          "Share your thoughts, ideas, and moments — without limits",
+                      bgImage: "assets/images/Onboarding1.png",
+                      currentPage: 0,
                     ),
                   ),
-                ],
+                  (route) => false,
+                );
+              },
+              child: Padding(
+                padding: EdgeInsets.only(left: getProportionateScreenWidth(21)),
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      "assets/icons/settings_log-out.svg",
+                      width: getProportionateScreenWidth(24),
+                      height: getProportionateScreenHeight(24),
+                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    ),
+                    SizedBox(width: getProportionateScreenWidth(10)),
+                    Text(
+                      "Log out",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: getProportionateScreenHeight(15),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             SizedBox(height: getProportionateScreenHeight(24)),

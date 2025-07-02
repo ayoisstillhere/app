@@ -1,5 +1,8 @@
 // lib/services/auth_manager.dart
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../constants.dart';
 
 class AuthManager {
   static const String _tokenKey = 'auth_token';
@@ -33,4 +36,28 @@ class AuthManager {
     final token = await getToken();
     return token != null && token.isNotEmpty;
   }
+
+  static Future<void> logout() async {
+  try {
+    final token = await getToken();
+    if (token != null) {
+      // Call the logout API endpoint
+      final response = await http.post(
+        Uri.parse("$baseUrl/api/v1/auth/logout"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      
+      // Even if the API call fails, we should still clear the token locally
+      // Check response for debugging purposes
+      if (response.statusCode != 200) {
+        
+      }
+    }
+  } catch (e) {
+    // Log the error but continue with local logout
+  } finally {
+    // Always clear the token locally
+    await clearToken();
+  }
+}
 }
