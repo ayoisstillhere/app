@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:app/features/home/data/models/explore_response_model.dart';
 import 'package:app/features/home/domain/entities/explore_response_entity.dart';
@@ -391,12 +392,15 @@ class _ExploreScreenState extends State<ExploreScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: List.generate(
-                      mockTrendingTopics.length,
+                      exploreResponse!.popularKeywords.length,
                       (index) => Column(
                         children: [
                           TrendingTopic(
-                            topic: mockTrendingTopics[index]["topic"],
-                            postNumber: mockTrendingTopics[index]["postNumber"],
+                            topic:
+                                exploreResponse!.popularKeywords[index].keyword,
+                            postNumber: exploreResponse!
+                                .popularKeywords[index]
+                                .postsCount,
                           ),
                           SizedBox(height: getProportionateScreenWidth(16)),
                         ],
