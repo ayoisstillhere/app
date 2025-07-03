@@ -1,13 +1,15 @@
 import 'dart:convert';
 
-import 'package:app/features/home/data/models/explore_response_model.dart';
-import 'package:app/features/home/domain/entities/explore_response_entity.dart';
-import 'package:app/features/home/domain/entities/search_response_entity.dart';
-import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/home/data/models/explore_response_model.dart';
+import 'package:app/features/home/domain/entities/explore_response_entity.dart';
+import 'package:app/features/home/domain/entities/search_response_entity.dart';
+import 'package:app/services/auth_manager.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -18,8 +20,9 @@ import '../widgets/trending_topic.dart';
 
 // ignore: must_be_immutable
 class ExploreScreen extends StatefulWidget {
-  ExploreScreen({super.key});
+  ExploreScreen({super.key, required this.currentUser});
   VoidCallback? onExploreButtonPressed;
+  final UserEntity currentUser;
 
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
@@ -434,6 +437,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                             exploreResponse!.trending[index].author.fullName,
                         pictures: exploreResponse!.trending[index].media,
                         forSearch: true,
+                        currentUser: widget.currentUser,
                       ),
                     ),
                   ),
@@ -597,6 +601,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                             bookmarks: item.data.savesCount!,
                             content: item.data.content!,
                             pictures: item.data.media!,
+                            currentUser: widget.currentUser,
                           )
                         : Container(),
                   );
@@ -622,6 +627,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                       bookmarks: item.savesCount,
                       content: item.content,
                       pictures: item.media,
+                      currentUser: widget.currentUser,
                     ),
                   );
                 },
@@ -646,6 +652,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                       bookmarks: item.savesCount,
                       content: item.content,
                       pictures: item.media,
+                      currentUser: widget.currentUser,
                     ),
                   );
                 },

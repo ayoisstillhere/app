@@ -1,9 +1,10 @@
-import 'package:app/components/social_text.dart';
-import 'package:app/features/auth/domain/entities/user_entity.dart';
-import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:timeago/timeago.dart' as timeago;
+
+import 'package:app/components/social_text.dart';
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -24,6 +25,7 @@ class PostCard extends StatefulWidget {
     required this.content,
     this.pictures = const [],
     this.forSearch = false,
+    required this.currentUser,
   });
 
   final Color dividerColor;
@@ -39,6 +41,7 @@ class PostCard extends StatefulWidget {
   final String content;
   final List<dynamic> pictures;
   final bool forSearch;
+  final UserEntity currentUser;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -90,26 +93,7 @@ class _PostCardState extends State<PostCard> {
                         iAmFollowing: false,
                         followsMe: true,
                         isVerified: true,
-                        currentUser: UserEntity(
-                          "id",
-                          "email",
-                          "username",
-                          "fullName",
-                          "bio",
-                          "location",
-                          "profileImage",
-                          "bannerImage",
-                          true,
-                          5,
-                          5,
-                          4,
-                          DateTime.now(),
-                          "sdfsf",
-                          true,
-                          true,
-                          true,
-                          DateTime.now(),
-                        ),
+                        currentUser: widget.currentUser,
                       ),
                     ),
                   );

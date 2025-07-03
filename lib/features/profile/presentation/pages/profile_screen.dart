@@ -30,7 +30,7 @@ class ProfileScreen extends StatefulWidget {
   final bool followsMe;
   final bool isVerified;
   final bool isFromNav;
-  final UserEntity? currentUser;
+  final UserEntity currentUser;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -58,11 +58,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     controller = TabController(length: 6, vsync: this);
-    _getPosts();
-    _getReposts();
-    _getComments();
-    _getSavedPosts();
-    _getLikedPosts();
+    if (mounted) {
+      _getPosts();
+      _getReposts();
+      _getComments();
+      _getSavedPosts();
+      _getLikedPosts();
+    }
   }
 
   @override
@@ -74,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/posts"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/posts"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -105,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getReposts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/reposts"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/reposts"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -132,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
-        "$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/comments",
+        "$baseUrl/api/v1/posts/user/${widget.currentUser.id}/comments",
       ),
       headers: {"Authorization": "Bearer $token"},
     );
@@ -158,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getSavedPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/saves"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/saves"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -183,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getLikedPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/likes"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/likes"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -215,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-    if (!widget.currentUser!.isOwnProfile &&
+    if (!widget.currentUser.isOwnProfile &&
         (widget.iAmFollowing || widget.followsMe)) {
       setState(() {
         canMessage = true;
@@ -244,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               shape: BoxShape.circle,
                               image: DecorationImage(
                                 image: NetworkImage(
-                                  widget.currentUser!.profileImage,
+                                  widget.currentUser.profileImage,
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -258,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Row(
                                 children: [
                                   Text(
-                                    widget.currentUser!.fullName,
+                                    widget.currentUser.fullName,
                                     style: TextStyle(
                                       fontSize: getProportionateScreenHeight(
                                         16,
@@ -277,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ],
                               ),
                               Text(
-                                "@${widget.currentUser!.username}",
+                                "@${widget.currentUser.username}",
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(13),
                                   color: kProfileText,
@@ -291,7 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             children: [
                               Text(
                                 NumberFormat.compact().format(
-                                  widget.currentUser!.followerCount,
+                                  widget.currentUser.followerCount,
                                 ),
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(16),
@@ -314,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             children: [
                               Text(
                                 NumberFormat.compact().format(
-                                  widget.currentUser!.followingCount,
+                                  widget.currentUser.followingCount,
                                 ),
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(16),
@@ -351,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               SizedBox(width: getProportionateScreenWidth(10)),
                               Text(
-                                widget.currentUser!.location,
+                                widget.currentUser.location,
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(12),
                                   fontWeight: FontWeight.w500,
@@ -366,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               SizedBox(width: getProportionateScreenWidth(10)),
                               Text(
-                                'Since ${DateFormat('MMMM yyyy').format(widget.currentUser!.dateJoined)}',
+                                'Since ${DateFormat('MMMM yyyy').format(widget.currentUser.dateJoined)}',
                                 style: TextStyle(
                                   fontSize: getProportionateScreenHeight(12),
                                   fontWeight: FontWeight.w500,
@@ -377,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           SizedBox(height: getProportionateScreenHeight(9)),
                           SocialText(
-                            text: widget.currentUser!.bio,
+                            text: widget.currentUser.bio,
                             baseStyle: Theme.of(context).textTheme.bodyLarge!
                                 .copyWith(
                                   fontSize: getProportionateScreenHeight(12),
@@ -398,7 +400,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ),
                       child: Row(
                         children: [
-                          if (widget.currentUser!.isOwnProfile)
+                          if (widget.currentUser.isOwnProfile)
                             InkWell(
                               onTap: () {},
                               child: Container(
@@ -418,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Center(child: Text("Edit Profile")),
                               ),
                             ),
-                          if (!widget.currentUser!.isOwnProfile &&
+                          if (!widget.currentUser.isOwnProfile &&
                               !widget.iAmFollowing &&
                               !widget.followsMe)
                             InkWell(
@@ -437,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Center(child: Text("Follow")),
                               ),
                             ),
-                          if (!widget.currentUser!.isOwnProfile &&
+                          if (!widget.currentUser.isOwnProfile &&
                               widget.iAmFollowing)
                             InkWell(
                               onTap: () {},
@@ -458,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Center(child: Text("Unfollow")),
                               ),
                             ),
-                          if (!widget.currentUser!.isOwnProfile &&
+                          if (!widget.currentUser.isOwnProfile &&
                               widget.followsMe &&
                               !widget.iAmFollowing)
                             InkWell(
@@ -497,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               child: Center(child: Text("Share Profile")),
                             ),
                           ),
-                          if (!widget.currentUser!.isOwnProfile &&
+                          if (!widget.currentUser.isOwnProfile &&
                               (widget.iAmFollowing || widget.followsMe))
                             Spacer(),
                           if (canMessage)
@@ -602,6 +604,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             bookmarks: post.count.saves,
                             content: post.content,
                             pictures: post.media,
+                            currentUser: widget.currentUser
                           ),
                         );
                       },
@@ -628,6 +631,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             bookmarks: repost.count.saves,
                             content: repost.content,
                             pictures: repost.media,
+                            currentUser: widget.currentUser
                           ),
                         );
                       },
@@ -653,6 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             bookmarks: media.count.saves,
                             content: media.content,
                             pictures: media.media,
+                            currentUser: widget.currentUser
                           ),
                         );
                       },
@@ -704,6 +709,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             bookmarks: savedPost.count.saves,
                             content: savedPost.content,
                             pictures: savedPost.media,
+                            currentUser: widget.currentUser,
                           ),
                         );
                       },
@@ -729,6 +735,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             bookmarks: likedPost.count.saves,
                             content: likedPost.content,
                             pictures: likedPost.media,
+                            currentUser: widget.currentUser,
                           ),
                         );
                       },
@@ -751,10 +758,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       alignment: Alignment.topCenter,
       width: double.infinity,
-      decoration: widget.currentUser!.bannerImage != null
+      decoration: widget.currentUser.bannerImage != null
           ? BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(widget.currentUser!.bannerImage),
+                image: NetworkImage(widget.currentUser.bannerImage),
                 fit: BoxFit.cover,
               ),
             )
@@ -785,7 +792,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
           InkWell(
-            onTap: widget.currentUser!.isOwnProfile
+            onTap: widget.currentUser.isOwnProfile
                 ? _onMyMoreButtonTap
                 : _onMoreButtonTap,
             child: SvgPicture.asset(

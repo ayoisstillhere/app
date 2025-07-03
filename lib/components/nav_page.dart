@@ -46,10 +46,7 @@ class _NavPageState extends State<NavPage> {
   }
 
   void navigationTapped(int page) {
-    if (page == 0) {
-      final homeScreen = navPages[0] as HomeScreen;
-      homeScreen.onHomeButtonPressed?.call();
-    } else if (page == 1) {
+    if (page == 1) {
       final exploreScreen = navPages[1] as ExploreScreen;
       exploreScreen.onExploreButtonPressed?.call();
     }
@@ -72,7 +69,7 @@ class _NavPageState extends State<NavPage> {
       final UserEntity user = UserModel.fromJson(jsonDecode(response.body));
       navPages = [
         HomeScreen(currentUser: user),
-        ExploreScreen(),
+        ExploreScreen(currentUser: user),
         ChatListScreen(),
         ProfileScreen(
           iAmFollowing: false,
