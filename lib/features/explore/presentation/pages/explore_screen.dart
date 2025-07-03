@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:app/features/home/data/models/explore_response_model.dart';
 import 'package:app/features/home/domain/entities/explore_response_entity.dart';
