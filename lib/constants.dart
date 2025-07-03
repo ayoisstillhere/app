@@ -246,14 +246,6 @@ List<Map<String, dynamic>> mockTrendingTopics = [
   {"topic": "Manchester United", "postNumber": 1000},
 ];
 
-List<String> mockRecentSearches = [
-  "Flutter development",
-  "Dart programming",
-  "Mobile app design",
-  "Firebase integration",
-  "State management",
-];
-
 List<Map<String, dynamic>> mockNotifications = [
   {
     "userName": "John Doe",

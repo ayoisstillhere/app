@@ -8,6 +8,7 @@ import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -35,6 +36,26 @@ class _ExploreScreenState extends State<ExploreScreen>
   ExploreResponseEntity? exploreResponse;
   bool isExploreLoaded = false;
   SearchResponseEntity? searchResponse;
+  List<String> recentSearches = [];
+
+  // Load recent searches from SharedPreferences when the screen initializes
+Future<void> _loadRecentSearches() async {
+  final prefs = await SharedPreferences.getInstance();
+  final searchesJson = prefs.getString('recent_searches');
+  
+  if (searchesJson != null) {
+    setState(() {
+      recentSearches = List<String>.from(jsonDecode(searchesJson));
+    });
+  }
+}
+
+// Save recent searches to SharedPreferences
+Future<void> _saveRecentSearches() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('recent_searches', jsonEncode(recentSearches));
+}
+
 
   @override
   void initState() {
@@ -42,6 +63,7 @@ class _ExploreScreenState extends State<ExploreScreen>
     _searchFocusNode.addListener(_onSearchFocusChange);
     controller = TabController(length: 4, vsync: this);
     widget.onExploreButtonPressed = resetExplore;
+    _loadRecentSearches();
     _getExploreContent();
   }
 
@@ -82,14 +104,15 @@ class _ExploreScreenState extends State<ExploreScreen>
   void _onSearchSubmitted(String query) {
     if (query.trim().isNotEmpty) {
       // Add to recent searches if not already present
-      if (!mockRecentSearches.contains(query)) {
+      if (!recentSearches.contains(query)) {
         setState(() {
-          mockRecentSearches.insert(0, query);
+          recentSearches.insert(0, query);
           // Keep only the last 10 searches
-          if (mockRecentSearches.length > 10) {
-            mockRecentSearches = mockRecentSearches.take(10).toList();
+          if (recentSearches.length > 10) {
+            recentSearches = recentSearches.take(10).toList();
           }
         });
+        _saveRecentSearches();
       }
       _getSearchResults(query);
     }
@@ -102,14 +125,16 @@ class _ExploreScreenState extends State<ExploreScreen>
 
   void _clearRecentSearch(String search) {
     setState(() {
-      mockRecentSearches.remove(search);
+      recentSearches.remove(search);
     });
+    _saveRecentSearches();
   }
 
   void _clearAllRecentSearches() {
     setState(() {
-      mockRecentSearches.clear();
+      recentSearches.clear();
     });
+    _saveRecentSearches();
   }
 
   Future<void> _getExploreContent() async {
@@ -247,7 +272,7 @@ class _ExploreScreenState extends State<ExploreScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: getProportionateScreenHeight(12)),
-        if (mockRecentSearches.isNotEmpty) ...[
+        if (recentSearches.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.symmetric(
               horizontal: getProportionateScreenWidth(16),
@@ -276,9 +301,9 @@ class _ExploreScreenState extends State<ExploreScreen>
           ),
           SizedBox(height: getProportionateScreenHeight(16)),
           ...List.generate(
-            mockRecentSearches.length,
+            recentSearches.length,
             (index) =>
-                _buildRecentSearchItem(context, mockRecentSearches[index]),
+                _buildRecentSearchItem(context, recentSearches[index]),
           ),
         ] else ...[
           Padding(
