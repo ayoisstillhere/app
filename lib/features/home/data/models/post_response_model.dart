@@ -13,9 +13,9 @@ class PostResponseModel extends PostResponseEntity {
           .map((post) => PostModel.fromJson(post))
           .toList(),
       pagination: PaginationModel.fromJson(json['pagination']),
-      user: json['user'] == null 
-          ? const UserModel.empty() 
-          : UserModel.fromJson(json['user']),
+      user: json['user'] == null
+          ? const PostResponseUserModel.empty()
+          : PostResponseUserModel.fromJson(json['user']),
     );
   }
 
@@ -23,7 +23,7 @@ class PostResponseModel extends PostResponseEntity {
     return {
       'posts': posts.map((post) => (post as PostModel).toJson()).toList(),
       'pagination': (pagination as PaginationModel).toJson(),
-      'user': (user as UserModel).toJson(),
+      'user': (user as PostResponseUserModel).toJson(),
     };
   }
 }
@@ -89,10 +89,10 @@ class PostModel extends Post {
       content: json['content'] ?? '',
       media: List<String>.from(json['media'] ?? []),
       links: List<String>.from(json['links'] ?? []),
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
+      updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
       author: AuthorModel.fromJson(json['author'] ?? {}),
@@ -103,7 +103,7 @@ class PostModel extends Post {
       authorId: json['authorId'] ?? '',
       isComment: json['isComment'] ?? false,
       parentPostId: json['parentPostId'], // Can be null
-      parentPost: json['parentPost'] != null 
+      parentPost: json['parentPost'] != null
           ? ParentPostModel.fromJson(json['parentPost'])
           : null,
     );
@@ -125,7 +125,8 @@ class PostModel extends Post {
       'authorId': authorId,
       'isComment': isComment,
       if (parentPostId != null) 'parentPostId': parentPostId,
-      if (parentPost != null) 'parentPost': (parentPost as ParentPostModel).toJson(),
+      if (parentPost != null)
+        'parentPost': (parentPost as ParentPostModel).toJson(),
     };
   }
 }
@@ -187,8 +188,8 @@ class CountModel extends Count {
   }
 }
 
-class UserModel extends User {
-  const UserModel({
+class PostResponseUserModel extends User {
+  const PostResponseUserModel({
     required String id,
     required String username,
     required String fullName,
@@ -196,10 +197,10 @@ class UserModel extends User {
   }) : super(id, username, fullName, profileImage);
 
   // Empty constructor for null handling
-  const UserModel.empty() : super('', '', '', '');
+  const PostResponseUserModel.empty() : super('', '', '', '');
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
+  factory PostResponseUserModel.fromJson(Map<String, dynamic> json) {
+    return PostResponseUserModel(
       id: json['id'] ?? '',
       username: json['username'] ?? '',
       fullName: json['fullName'] ?? '',
@@ -248,10 +249,10 @@ class ParentPostModel extends ParentPost {
       content: json['content'] ?? '',
       media: List<String>.from(json['media'] ?? []),
       links: List<String>.from(json['links'] ?? []),
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
+      updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
       author: AuthorModel.fromJson(json['author'] ?? {}),
