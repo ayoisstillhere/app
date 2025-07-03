@@ -80,6 +80,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 
   void resetExplore() {
+    if (!mounted) return;
     if (_isSearchFocused || _isSearchQueried) {
       _searchController.clear();
       _searchFocusNode.unfocus();
@@ -141,6 +142,9 @@ class _ExploreScreenState extends State<ExploreScreen>
       Uri.parse("$baseUrl/api/v1/search/explore"),
       headers: {"Authorization": "Bearer $token"},
     );
+
+    if (!mounted) return;
+
     if (response.statusCode == 200) {
       exploreResponse = ExploreResponseModel.fromJson(
         jsonDecode(response.body),
@@ -169,6 +173,9 @@ class _ExploreScreenState extends State<ExploreScreen>
       Uri.parse("$baseUrl/api/v1/search?query=$query"),
       headers: {"Authorization": "Bearer $token"},
     );
+
+    if (!mounted) return;
+
     if (response.statusCode == 200) {
       searchResponse = SearchResponseModel.fromJson(jsonDecode(response.body));
       setState(() {

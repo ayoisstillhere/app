@@ -65,7 +65,6 @@ List<Map<String, dynamic>> settingsDetails = [
   },
 ];
 
-
 // API Constants
 const String baseUrl = 'https://api.hiraofficial.com';
 
@@ -236,14 +235,6 @@ List<Map<String, dynamic>> mockReplies = [
     "parentPostId": "ayoisstillhere_post_1",
     "pictures": [],
   },
-];
-
-List<Map<String, dynamic>> mockTrendingTopics = [
-  {"topic": "Cristiano Ronaldo", "postNumber": 4000},
-  {"topic": "Barcelona", "postNumber": 3000},
-  {"topic": "Messi", "postNumber": 2000},
-  {"topic": "Neymar", "postNumber": 1500},
-  {"topic": "Manchester United", "postNumber": 1000},
 ];
 
 List<Map<String, dynamic>> mockNotifications = [
