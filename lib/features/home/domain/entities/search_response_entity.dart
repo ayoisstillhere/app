@@ -3,12 +3,14 @@ class SearchResponseEntity {
   final Everything everything;
   final Media media;
   final People people;
+  final Media recent;
 
   const SearchResponseEntity({
     required this.top,
     required this.everything,
     required this.media,
     required this.people,
+    required this.recent,
   });
 }
 
@@ -130,6 +132,9 @@ class MediaPost {
   final bool isLiked;
   final bool isReposted;
   final bool isSaved;
+  final String fullName;
+  final String profileImage;
+  final int savesCount;
 
   const MediaPost({
     required this.content,
@@ -146,6 +151,9 @@ class MediaPost {
     required this.isLiked,
     required this.isReposted,
     required this.isSaved,
+    required this.fullName,
+    required this.profileImage,
+    required this.savesCount,
   });
 }
 
@@ -187,6 +195,7 @@ class Data {
   final bool? isSaved;
   final String? keyword;
   final String? type;
+  final int? savesCount;
 
   const Data({
     this.username,
@@ -212,5 +221,6 @@ class Data {
     this.isSaved,
     this.keyword,
     this.type,
+    this.savesCount,
   });
 }

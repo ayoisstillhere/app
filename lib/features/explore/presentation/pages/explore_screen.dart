@@ -39,23 +39,22 @@ class _ExploreScreenState extends State<ExploreScreen>
   List<String> recentSearches = [];
 
   // Load recent searches from SharedPreferences when the screen initializes
-Future<void> _loadRecentSearches() async {
-  final prefs = await SharedPreferences.getInstance();
-  final searchesJson = prefs.getString('recent_searches');
-  
-  if (searchesJson != null) {
-    setState(() {
-      recentSearches = List<String>.from(jsonDecode(searchesJson));
-    });
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    final searchesJson = prefs.getString('recent_searches');
+
+    if (searchesJson != null) {
+      setState(() {
+        recentSearches = List<String>.from(jsonDecode(searchesJson));
+      });
+    }
   }
-}
 
-// Save recent searches to SharedPreferences
-Future<void> _saveRecentSearches() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('recent_searches', jsonEncode(recentSearches));
-}
-
+  // Save recent searches to SharedPreferences
+  Future<void> _saveRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('recent_searches', jsonEncode(recentSearches));
+  }
 
   @override
   void initState() {
@@ -302,8 +301,7 @@ Future<void> _saveRecentSearches() async {
           SizedBox(height: getProportionateScreenHeight(16)),
           ...List.generate(
             recentSearches.length,
-            (index) =>
-                _buildRecentSearchItem(context, recentSearches[index]),
+            (index) => _buildRecentSearchItem(context, recentSearches[index]),
           ),
         ] else ...[
           Padding(
@@ -583,17 +581,14 @@ Future<void> _saveRecentSearches() async {
                         ? PostCard(
                             dividerColor: dividerColor,
                             iconColor: iconColor,
-                            authorName:
-                                "Ayodele", // TODO: Replace with actual author name
+                            authorName: item.data.fullName!,
                             authorHandle: item.data.authorUsername!,
-                            imageUrl:
-                                "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YW5pbWV8ZW58MHx8MHx8fDA%3D", // TODO: Replace with actual author image
+                            imageUrl: item.data.profileImage!,
                             postTime: item.data.createdAt!,
                             likes: item.data.likesCount!,
                             comments: item.data.commentsCount!,
                             reposts: item.data.repostsCount!,
-                            bookmarks:
-                                5, // TODO: Replace with actual bookmarks count
+                            bookmarks: item.data.savesCount!,
                             content: item.data.content!,
                             pictures: item.data.media!,
                           )
@@ -602,27 +597,25 @@ Future<void> _saveRecentSearches() async {
                 },
               ),
               ListView.builder(
-                // TODO: Replace with actual recent posts
-                itemCount: mockReplies.length,
+                itemCount: searchResponse!.recent.posts.length,
                 itemBuilder: (context, index) {
-                  final reply = mockReplies[index];
+                  final item = searchResponse!.recent.posts[index];
 
                   return GestureDetector(
                     onTap: () {},
-                    child: ReplyCard(
+                    child: PostCard(
                       dividerColor: dividerColor,
                       iconColor: iconColor,
-                      authorHandle: reply["parentPostId"],
-                      imageUrl: reply["userImage"],
-                      postTime: DateTime.now(),
-                      likes: reply["likes"],
-                      comments: reply["comments"],
-                      reposts: reply["reposts"],
-                      bookmarks: reply["bookmarks"],
-                      content: reply["content"],
-                      pictures: reply["pictures"],
-                      replyerName: reply["userName"],
-                      replyerHandle: mockReplies[index]["handle"],
+                      authorName: item.fullName,
+                      authorHandle: item.authorUsername,
+                      imageUrl: item.profileImage,
+                      postTime: item.createdAt,
+                      likes: item.likesCount,
+                      comments: item.commentsCount,
+                      reposts: item.repostsCount,
+                      bookmarks: item.savesCount,
+                      content: item.content,
+                      pictures: item.media,
                     ),
                   );
                 },
@@ -637,16 +630,14 @@ Future<void> _saveRecentSearches() async {
                     child: PostCard(
                       dividerColor: dividerColor,
                       iconColor: iconColor,
-                      authorName:
-                          "Ayodele", // TODO: Replace with actual author name
+                      authorName: item.fullName,
                       authorHandle: item.authorUsername,
-                      imageUrl:
-                          "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YW5pbWV8ZW58MHx8MHx8fDA%3D", // TODO: Replace with actual author image
+                      imageUrl: item.profileImage,
                       postTime: item.createdAt,
                       likes: item.likesCount,
                       comments: item.commentsCount,
                       reposts: item.repostsCount,
-                      bookmarks: 5, // TODO: Replace with actual bookmarks count
+                      bookmarks: item.savesCount,
                       content: item.content,
                       pictures: item.media,
                     ),

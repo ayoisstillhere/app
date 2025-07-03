@@ -6,7 +6,14 @@ class SearchResponseModel extends SearchResponseEntity {
     required EverythingModel everything,
     required MediaModel media,
     required PeopleModel people,
-  }) : super(top: top, everything: everything, media: media, people: people);
+    required MediaModel recent,
+  }) : super(
+         top: top,
+         everything: everything,
+         media: media,
+         people: people,
+         recent: recent,
+       );
 
   const SearchResponseModel.empty()
     : super(
@@ -14,6 +21,7 @@ class SearchResponseModel extends SearchResponseEntity {
         everything: const EverythingModel.empty(),
         media: const MediaModel.empty(),
         people: const PeopleModel.empty(),
+        recent: const MediaModel.empty(),
       );
 
   factory SearchResponseModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +40,9 @@ class SearchResponseModel extends SearchResponseEntity {
       people: json['people'] != null
           ? PeopleModel.fromJson(json['people'])
           : const PeopleModel.empty(),
+      recent: json['recent'] != null
+          ? MediaModel.fromJson(json['recent'])
+          : const MediaModel.empty(),
     );
   }
 
@@ -301,6 +312,9 @@ class MediaPostModel extends MediaPost {
     required super.isLiked,
     required super.isReposted,
     required super.isSaved,
+    required super.fullName,
+    required super.profileImage,
+    required super.savesCount,
   });
 
   factory MediaPostModel.fromJson(Map<String, dynamic> json) {
@@ -321,6 +335,9 @@ class MediaPostModel extends MediaPost {
       isLiked: json['isLiked'] ?? false,
       isReposted: json['isReposted'] ?? false,
       isSaved: json['isSaved'] ?? false,
+      fullName: json['fullName'] ?? '',
+      profileImage: json['profileImage'] ?? '',
+      savesCount: json['savesCount'] ?? 0,
     );
   }
 
@@ -340,6 +357,9 @@ class MediaPostModel extends MediaPost {
       'isLiked': isLiked,
       'isReposted': isReposted,
       'isSaved': isSaved,
+      'fullName': fullName,
+      'profileImage': profileImage,
+      'savesCount': savesCount,
     };
   }
 }
@@ -417,6 +437,7 @@ class DataModel extends Data {
     super.isSaved,
     super.keyword,
     super.type,
+    super.savesCount,
   });
 
   factory DataModel.fromJson(Map<String, dynamic> json) {
@@ -448,6 +469,7 @@ class DataModel extends Data {
       isSaved: json['isSaved'],
       keyword: json['keyword'],
       type: json['type'],
+      savesCount: json['savesCount'],
     );
   }
 
@@ -476,6 +498,7 @@ class DataModel extends Data {
     if (isSaved != null) data['isSaved'] = isSaved;
     if (keyword != null) data['keyword'] = keyword;
     if (type != null) data['type'] = type;
+    if (savesCount != null) data['savesCount'] = savesCount;
 
     return data;
   }
