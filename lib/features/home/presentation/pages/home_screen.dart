@@ -263,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen>
                     replyerName: mockReplies[index]["userName"],
                     replyerHandle: mockReplies[index]["handle"],
                     imageUrl: mockReplies[index]["userImage"],
-                    postTime: mockReplies[index]["replyTime"],
+                    postTime: DateTime.now(),
                     likes: mockReplies[index]["likes"],
                     comments: mockReplies[index]["comments"],
                     reposts: mockReplies[index]["reposts"],

@@ -18,7 +18,7 @@ class FollowSuggestionsList extends StatelessWidget {
       ),
       child: ListView.builder(
         shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+        // physics: const NeverScrollableScrollPhysics(),
         itemCount: suggestedAccounts.length,
         itemBuilder: (context, index) {
           return FollowSuggestion(

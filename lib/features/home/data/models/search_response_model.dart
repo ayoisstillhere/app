@@ -6,11 +6,20 @@ class SearchResponseModel extends SearchResponseEntity {
     required EverythingModel everything,
     required MediaModel media,
     required PeopleModel people,
-  }) : super(top, everything, media, people);
+  }) : super(top: top, everything: everything, media: media, people: people);
+
+  const SearchResponseModel.empty()
+    : super(
+        top: const [],
+        everything: const EverythingModel.empty(),
+        media: const MediaModel.empty(),
+        people: const PeopleModel.empty(),
+      );
 
   factory SearchResponseModel.fromJson(Map<String, dynamic> json) {
     return SearchResponseModel(
-      top: (json['top'] as List<dynamic>?)
+      top:
+          (json['top'] as List<dynamic>?)
               ?.map((item) => TopModel.fromJson(item))
               .toList() ??
           [],
@@ -42,27 +51,35 @@ class EverythingModel extends Everything {
     required List<EverythingPostModel> posts,
     required List<KeywordModel> keywords,
     required PaginationModel pagination,
-  }) : super(users, posts, keywords, pagination);
+  }) : super(
+         users: users,
+         posts: posts,
+         keywords: keywords,
+         pagination: pagination,
+       );
 
   const EverythingModel.empty()
-      : super(
-          const [],
-          const [],
-          const [],
-          const PaginationModel(page: 0, limit: 0, hasMore: false),
-        );
+    : super(
+        users: const [],
+        posts: const [],
+        keywords: const [],
+        pagination: const PaginationModel(page: 0, limit: 0, hasMore: false),
+      );
 
   factory EverythingModel.fromJson(Map<String, dynamic> json) {
     return EverythingModel(
-      users: (json['users'] as List<dynamic>?)
+      users:
+          (json['users'] as List<dynamic>?)
               ?.map((user) => UserModel.fromJson(user))
               .toList() ??
           [],
-      posts: (json['posts'] as List<dynamic>?)
+      posts:
+          (json['posts'] as List<dynamic>?)
               ?.map((post) => EverythingPostModel.fromJson(post))
               .toList() ??
           [],
-      keywords: (json['keywords'] as List<dynamic>?)
+      keywords:
+          (json['keywords'] as List<dynamic>?)
               ?.map((keyword) => KeywordModel.fromJson(keyword))
               .toList() ??
           [],
@@ -75,8 +92,12 @@ class EverythingModel extends Everything {
   Map<String, dynamic> toJson() {
     return {
       'users': users.map((user) => (user as UserModel).toJson()).toList(),
-      'posts': posts.map((post) => (post as EverythingPostModel).toJson()).toList(),
-      'keywords': keywords.map((keyword) => (keyword as KeywordModel).toJson()).toList(),
+      'posts': posts
+          .map((post) => (post as EverythingPostModel).toJson())
+          .toList(),
+      'keywords': keywords
+          .map((keyword) => (keyword as KeywordModel).toJson())
+          .toList(),
       'pagination': (pagination as PaginationModel).toJson(),
     };
   }
@@ -84,11 +105,11 @@ class EverythingModel extends Everything {
 
 class KeywordModel extends Keyword {
   const KeywordModel({
-    required String keyword,
-    required String type,
-    required int postsCount,
-    required String objectId,
-  }) : super(keyword, type, postsCount, objectId);
+    required super.keyword,
+    required super.type,
+    required super.postsCount,
+    required super.objectId,
+  });
 
   factory KeywordModel.fromJson(Map<String, dynamic> json) {
     return KeywordModel(
@@ -111,10 +132,10 @@ class KeywordModel extends Keyword {
 
 class PaginationModel extends Pagination {
   const PaginationModel({
-    required int page,
-    required int limit,
-    required bool hasMore,
-  }) : super(page, limit, hasMore);
+    required super.page,
+    required super.limit,
+    required super.hasMore,
+  });
 
   factory PaginationModel.fromJson(Map<String, dynamic> json) {
     return PaginationModel(
@@ -125,55 +146,39 @@ class PaginationModel extends Pagination {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'page': page,
-      'limit': limit,
-      'hasMore': hasMore,
-    };
+    return {'page': page, 'limit': limit, 'hasMore': hasMore};
   }
 }
 
 class EverythingPostModel extends EverythingPost {
   const EverythingPostModel({
-    required String content,
-    required String authorId,
-    required String authorUsername,
-    required List<String> keywords,
-    required List<String> media,
-    required bool hasMedia,
-    required int likesCount,
-    required int commentsCount,
-    required int repostsCount,
-    required DateTime createdAt,
-    required String objectId,
-    required String id,
-    required bool isLiked,
-    required bool isReposted,
-    required bool isSaved,
-  }) : super(
-          content,
-          authorId,
-          authorUsername,
-          keywords,
-          media,
-          hasMedia,
-          likesCount,
-          commentsCount,
-          repostsCount,
-          createdAt,
-          objectId,
-          id,
-          isLiked,
-          isReposted,
-          isSaved,
-        );
+    required super.content,
+    super.authorId,
+    required super.authorUsername,
+    required super.keywords,
+    required super.media,
+    required super.hasMedia,
+    required super.likesCount,
+    required super.commentsCount,
+    required super.repostsCount,
+    required super.createdAt,
+    required super.objectId,
+    required super.id,
+    required super.isLiked,
+    required super.isReposted,
+    required super.isSaved,
+  });
 
   factory EverythingPostModel.fromJson(Map<String, dynamic> json) {
     return EverythingPostModel(
       content: json['content'] ?? '',
-      authorId: json['authorId'] ?? '',
+      authorId: json['authorId'],
       authorUsername: json['authorUsername'] ?? '',
-      keywords: List<String>.from(json['keywords'] ?? []),
+      keywords:
+          (json['keywords'] as List<dynamic>?)
+              ?.map((k) => k as String?)
+              .toList() ??
+          [],
       media: List<String>.from(json['media'] ?? []),
       hasMedia: json['hasMedia'] ?? false,
       likesCount: json['likesCount'] ?? 0,
@@ -193,7 +198,7 @@ class EverythingPostModel extends EverythingPost {
   Map<String, dynamic> toJson() {
     return {
       'content': content,
-      'authorId': authorId,
+      if (authorId != null) 'authorId': authorId,
       'authorUsername': authorUsername,
       'keywords': keywords,
       'media': media,
@@ -213,16 +218,14 @@ class EverythingPostModel extends EverythingPost {
 
 class UserModel extends User {
   const UserModel({
-    required String username,
-    required String fullName,
-    required String bio,
-    required String profileImage,
-    required int followersCount,
-    required int postsCount,
-    required String objectId,
-  }) : super(username, fullName, bio, profileImage, followersCount, postsCount, objectId);
-
-  const UserModel.empty() : super('', '', '', '', 0, 0, '');
+    required super.username,
+    required super.fullName,
+    required super.bio,
+    required super.profileImage,
+    required super.followersCount,
+    required super.postsCount,
+    required super.objectId,
+  });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -253,14 +256,18 @@ class MediaModel extends Media {
   const MediaModel({
     required List<MediaPostModel> posts,
     required PaginationModel pagination,
-  }) : super(posts, pagination);
+  }) : super(posts: posts, pagination: pagination);
 
   const MediaModel.empty()
-      : super(const [], const PaginationModel(page: 0, limit: 0, hasMore: false));
+    : super(
+        posts: const [],
+        pagination: const PaginationModel(page: 0, limit: 0, hasMore: false),
+      );
 
   factory MediaModel.fromJson(Map<String, dynamic> json) {
     return MediaModel(
-      posts: (json['posts'] as List<dynamic>?)
+      posts:
+          (json['posts'] as List<dynamic>?)
               ?.map((post) => MediaPostModel.fromJson(post))
               .toList() ??
           [],
@@ -280,36 +287,21 @@ class MediaModel extends Media {
 
 class MediaPostModel extends MediaPost {
   const MediaPostModel({
-    required String content,
-    required String authorUsername,
-    required List<String> keywords,
-    required List<String> media,
-    required bool hasMedia,
-    required int likesCount,
-    required int commentsCount,
-    required int repostsCount,
-    required DateTime createdAt,
-    required String objectId,
-    required String id,
-    required bool isLiked,
-    required bool isReposted,
-    required bool isSaved,
-  }) : super(
-          content,
-          authorUsername,
-          keywords,
-          media,
-          hasMedia,
-          likesCount,
-          commentsCount,
-          repostsCount,
-          createdAt,
-          objectId,
-          id,
-          isLiked,
-          isReposted,
-          isSaved,
-        );
+    required super.content,
+    required super.authorUsername,
+    required super.keywords,
+    required super.media,
+    required super.hasMedia,
+    required super.likesCount,
+    required super.commentsCount,
+    required super.repostsCount,
+    required super.createdAt,
+    required super.objectId,
+    required super.id,
+    required super.isLiked,
+    required super.isReposted,
+    required super.isSaved,
+  });
 
   factory MediaPostModel.fromJson(Map<String, dynamic> json) {
     return MediaPostModel(
@@ -356,14 +348,18 @@ class PeopleModel extends People {
   const PeopleModel({
     required List<UserModel> users,
     required PaginationModel pagination,
-  }) : super(users, pagination);
+  }) : super(users: users, pagination: pagination);
 
   const PeopleModel.empty()
-      : super(const [], const PaginationModel(page: 0, limit: 0, hasMore: false));
+    : super(
+        users: const [],
+        pagination: const PaginationModel(page: 0, limit: 0, hasMore: false),
+      );
 
   factory PeopleModel.fromJson(Map<String, dynamic> json) {
     return PeopleModel(
-      users: (json['users'] as List<dynamic>?)
+      users:
+          (json['users'] as List<dynamic>?)
               ?.map((user) => UserModel.fromJson(user))
               .toList() ??
           [],
@@ -382,10 +378,7 @@ class PeopleModel extends People {
 }
 
 class TopModel extends Top {
-  const TopModel({
-    required String type,
-    required DataModel data,
-  }) : super(type, data);
+  const TopModel({required super.type, required DataModel super.data});
 
   factory TopModel.fromJson(Map<String, dynamic> json) {
     return TopModel(
@@ -395,63 +388,36 @@ class TopModel extends Top {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'type': type,
-      'data': (data as DataModel).toJson(),
-    };
+    return {'type': type, 'data': (data as DataModel).toJson()};
   }
 }
 
 class DataModel extends Data {
   const DataModel({
-    required String? username,
-    required String? fullName,
-    required String? bio,
-    required String? profileImage,
-    required int? followersCount,
-    required int? postsCount,
-    required String? objectId,
-    required String? content,
-    required String? authorId,
-    required String? authorUsername,
-    required List<String>? keywords,
-    required List<String>? media,
-    required bool? hasMedia,
-    required int? likesCount,
-    required int? commentsCount,
-    required int? repostsCount,
-    required DateTime? createdAt,
-    required String? id,
-    required bool? isLiked,
-    required bool? isReposted,
-    required bool? isSaved,
-    required String? keyword,
-    required String? type,
-  }) : super(
-          username,
-          fullName,
-          bio,
-          profileImage,
-          followersCount,
-          postsCount,
-          objectId,
-          content,
-          authorId,
-          authorUsername,
-          keywords,
-          media,
-          hasMedia,
-          likesCount,
-          commentsCount,
-          repostsCount,
-          createdAt,
-          id,
-          isLiked,
-          isReposted,
-          isSaved,
-          keyword,
-          type,
-        );
+    super.username,
+    super.fullName,
+    super.bio,
+    super.profileImage,
+    super.followersCount,
+    super.postsCount,
+    required super.objectId,
+    super.content,
+    super.authorId,
+    super.authorUsername,
+    super.keywords,
+    super.media,
+    super.hasMedia,
+    super.likesCount,
+    super.commentsCount,
+    super.repostsCount,
+    super.createdAt,
+    super.id,
+    super.isLiked,
+    super.isReposted,
+    super.isSaved,
+    super.keyword,
+    super.type,
+  });
 
   factory DataModel.fromJson(Map<String, dynamic> json) {
     return DataModel(
@@ -461,16 +427,14 @@ class DataModel extends Data {
       profileImage: json['profileImage'],
       followersCount: json['followersCount'],
       postsCount: json['postsCount'],
-      objectId: json['objectId'],
+      objectId: json['objectId'] ?? '',
       content: json['content'],
       authorId: json['authorId'],
       authorUsername: json['authorUsername'],
       keywords: json['keywords'] != null
-          ? List<String>.from(json['keywords'])
+          ? List<String?>.from(json['keywords'])
           : null,
-      media: json['media'] != null
-          ? List<String>.from(json['media'])
-          : null,
+      media: json['media'] != null ? List<String>.from(json['media']) : null,
       hasMedia: json['hasMedia'],
       likesCount: json['likesCount'],
       commentsCount: json['commentsCount'],
@@ -488,30 +452,31 @@ class DataModel extends Data {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      if (username != null) 'username': username,
-      if (fullName != null) 'fullName': fullName,
-      if (bio != null) 'bio': bio,
-      if (profileImage != null) 'profileImage': profileImage,
-      if (followersCount != null) 'followersCount': followersCount,
-      if (postsCount != null) 'postsCount': postsCount,
-      if (objectId != null) 'objectId': objectId,
-      if (content != null) 'content': content,
-      if (authorId != null) 'authorId': authorId,
-      if (authorUsername != null) 'authorUsername': authorUsername,
-      if (keywords != null) 'keywords': keywords,
-      if (media != null) 'media': media,
-      if (hasMedia != null) 'hasMedia': hasMedia,
-      if (likesCount != null) 'likesCount': likesCount,
-      if (commentsCount != null) 'commentsCount': commentsCount,
-      if (repostsCount != null) 'repostsCount': repostsCount,
-      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-      if (id != null) 'id': id,
-      if (isLiked != null) 'isLiked': isLiked,
-      if (isReposted != null) 'isReposted': isReposted,
-      if (isSaved != null) 'isSaved': isSaved,
-      if (keyword != null) 'keyword': keyword,
-      if (type != null) 'type': type,
-    };
+    final Map<String, dynamic> data = {'objectId': objectId};
+
+    if (username != null) data['username'] = username;
+    if (fullName != null) data['fullName'] = fullName;
+    if (bio != null) data['bio'] = bio;
+    if (profileImage != null) data['profileImage'] = profileImage;
+    if (followersCount != null) data['followersCount'] = followersCount;
+    if (postsCount != null) data['postsCount'] = postsCount;
+    if (content != null) data['content'] = content;
+    if (authorId != null) data['authorId'] = authorId;
+    if (authorUsername != null) data['authorUsername'] = authorUsername;
+    if (keywords != null) data['keywords'] = keywords;
+    if (media != null) data['media'] = media;
+    if (hasMedia != null) data['hasMedia'] = hasMedia;
+    if (likesCount != null) data['likesCount'] = likesCount;
+    if (commentsCount != null) data['commentsCount'] = commentsCount;
+    if (repostsCount != null) data['repostsCount'] = repostsCount;
+    if (createdAt != null) data['createdAt'] = createdAt.toString();
+    if (id != null) data['id'] = id;
+    if (isLiked != null) data['isLiked'] = isLiked;
+    if (isReposted != null) data['isReposted'] = isReposted;
+    if (isSaved != null) data['isSaved'] = isSaved;
+    if (keyword != null) data['keyword'] = keyword;
+    if (type != null) data['type'] = type;
+
+    return data;
   }
 }

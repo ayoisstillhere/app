@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:app/features/home/data/models/explore_response_model.dart';
 import 'package:app/features/home/domain/entities/explore_response_entity.dart';
+import 'package:app/features/home/domain/entities/search_response_entity.dart';
 import 'package:app/features/home/presentation/widgets/reply_card.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../../../home/data/models/search_response_model.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
 import '../widgets/follow_suggestions_list.dart';
 import '../widgets/trending_topic.dart';
@@ -32,6 +34,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   late TabController controller;
   ExploreResponseEntity? exploreResponse;
   bool isExploreLoaded = false;
+  SearchResponseEntity? searchResponse;
 
   @override
   void initState() {
@@ -88,10 +91,7 @@ class _ExploreScreenState extends State<ExploreScreen>
           }
         });
       }
-
-      setState(() {
-        _isSearchQueried = true;
-      });
+      _getSearchResults(query);
     }
   }
 
@@ -124,6 +124,32 @@ class _ExploreScreenState extends State<ExploreScreen>
       );
       setState(() {
         isExploreLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _getSearchResults(String query) async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/search?query=$query"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      searchResponse = SearchResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        _isSearchQueried = true;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -423,6 +449,18 @@ class _ExploreScreenState extends State<ExploreScreen>
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
+    List<SuggestedAccount> suggestedAccounts = [];
+    for (var user in searchResponse!.people.users) {
+      suggestedAccounts.add(
+        SuggestedAccount(
+          user.username,
+          user.fullName,
+          user.bio,
+          user.profileImage,
+          user.followersCount,
+        ),
+      );
+    }
 
     return Column(
       children: [
@@ -511,30 +549,35 @@ class _ExploreScreenState extends State<ExploreScreen>
             controller: controller,
             children: [
               ListView.builder(
-                itemCount: mockReplies.length,
+                itemCount: searchResponse!.top.length,
                 itemBuilder: (context, index) {
-                  final post = mockReplies[index];
-
+                  var item = searchResponse!.top[index];
                   return GestureDetector(
                     onTap: () {},
-                    child: PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: post["userName"],
-                      authorHandle: post["handle"],
-                      imageUrl: post["userImage"],
-                      postTime: DateTime.now(),
-                      likes: post["likes"],
-                      comments: post["comments"],
-                      reposts: post["reposts"],
-                      bookmarks: post["bookmarks"],
-                      content: post["content"],
-                      pictures: post["pictures"],
-                    ),
+                    child: item.type == "post"
+                        ? PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName:
+                                "Ayodele", // TODO: Replace with actual author name
+                            authorHandle: item.data.authorUsername!,
+                            imageUrl:
+                                "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YW5pbWV8ZW58MHx8MHx8fDA%3D", // TODO: Replace with actual author image
+                            postTime: item.data.createdAt!,
+                            likes: item.data.likesCount!,
+                            comments: item.data.commentsCount!,
+                            reposts: item.data.repostsCount!,
+                            bookmarks:
+                                5, // TODO: Replace with actual bookmarks count
+                            content: item.data.content!,
+                            pictures: item.data.media!,
+                          )
+                        : Container(),
                   );
                 },
               ),
               ListView.builder(
+                // TODO: Replace with actual recent posts
                 itemCount: mockReplies.length,
                 itemBuilder: (context, index) {
                   final reply = mockReplies[index];
@@ -559,8 +602,38 @@ class _ExploreScreenState extends State<ExploreScreen>
                   );
                 },
               ),
-              Center(child: Text("Media")),
-              Center(child: Text("People")), // Fixed typo here too
+              ListView.builder(
+                itemCount: searchResponse!.media.posts.length,
+                itemBuilder: (context, index) {
+                  final item = searchResponse!.media.posts[index];
+
+                  return GestureDetector(
+                    onTap: () {},
+                    child: PostCard(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      authorName:
+                          "Ayodele", // TODO: Replace with actual author name
+                      authorHandle: item.authorUsername,
+                      imageUrl:
+                          "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YW5pbWV8ZW58MHx8MHx8fDA%3D", // TODO: Replace with actual author image
+                      postTime: item.createdAt,
+                      likes: item.likesCount,
+                      comments: item.commentsCount,
+                      reposts: item.repostsCount,
+                      bookmarks: 5, // TODO: Replace with actual bookmarks count
+                      content: item.content,
+                      pictures: item.media,
+                    ),
+                  );
+                },
+              ),
+              Column(
+                children: [
+                  SizedBox(height: getProportionateScreenHeight(20)),
+                  FollowSuggestionsList(suggestedAccounts: suggestedAccounts),
+                ],
+              ),
             ],
           ),
         ),

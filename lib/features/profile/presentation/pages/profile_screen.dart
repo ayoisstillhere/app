@@ -80,12 +80,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (response.statusCode == 200) {
       posts = PostResponseModel.fromJson(jsonDecode(response.body));
       setState(() {
-        isPostsLoaded = true;
         mediaPosts = PostResponseEntity(
           posts!.posts.where((element) => element.media.isNotEmpty).toList(),
           posts!.pagination,
           posts!.user,
         );
+        isPostsLoaded = true;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
