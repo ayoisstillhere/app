@@ -163,7 +163,7 @@ class _SignInScreenState extends State<SignInScreen> {
                               Uri.parse('$baseUrl/api/v1/auth/login'),
                               headers: {'Content-Type': 'application/json'},
                               body: jsonEncode({
-                                'email': _emailController.text.trim(),
+                                'emailOrUsername': _emailController.text.trim(),
                                 'password': _passwordController.text.trim(),
                               }),
                             );

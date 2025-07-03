@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
-import 'package:app/features/home/data/models/comment_response_model.dart';
-import 'package:app/features/home/domain/entities/comment_response_entity.dart';
 import 'package:app/features/home/domain/entities/post_response_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   PostResponseEntity? posts;
   PostResponseEntity? reposts;
-  CommentResponseEntity? comments;
+  PostResponseEntity? comments;
   PostResponseEntity? savedPosts;
   PostResponseEntity? likedPosts;
   PostResponseEntity? mediaPosts;
@@ -54,8 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool isRepostsLoaded = false;
   bool isCommentsLoaded = false;
   bool isSavedPostsLoaded = false;
-  // bool isLikedPostsLoaded = false;
-  // bool isMediaLoaded = false;
+  bool isLikedPostsLoaded = false;
 
   @override
   void initState() {
@@ -63,9 +60,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     controller = TabController(length: 6, vsync: this);
     _getPosts();
     _getReposts();
-    // _getComments();
+    _getComments();
     _getSavedPosts();
-    // _getLikedPosts();
+    _getLikedPosts();
   }
 
   @override
@@ -77,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.username}"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/posts"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -87,6 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         mediaPosts = PostResponseEntity(
           posts!.posts.where((element) => element.media.isNotEmpty).toList(),
           posts!.pagination,
+          posts!.user,
         );
       });
     } else {
@@ -107,9 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getReposts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse(
-        "$baseUrl/api/v1/posts/user/${widget.currentUser!.username}/reposts",
-      ),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/reposts"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -125,6 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             jsonDecode(
               response.body,
             )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
           ),
         ),
       );
@@ -135,12 +132,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
-        "$baseUrl/api/v1/posts/user/${widget.currentUser!.username}/comments",
+        "$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/comments",
       ),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
-      comments = CommentResponseModel.fromJson(jsonDecode(response.body));
+      comments = PostResponseModel.fromJson(jsonDecode(response.body));
       setState(() {
         isCommentsLoaded = true;
       });
@@ -161,9 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getSavedPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse(
-        "$baseUrl/api/v1/posts/user/${widget.currentUser!.username}/saves",
-      ),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/saves"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -185,8 +180,30 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // Future<void> _getLikedPosts() async {}
-  // Future<void> _getMedia() async {}
+  Future<void> _getLikedPosts() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser!.id}/likes"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      likedPosts = PostResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isLikedPostsLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -643,9 +660,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   : Center(child: CircularProgressIndicator()),
               isCommentsLoaded
                   ? ListView.builder(
-                      itemCount: comments!.comments.length,
+                      itemCount: comments!.posts.length,
                       itemBuilder: (context, index) {
-                        final comment = comments!.comments[index];
+                        final comment = comments!.posts[index];
                         return GestureDetector(
                           onTap: () {},
                           child: ReplyCard(
@@ -692,7 +709,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                       },
                     )
                   : Center(child: CircularProgressIndicator()),
-              Center(child: Text("Liked")),
+              isLikedPostsLoaded
+                  ? ListView.builder(
+                      itemCount: likedPosts!.posts.length,
+                      itemBuilder: (context, index) {
+                        final likedPost = likedPosts!.posts[index];
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName: likedPost.author.fullName,
+                            authorHandle: likedPost.author.username,
+                            imageUrl: likedPost.author.profileImage,
+                            postTime: likedPost.createdAt,
+                            likes: likedPost.count.likes,
+                            comments: likedPost.count.comments,
+                            reposts: likedPost.count.reposts,
+                            bookmarks: likedPost.count.saves,
+                            content: likedPost.content,
+                            pictures: likedPost.media,
+                          ),
+                        );
+                      },
+                    )
+                  : Center(child: CircularProgressIndicator()),
             ],
           ),
         ),

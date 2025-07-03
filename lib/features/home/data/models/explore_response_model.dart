@@ -9,25 +9,27 @@ class ExploreResponseModel extends ExploreResponseEntity {
 
   factory ExploreResponseModel.fromJson(Map<String, dynamic> json) {
     return ExploreResponseModel(
-      suggestedAccounts: (json['suggestedAccounts'] as List)
-          .map((e) => SuggestedAccountModel.fromJson(e))
-          .toList(),
-      trending: (json['trending'] as List)
-          .map((e) => TrendingModel.fromJson(e))
-          .toList(),
-      popularKeywords: (json['popularKeywords'] as List)
-          .map((e) => PopularKeywordModel.fromJson(e))
-          .toList(),
+      suggestedAccounts: (json['suggestedAccounts'] as List<dynamic>?)
+          ?.map((e) => SuggestedAccountModel.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      trending: (json['trending'] as List<dynamic>?)
+          ?.map((e) => TrendingModel.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      popularKeywords: (json['popularKeywords'] as List<dynamic>?)
+          ?.map((e) => PopularKeywordModel.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'suggestedAccounts':
-          suggestedAccounts.map((e) => (e as SuggestedAccountModel).toJson()).toList(),
+      'suggestedAccounts': suggestedAccounts
+          .map((e) => (e as SuggestedAccountModel).toJson())
+          .toList(),
       'trending': trending.map((e) => (e as TrendingModel).toJson()).toList(),
-      'popularKeywords':
-          popularKeywords.map((e) => (e as PopularKeywordModel).toJson()).toList(),
+      'popularKeywords': popularKeywords
+          .map((e) => (e as PopularKeywordModel).toJson())
+          .toList(),
     };
   }
 }
@@ -43,11 +45,11 @@ class SuggestedAccountModel extends SuggestedAccount {
 
   factory SuggestedAccountModel.fromJson(Map<String, dynamic> json) {
     return SuggestedAccountModel(
-      username: json['username'],
-      fullName: json['fullName'],
-      bio: json['bio'],
-      profileImage: json['profileImage'],
-      followersCount: json['followersCount'],
+      username: json['username'] ?? '',
+      fullName: json['fullName'] ?? '',
+      bio: json['bio'] ?? '',
+      profileImage: json['profileImage'] ?? '',
+      followersCount: json['followersCount']?.toInt() ?? 0,
     );
   }
 
@@ -71,18 +73,14 @@ class PopularKeywordModel extends PopularKeyword {
 
   factory PopularKeywordModel.fromJson(Map<String, dynamic> json) {
     return PopularKeywordModel(
-      keyword: json['keyword'],
-      type: json['type'],
-      postsCount: json['postsCount'],
+      keyword: json['keyword'] ?? '',
+      type: json['type'] ?? '',
+      postsCount: json['postsCount']?.toInt() ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'keyword': keyword,
-      'type': type,
-      'postsCount': postsCount,
-    };
+    return {'keyword': keyword, 'type': type, 'postsCount': postsCount};
   }
 }
 
@@ -98,12 +96,12 @@ class TrendingModel extends Trending {
 
   factory TrendingModel.fromJson(Map<String, dynamic> json) {
     return TrendingModel(
-      id: json['id'],
-      content: json['content'],
-      media: List<String>.from(json['media'] ?? []),
-      author: AuthorModel.fromJson(json['author']),
-      createdAt: DateTime.parse(json['createdAt']),
-      count: CountModel.fromJson(json['count']),
+      id: json['id'] ?? '',
+      content: json['content'] ?? '',
+      media: List<String>.from(json['media']?.cast<String>() ?? []),
+      author: AuthorModel.fromJson(json['author'] ?? {}),
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      count: CountModel.fromJson(json['count'] ?? {}),
     );
   }
 
@@ -128,9 +126,9 @@ class AuthorModel extends Author {
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
     return AuthorModel(
-      username: json['username'],
-      fullName: json['fullName'],
-      profileImage: json['profileImage'],
+      username: json['username'] ?? '',
+      fullName: json['fullName'] ?? '',
+      profileImage: json['profileImage'] ?? '',
     );
   }
 
@@ -153,10 +151,10 @@ class CountModel extends Count {
 
   factory CountModel.fromJson(Map<String, dynamic> json) {
     return CountModel(
-      likes: json['likes'] ?? 0,
-      comments: json['comments'] ?? 0,
-      reposts: json['reposts'] ?? 0,
-      saves: json['saves'] ?? 0,
+      likes: json['likes']?.toInt() ?? 0,
+      comments: json['comments']?.toInt() ?? 0,
+      reposts: json['reposts']?.toInt() ?? 0,
+      saves: json['saves']?.toInt() ?? 0,
     );
   }
 
@@ -169,3 +167,4 @@ class CountModel extends Count {
     };
   }
 }
+

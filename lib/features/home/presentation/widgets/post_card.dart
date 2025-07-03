@@ -23,6 +23,7 @@ class PostCard extends StatefulWidget {
     required this.bookmarks,
     required this.content,
     this.pictures = const [],
+    this.forSearch = false,
   });
 
   final Color dividerColor;
@@ -37,6 +38,7 @@ class PostCard extends StatefulWidget {
   final int bookmarks;
   final String content;
   final List<dynamic> pictures;
+  final bool forSearch;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -61,7 +63,9 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
+      width: widget.forSearch
+          ? getProportionateScreenWidth(391)
+          : double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: getProportionateScreenWidth(18),
         vertical: getProportionateScreenHeight(10),

@@ -1,3 +1,4 @@
+import 'package:app/features/home/domain/entities/explore_response_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -5,7 +6,8 @@ import '../../../../constants.dart';
 import '../../../../size_config.dart';
 
 class FollowSuggestionsList extends StatelessWidget {
-  const FollowSuggestionsList({super.key});
+  const FollowSuggestionsList({super.key, required this.suggestedAccounts});
+  final List<SuggestedAccount> suggestedAccounts;
 
   @override
   Widget build(BuildContext context) {
@@ -17,14 +19,14 @@ class FollowSuggestionsList extends StatelessWidget {
       child: ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: 3,
+        itemCount: suggestedAccounts.length,
         itemBuilder: (context, index) {
           return FollowSuggestion(
-            image: mockFollowerSuggestions[index]["userImage"],
-            name: mockFollowerSuggestions[index]["userName"],
-            followerCount: mockFollowerSuggestions[index]["followers"],
-            handle: mockFollowerSuggestions[index]["handle"],
-            bio: mockFollowerSuggestions[index]["bio"],
+            image: suggestedAccounts[index].profileImage,
+            name: suggestedAccounts[index].fullName,
+            followerCount: suggestedAccounts[index].followersCount,
+            handle: suggestedAccounts[index].username,
+            bio: suggestedAccounts[index].bio,
           );
         },
       ),
@@ -65,10 +67,12 @@ class FollowSuggestion extends StatelessWidget {
                   width: getProportionateScreenWidth(25),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(image),
-                      fit: BoxFit.cover,
-                    ),
+                    image: image.isEmpty
+                        ? null
+                        : DecorationImage(
+                            image: NetworkImage(image),
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
               ),

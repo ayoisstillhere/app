@@ -4,7 +4,8 @@ class PostResponseModel extends PostResponseEntity {
   const PostResponseModel({
     required List<PostModel> posts,
     required PaginationModel pagination,
-  }) : super(posts, pagination);
+    required User user,
+  }) : super(posts, pagination, user);
 
   factory PostResponseModel.fromJson(Map<String, dynamic> json) {
     return PostResponseModel(
@@ -12,6 +13,9 @@ class PostResponseModel extends PostResponseEntity {
           .map((post) => PostModel.fromJson(post))
           .toList(),
       pagination: PaginationModel.fromJson(json['pagination']),
+      user: json['user'] == null 
+          ? const UserModel.empty() 
+          : UserModel.fromJson(json['user']),
     );
   }
 
@@ -19,6 +23,7 @@ class PostResponseModel extends PostResponseEntity {
     return {
       'posts': posts.map((post) => (post as PostModel).toJson()).toList(),
       'pagination': (pagination as PaginationModel).toJson(),
+      'user': (user as UserModel).toJson(),
     };
   }
 }
@@ -32,9 +37,9 @@ class PaginationModel extends Pagination {
 
   factory PaginationModel.fromJson(Map<String, dynamic> json) {
     return PaginationModel(
-      page: json['page'],
-      limit: json['limit'],
-      hasMore: json['hasMore'],
+      page: json['page'] ?? 0,
+      limit: json['limit'] ?? 10,
+      hasMore: json['hasMore'] ?? false,
     );
   }
 
@@ -56,6 +61,10 @@ class PostModel extends Post {
     required bool isLiked,
     required bool isReposted,
     required bool isSaved,
+    required String authorId,
+    required bool isComment,
+    required String? parentPostId,
+    required ParentPost? parentPost,
   }) : super(
          id,
          content,
@@ -68,21 +77,35 @@ class PostModel extends Post {
          isLiked,
          isReposted,
          isSaved,
+         authorId,
+         isComment,
+         parentPostId,
+         parentPost,
        );
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
-      id: json['id'],
-      content: json['content'],
+      id: json['id'] ?? '',
+      content: json['content'] ?? '',
       media: List<String>.from(json['media'] ?? []),
       links: List<String>.from(json['links'] ?? []),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      author: AuthorModel.fromJson(json['author']),
-      count: CountModel.fromJson(json['_count']),
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
+      author: AuthorModel.fromJson(json['author'] ?? {}),
+      count: CountModel.fromJson(json['_count'] ?? {}),
       isLiked: json['isLiked'] ?? false,
       isReposted: json['isReposted'] ?? false,
       isSaved: json['isSaved'] ?? false,
+      authorId: json['authorId'] ?? '',
+      isComment: json['isComment'] ?? false,
+      parentPostId: json['parentPostId'], // Can be null
+      parentPost: json['parentPost'] != null 
+          ? ParentPostModel.fromJson(json['parentPost'])
+          : null,
     );
   }
 
@@ -99,27 +122,37 @@ class PostModel extends Post {
       'isLiked': isLiked,
       'isReposted': isReposted,
       'isSaved': isSaved,
+      'authorId': authorId,
+      'isComment': isComment,
+      if (parentPostId != null) 'parentPostId': parentPostId,
+      if (parentPost != null) 'parentPost': (parentPost as ParentPostModel).toJson(),
     };
   }
 }
 
 class AuthorModel extends Author {
   const AuthorModel({
+    required String id,
     required String username,
     required String fullName,
     required String profileImage,
-  }) : super(username, fullName, profileImage);
+  }) : super(id, username, fullName, profileImage);
+
+  // Empty constructor for null handling
+  const AuthorModel.empty() : super('', '', '', '');
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
     return AuthorModel(
-      username: json['username'],
-      fullName: json['fullName'],
-      profileImage: json['profileImage'],
+      id: json['id'] ?? '',
+      username: json['username'] ?? '',
+      fullName: json['fullName'] ?? '',
+      profileImage: json['profileImage'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'username': username,
       'fullName': fullName,
       'profileImage': profileImage,
@@ -150,6 +183,96 @@ class CountModel extends Count {
       'comments': comments,
       'reposts': reposts,
       'saves': saves,
+    };
+  }
+}
+
+class UserModel extends User {
+  const UserModel({
+    required String id,
+    required String username,
+    required String fullName,
+    required String profileImage,
+  }) : super(id, username, fullName, profileImage);
+
+  // Empty constructor for null handling
+  const UserModel.empty() : super('', '', '', '');
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] ?? '',
+      username: json['username'] ?? '',
+      fullName: json['fullName'] ?? '',
+      profileImage: json['profileImage'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'fullName': fullName,
+      'profileImage': profileImage,
+    };
+  }
+}
+
+class ParentPostModel extends ParentPost {
+  const ParentPostModel({
+    required String id,
+    required String content,
+    required List<String> media,
+    required List<String> links,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required AuthorModel author,
+    required String authorId,
+    required bool isComment,
+    required String? parentPostId,
+  }) : super(
+         id,
+         content,
+         media,
+         links,
+         authorId,
+         isComment,
+         parentPostId,
+         createdAt,
+         updatedAt,
+         author,
+       );
+
+  factory ParentPostModel.fromJson(Map<String, dynamic> json) {
+    return ParentPostModel(
+      id: json['id'] ?? '',
+      content: json['content'] ?? '',
+      media: List<String>.from(json['media'] ?? []),
+      links: List<String>.from(json['links'] ?? []),
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
+      author: AuthorModel.fromJson(json['author'] ?? {}),
+      authorId: json['authorId'] ?? '',
+      isComment: json['isComment'] ?? false,
+      parentPostId: json['parentPostId'], // Can be null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'content': content,
+      'media': media,
+      'links': links,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'author': (author as AuthorModel).toJson(),
+      'authorId': authorId,
+      'isComment': isComment,
+      if (parentPostId != null) 'parentPostId': parentPostId,
     };
   }
 }

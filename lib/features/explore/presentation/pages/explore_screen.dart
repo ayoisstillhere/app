@@ -1,6 +1,12 @@
+import 'dart:convert';
+
+import 'package:app/features/home/data/models/explore_response_model.dart';
+import 'package:app/features/home/domain/entities/explore_response_entity.dart';
 import 'package:app/features/home/presentation/widgets/reply_card.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -24,6 +30,8 @@ class _ExploreScreenState extends State<ExploreScreen>
   bool _isSearchFocused = false;
   bool _isSearchQueried = false;
   late TabController controller;
+  ExploreResponseEntity? exploreResponse;
+  bool isExploreLoaded = false;
 
   @override
   void initState() {
@@ -31,6 +39,7 @@ class _ExploreScreenState extends State<ExploreScreen>
     _searchFocusNode.addListener(_onSearchFocusChange);
     controller = TabController(length: 4, vsync: this);
     widget.onExploreButtonPressed = resetExplore;
+    _getExploreContent();
   }
 
   @override
@@ -101,6 +110,34 @@ class _ExploreScreenState extends State<ExploreScreen>
     setState(() {
       mockRecentSearches.clear();
     });
+  }
+
+  Future<void> _getExploreContent() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/search/explore"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      exploreResponse = ExploreResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+      setState(() {
+        isExploreLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -269,87 +306,109 @@ class _ExploreScreenState extends State<ExploreScreen>
     Color dividerColor,
     Color iconColor,
   ) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: getProportionateScreenHeight(8)),
-          FollowSuggestionsList(),
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: getProportionateScreenWidth(16),
-            ),
-            child: Text(
-              "Trending",
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: getProportionateScreenHeight(16),
-              ),
-            ),
-          ),
-          SizedBox(height: getProportionateScreenHeight(23)),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+    return isExploreLoaded
+        ? SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (var image in trendingImages)
-                  Container(
-                    width: getProportionateScreenWidth(159),
-                    height: getProportionateScreenHeight(161),
-                    margin: EdgeInsets.only(
-                      right: getProportionateScreenWidth(10),
+                SizedBox(height: getProportionateScreenHeight(8)),
+                FollowSuggestionsList(
+                  suggestedAccounts: exploreResponse!.suggestedAccounts,
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: getProportionateScreenWidth(16),
+                  ),
+                  child: Text(
+                    "Trending",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: getProportionateScreenHeight(16),
                     ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        getProportionateScreenWidth(10),
-                      ),
-                      image: DecorationImage(
-                        image: NetworkImage(image),
-                        fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(height: getProportionateScreenHeight(23)),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (var image in exploreResponse!.trending[0].media)
+                        Container(
+                          width: getProportionateScreenWidth(159),
+                          height: getProportionateScreenHeight(161),
+                          margin: EdgeInsets.only(
+                            right: getProportionateScreenWidth(10),
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              getProportionateScreenWidth(10),
+                            ),
+                            image: DecorationImage(
+                              image: NetworkImage(image),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: getProportionateScreenHeight(52)),
+                SizedBox(height: getProportionateScreenHeight(23)),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(
+                      exploreResponse!.trending.length,
+                      (index) => PostCard(
+                        dividerColor: dividerColor,
+                        iconColor: iconColor,
+                        imageUrl: exploreResponse!
+                            .trending[index]
+                            .author
+                            .profileImage,
+                        postTime: exploreResponse!.trending[index].createdAt,
+                        likes: exploreResponse!.trending[index].count.likes,
+                        comments:
+                            exploreResponse!.trending[index].count.comments,
+                        reposts: exploreResponse!.trending[index].count.reposts,
+                        bookmarks: exploreResponse!.trending[index].count.saves,
+                        content: exploreResponse!.trending[index].content,
+                        authorHandle:
+                            exploreResponse!.trending[index].author.username,
+                        authorName:
+                            exploreResponse!.trending[index].author.fullName,
+                        pictures: exploreResponse!.trending[index].media,
+                        forSearch: true,
                       ),
                     ),
                   ),
+                ),
+                SizedBox(height: getProportionateScreenHeight(54)),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: getProportionateScreenWidth(19),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: List.generate(
+                      mockTrendingTopics.length,
+                      (index) => Column(
+                        children: [
+                          TrendingTopic(
+                            topic: mockTrendingTopics[index]["topic"],
+                            postNumber: mockTrendingTopics[index]["postNumber"],
+                          ),
+                          SizedBox(height: getProportionateScreenWidth(16)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: getProportionateScreenHeight(87)),
               ],
             ),
-          ),
-          SizedBox(height: getProportionateScreenHeight(52)),
-          ReplyCard(
-            dividerColor: dividerColor,
-            iconColor: iconColor,
-            replyerName: mockReplies.first["userName"],
-            replyerHandle: mockReplies.first["handle"],
-            imageUrl: mockReplies.first["userImage"],
-            postTime: DateTime.now(),
-            likes: mockReplies.first["likes"],
-            comments: mockReplies.first["comments"],
-            reposts: mockReplies.first["reposts"],
-            bookmarks: mockReplies.first["bookmarks"],
-            content: mockReplies.first["content"],
-            authorHandle: mockReplies.first["parentPostId"],
-          ),
-          SizedBox(height: getProportionateScreenHeight(54)),
-          Padding(
-            padding: EdgeInsets.only(left: getProportionateScreenWidth(19)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: List.generate(
-                mockTrendingTopics.length,
-                (index) => Column(
-                  children: [
-                    TrendingTopic(
-                      topic: mockTrendingTopics[index]["topic"],
-                      postNumber: mockTrendingTopics[index]["postNumber"],
-                    ),
-                    SizedBox(height: getProportionateScreenWidth(16)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: getProportionateScreenHeight(87)),
-        ],
-      ),
-    );
+          )
+        : const Center(child: CircularProgressIndicator());
   }
 
   Widget _buildSearchResultsView(BuildContext context) {

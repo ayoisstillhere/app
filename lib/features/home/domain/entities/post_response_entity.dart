@@ -3,11 +3,12 @@ import 'package:equatable/equatable.dart';
 class PostResponseEntity extends Equatable {
   final List<Post> posts;
   final Pagination pagination;
+  final User user;
 
-  const PostResponseEntity(this.posts, this.pagination);
+  const PostResponseEntity(this.posts, this.pagination, this.user);
 
   @override
-  List<Object?> get props => [posts, pagination];
+  List<Object?> get props => [posts, pagination, user];
 }
 
 class Pagination extends Equatable {
@@ -26,9 +27,13 @@ class Post extends Equatable {
   final String content;
   final List<String> media;
   final List<String> links;
+  final String authorId;
+  final bool isComment;
+  final String? parentPostId; // Made nullable
   final DateTime createdAt;
   final DateTime updatedAt;
   final Author author;
+  final ParentPost? parentPost; // Made nullable
   final Count count;
   final bool isLiked;
   final bool isReposted;
@@ -46,7 +51,16 @@ class Post extends Equatable {
     this.isLiked,
     this.isReposted,
     this.isSaved,
+    this.authorId,
+    this.isComment,
+    this.parentPostId,
+    this.parentPost,
   );
+
+  // Helper methods to check post type
+  bool get isTopLevelPost => !isComment && parentPostId == null;
+  bool get isReply => isComment && parentPostId != null;
+  bool get hasParentPost => parentPost != null;
 
   @override
   List<Object?> get props => [
@@ -61,18 +75,23 @@ class Post extends Equatable {
     isLiked,
     isReposted,
     isSaved,
+    authorId,
+    isComment,
+    parentPostId,
+    parentPost,
   ];
 }
 
 class Author extends Equatable {
+  final String id;
   final String username;
   final String fullName;
   final String profileImage;
 
-  const Author(this.username, this.fullName, this.profileImage);
+  const Author(this.id, this.username, this.fullName, this.profileImage);
 
   @override
-  List<Object?> get props => [username, fullName, profileImage];
+  List<Object?> get props => [id, username, fullName, profileImage];
 }
 
 class Count extends Equatable {
@@ -85,4 +104,56 @@ class Count extends Equatable {
 
   @override
   List<Object?> get props => [likes, comments, reposts, saves];
+}
+
+class ParentPost extends Equatable {
+  final String id;
+  final String content;
+  final List<String> media;
+  final List<String> links;
+  final String authorId;
+  final bool isComment;
+  final String? parentPostId; // Made nullable
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final Author author;
+
+  const ParentPost(
+    this.id,
+    this.content,
+    this.media,
+    this.links,
+    this.authorId,
+    this.isComment,
+    this.parentPostId,
+    this.createdAt,
+    this.updatedAt,
+    this.author,
+  );
+
+  @override
+  List<Object?> get props => [
+    id,
+    content,
+    media,
+    links,
+    authorId,
+    isComment,
+    parentPostId,
+    createdAt,
+    updatedAt,
+    author,
+  ];
+}
+
+class User extends Equatable {
+  final String id;
+  final String username;
+  final String fullName;
+  final String profileImage;
+
+  const User(this.id, this.username, this.fullName, this.profileImage);
+
+  @override
+  List<Object?> get props => [id, username, fullName, profileImage];
 }
