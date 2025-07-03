@@ -94,6 +94,7 @@ class _PostCardState extends State<PostCard> {
                         followsMe: true,
                         isVerified: true,
                         currentUser: widget.currentUser,
+                        otherUserName: widget.authorHandle,
                       ),
                     ),
                   );

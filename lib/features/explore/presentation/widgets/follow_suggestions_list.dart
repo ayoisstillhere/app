@@ -131,7 +131,7 @@ class FollowSuggestion extends StatelessWidget {
           SizedBox(height: getProportionateScreenHeight(7)),
           Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: getProportionateScreenWidth(40),
+              horizontal: getProportionateScreenWidth(35),
             ),
             child: Text(bio),
           ),

@@ -1,14 +1,15 @@
 import 'dart:convert';
 
-import 'package:app/features/auth/domain/entities/user_entity.dart';
-import 'package:app/features/home/domain/entities/post_response_entity.dart';
-import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:app/components/social_text.dart';
+import 'package:app/features/auth/data/models/user_model.dart';
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/home/domain/entities/post_response_entity.dart';
+import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:app/size_config.dart';
 
 import '../../../../constants.dart';
@@ -18,19 +19,21 @@ import '../../../home/presentation/widgets/post_Card.dart';
 import '../../../home/presentation/widgets/reply_card.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({
+  ProfileScreen({
     super.key,
     required this.iAmFollowing,
     required this.followsMe,
     required this.isVerified,
     this.isFromNav = false,
     required this.currentUser,
+    this.otherUserName,
   });
   final bool iAmFollowing;
   final bool followsMe;
   final bool isVerified;
   final bool isFromNav;
-  final UserEntity currentUser;
+  UserEntity currentUser;
+  String? otherUserName;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -53,17 +56,25 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool isCommentsLoaded = false;
   bool isSavedPostsLoaded = false;
   bool isLikedPostsLoaded = false;
+  bool isOtherUserLoaded = false;
 
   @override
   void initState() {
     super.initState();
     controller = TabController(length: 6, vsync: this);
     if (mounted) {
-      _getPosts();
-      _getReposts();
-      _getComments();
-      _getSavedPosts();
-      _getLikedPosts();
+      if (widget.otherUserName != null) {
+        _fetchOtherUser();
+      } else {
+        setState(() {
+          isOtherUserLoaded = true;
+        });
+        _getPosts();
+        _getReposts();
+        _getComments();
+        _getSavedPosts();
+        _getLikedPosts();
+      }
     }
   }
 
@@ -133,9 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getComments() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse(
-        "$baseUrl/api/v1/posts/user/${widget.currentUser.id}/comments",
-      ),
+      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/comments"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -176,6 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             jsonDecode(
               response.body,
             )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
           ),
         ),
       );
@@ -201,6 +211,43 @@ class _ProfileScreenState extends State<ProfileScreen>
             jsonDecode(
               response.body,
             )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _fetchOtherUser() async {
+    if (widget.otherUserName == null) return;
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/user/profile/${widget.otherUserName}"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      if (mounted) {
+        setState(() {
+          widget.currentUser = UserModel.fromJson(jsonDecode(response.body));
+        });
+        _getPosts();
+        _getReposts();
+        _getComments();
+        _getSavedPosts();
+        _getLikedPosts();
+        setState(() {
+          isOtherUserLoaded = true;
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
           ),
         ),
       );
@@ -224,527 +271,566 @@ class _ProfileScreenState extends State<ProfileScreen>
       });
     }
     return Scaffold(
-      body: SafeArea(
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    _buildHeader(iconColor),
-                    SizedBox(height: getProportionateScreenHeight(8)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: getProportionateScreenWidth(24),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: getProportionateScreenHeight(68),
-                            width: getProportionateScreenWidth(68),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: NetworkImage(
-                                  widget.currentUser.profileImage,
-                                ),
-                                fit: BoxFit.cover,
-                              ),
-                              border: Border.all(width: 1, color: kPrimPurple),
-                            ),
-                          ),
-                          SizedBox(width: getProportionateScreenWidth(6)),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    widget.currentUser.fullName,
-                                    style: TextStyle(
-                                      fontSize: getProportionateScreenHeight(
-                                        16,
-                                      ),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  if (widget.isVerified)
-                                    SvgPicture.asset(
-                                      "assets/icons/verified.svg",
-                                      height: getProportionateScreenHeight(
-                                        19.14,
-                                      ),
-                                      width: getProportionateScreenWidth(19.14),
-                                    ),
-                                ],
-                              ),
-                              Text(
-                                "@${widget.currentUser.username}",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(13),
-                                  color: kProfileText,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                NumberFormat.compact().format(
-                                  widget.currentUser.followerCount,
-                                ),
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(16),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                "Followers",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(12),
-                                  fontWeight: FontWeight.w500,
-                                  color: kProfileText,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: getProportionateScreenWidth(10)),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                NumberFormat.compact().format(
-                                  widget.currentUser.followingCount,
-                                ),
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(16),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                "Following",
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(12),
-                                  fontWeight: FontWeight.w500,
-                                  color: kProfileText,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: getProportionateScreenHeight(18)),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        left: getProportionateScreenWidth(30),
-                      ),
+      body: isOtherUserLoaded
+          ? SafeArea(
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/map-pin.svg",
-                                height: getProportionateScreenHeight(18),
-                                width: getProportionateScreenWidth(18),
-                              ),
-                              SizedBox(width: getProportionateScreenWidth(10)),
-                              Text(
-                                widget.currentUser.location,
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(12),
-                                  fontWeight: FontWeight.w500,
-                                  color: kProfileText,
+                          _buildHeader(iconColor),
+                          SizedBox(height: getProportionateScreenHeight(8)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: getProportionateScreenWidth(24),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  height: getProportionateScreenHeight(68),
+                                  width: getProportionateScreenWidth(68),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                        widget.currentUser.profileImage,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                    border: Border.all(
+                                      width: 1,
+                                      color: kPrimPurple,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: getProportionateScreenWidth(35)),
-                              SvgPicture.asset(
-                                "assets/icons/calendar.svg",
-                                height: getProportionateScreenHeight(18),
-                                width: getProportionateScreenWidth(18),
-                              ),
-                              SizedBox(width: getProportionateScreenWidth(10)),
-                              Text(
-                                'Since ${DateFormat('MMMM yyyy').format(widget.currentUser.dateJoined)}',
-                                style: TextStyle(
-                                  fontSize: getProportionateScreenHeight(12),
-                                  fontWeight: FontWeight.w500,
-                                  color: kProfileText,
+                                SizedBox(width: getProportionateScreenWidth(6)),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          widget.currentUser.fullName,
+                                          style: TextStyle(
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  16,
+                                                ),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (widget.isVerified)
+                                          SvgPicture.asset(
+                                            "assets/icons/verified.svg",
+                                            height:
+                                                getProportionateScreenHeight(
+                                                  19.14,
+                                                ),
+                                            width: getProportionateScreenWidth(
+                                              19.14,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    Text(
+                                      "@${widget.currentUser.username}",
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          13,
+                                        ),
+                                        color: kProfileText,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                Spacer(),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      NumberFormat.compact().format(
+                                        widget.currentUser.followerCount,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          16,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Followers",
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          12,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: kProfileText,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  width: getProportionateScreenWidth(10),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      NumberFormat.compact().format(
+                                        widget.currentUser.followingCount,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          16,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Following",
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          12,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: kProfileText,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                          SizedBox(height: getProportionateScreenHeight(9)),
-                          SocialText(
-                            text: widget.currentUser.bio,
-                            baseStyle: Theme.of(context).textTheme.bodyLarge!
-                                .copyWith(
-                                  fontSize: getProportionateScreenHeight(12),
-                                  fontWeight: FontWeight.w500,
+                          SizedBox(height: getProportionateScreenHeight(18)),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: getProportionateScreenWidth(30),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      "assets/icons/map-pin.svg",
+                                      height: getProportionateScreenHeight(18),
+                                      width: getProportionateScreenWidth(18),
+                                    ),
+                                    SizedBox(
+                                      width: getProportionateScreenWidth(10),
+                                    ),
+                                    Text(
+                                      widget.currentUser.location,
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          12,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: kProfileText,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: getProportionateScreenWidth(35),
+                                    ),
+                                    SvgPicture.asset(
+                                      "assets/icons/calendar.svg",
+                                      height: getProportionateScreenHeight(18),
+                                      width: getProportionateScreenWidth(18),
+                                    ),
+                                    SizedBox(
+                                      width: getProportionateScreenWidth(10),
+                                    ),
+                                    Text(
+                                      'Since ${DateFormat('MMMM yyyy').format(widget.currentUser.dateJoined)}',
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          12,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: kProfileText,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                                SizedBox(
+                                  height: getProportionateScreenHeight(9),
+                                ),
+                                SocialText(
+                                  text: widget.currentUser.bio,
+                                  baseStyle: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge!
+                                      .copyWith(
+                                        fontSize: getProportionateScreenHeight(
+                                          12,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
+                          SizedBox(height: getProportionateScreenHeight(18)),
+                          Padding(
+                            padding: canMessage
+                                ? EdgeInsets.symmetric(
+                                    horizontal: getProportionateScreenWidth(20),
+                                  )
+                                : EdgeInsets.symmetric(
+                                    horizontal: getProportionateScreenWidth(30),
+                                  ),
+                            child: Row(
+                              children: [
+                                if (widget.currentUser.isOwnProfile)
+                                  InkWell(
+                                    onTap: () {},
+                                    child: Container(
+                                      height: getProportionateScreenHeight(27),
+                                      width: canMessage
+                                          ? getProportionateScreenWidth(158.5)
+                                          : getProportionateScreenWidth(163.5),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          width: 1,
+                                          color: kProfileText,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text("Edit Profile"),
+                                      ),
+                                    ),
+                                  ),
+                                if (!widget.currentUser.isOwnProfile &&
+                                    !widget.iAmFollowing &&
+                                    !widget.followsMe)
+                                  InkWell(
+                                    onTap: () {},
+                                    child: Container(
+                                      height: getProportionateScreenHeight(27),
+                                      width: canMessage
+                                          ? getProportionateScreenWidth(158.5)
+                                          : getProportionateScreenWidth(163.5),
+                                      decoration: BoxDecoration(
+                                        color: kAccentColor,
+                                        borderRadius: BorderRadius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                      child: Center(child: Text("Follow")),
+                                    ),
+                                  ),
+                                if (!widget.currentUser.isOwnProfile &&
+                                    widget.iAmFollowing)
+                                  InkWell(
+                                    onTap: () {},
+                                    child: Container(
+                                      height: getProportionateScreenHeight(27),
+                                      width: canMessage
+                                          ? getProportionateScreenWidth(158.5)
+                                          : getProportionateScreenWidth(163.5),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          width: 1,
+                                          color: kProfileText,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                      child: Center(child: Text("Unfollow")),
+                                    ),
+                                  ),
+                                if (!widget.currentUser.isOwnProfile &&
+                                    widget.followsMe &&
+                                    !widget.iAmFollowing)
+                                  InkWell(
+                                    onTap: () {},
+                                    child: Container(
+                                      height: getProportionateScreenHeight(27),
+                                      width: canMessage
+                                          ? getProportionateScreenWidth(158.5)
+                                          : getProportionateScreenWidth(163.5),
+                                      decoration: BoxDecoration(
+                                        color: kAccentColor,
+                                        borderRadius: BorderRadius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                      child: Center(child: Text("Follow Back")),
+                                    ),
+                                  ),
+                                Spacer(),
+                                InkWell(
+                                  onTap: () {},
+                                  child: Container(
+                                    height: getProportionateScreenHeight(27),
+                                    width: canMessage
+                                        ? getProportionateScreenWidth(158.5)
+                                        : getProportionateScreenWidth(163.5),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        width: 1,
+                                        color: kProfileText,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        getProportionateScreenWidth(10),
+                                      ),
+                                    ),
+                                    child: Center(child: Text("Share Profile")),
+                                  ),
+                                ),
+                                if (!widget.currentUser.isOwnProfile &&
+                                    (widget.iAmFollowing || widget.followsMe))
+                                  Spacer(),
+                                if (canMessage)
+                                  InkWell(
+                                    onTap: () {},
+                                    child: SvgPicture.asset(
+                                      "assets/icons/mail.svg",
+                                      height: getProportionateScreenHeight(24),
+                                      width: getProportionateScreenWidth(24),
+                                      colorFilter: ColorFilter.mode(
+                                        kProfileText,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(18)),
                         ],
                       ),
                     ),
-                    SizedBox(height: getProportionateScreenHeight(18)),
-                    Padding(
-                      padding: canMessage
-                          ? EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenWidth(20),
-                            )
-                          : EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenWidth(30),
-                            ),
-                      child: Row(
-                        children: [
-                          if (widget.currentUser.isOwnProfile)
-                            InkWell(
-                              onTap: () {},
-                              child: Container(
-                                height: getProportionateScreenHeight(27),
-                                width: canMessage
-                                    ? getProportionateScreenWidth(158.5)
-                                    : getProportionateScreenWidth(163.5),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    width: 1,
-                                    color: kProfileText,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    getProportionateScreenWidth(10),
-                                  ),
-                                ),
-                                child: Center(child: Text("Edit Profile")),
+                    SliverPersistentHeader(
+                      delegate: _SliverAppBarDelegate(
+                        TabBar(
+                          controller: controller,
+                          tabAlignment: TabAlignment.start,
+                          isScrollable: true,
+                          indicatorColor: kLightPurple,
+                          dividerColor: dividerColor,
+                          labelStyle: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w500),
+                          unselectedLabelStyle: Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w500),
+                          tabs: [
+                            Tab(
+                              child: SizedBox(
+                                width: getProportionateScreenWidth(70),
+                                child: Center(child: Text("Posts")),
                               ),
                             ),
-                          if (!widget.currentUser.isOwnProfile &&
-                              !widget.iAmFollowing &&
-                              !widget.followsMe)
-                            InkWell(
-                              onTap: () {},
-                              child: Container(
-                                height: getProportionateScreenHeight(27),
-                                width: canMessage
-                                    ? getProportionateScreenWidth(158.5)
-                                    : getProportionateScreenWidth(163.5),
-                                decoration: BoxDecoration(
-                                  color: kAccentColor,
-                                  borderRadius: BorderRadius.circular(
-                                    getProportionateScreenWidth(10),
-                                  ),
-                                ),
-                                child: Center(child: Text("Follow")),
+                            Tab(
+                              child: SizedBox(
+                                width: getProportionateScreenWidth(70),
+                                child: Center(child: Text("Reposts")),
                               ),
                             ),
-                          if (!widget.currentUser.isOwnProfile &&
-                              widget.iAmFollowing)
-                            InkWell(
-                              onTap: () {},
-                              child: Container(
-                                height: getProportionateScreenHeight(27),
-                                width: canMessage
-                                    ? getProportionateScreenWidth(158.5)
-                                    : getProportionateScreenWidth(163.5),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    width: 1,
-                                    color: kProfileText,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    getProportionateScreenWidth(10),
-                                  ),
-                                ),
-                                child: Center(child: Text("Unfollow")),
+                            Tab(
+                              child: SizedBox(
+                                width: getProportionateScreenWidth(70),
+                                child: Center(child: Text("Media")),
                               ),
                             ),
-                          if (!widget.currentUser.isOwnProfile &&
-                              widget.followsMe &&
-                              !widget.iAmFollowing)
-                            InkWell(
-                              onTap: () {},
-                              child: Container(
-                                height: getProportionateScreenHeight(27),
-                                width: canMessage
-                                    ? getProportionateScreenWidth(158.5)
-                                    : getProportionateScreenWidth(163.5),
-                                decoration: BoxDecoration(
-                                  color: kAccentColor,
-                                  borderRadius: BorderRadius.circular(
-                                    getProportionateScreenWidth(10),
-                                  ),
-                                ),
-                                child: Center(child: Text("Follow Back")),
+                            Tab(
+                              child: SizedBox(
+                                width: getProportionateScreenWidth(70),
+                                child: Center(child: Text("Comments")),
                               ),
                             ),
-                          Spacer(),
-                          InkWell(
-                            onTap: () {},
-                            child: Container(
-                              height: getProportionateScreenHeight(27),
-                              width: canMessage
-                                  ? getProportionateScreenWidth(158.5)
-                                  : getProportionateScreenWidth(163.5),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  width: 1,
-                                  color: kProfileText,
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                  getProportionateScreenWidth(10),
-                                ),
-                              ),
-                              child: Center(child: Text("Share Profile")),
-                            ),
-                          ),
-                          if (!widget.currentUser.isOwnProfile &&
-                              (widget.iAmFollowing || widget.followsMe))
-                            Spacer(),
-                          if (canMessage)
-                            InkWell(
-                              onTap: () {},
-                              child: SvgPicture.asset(
-                                "assets/icons/mail.svg",
-                                height: getProportionateScreenHeight(24),
-                                width: getProportionateScreenWidth(24),
-                                colorFilter: ColorFilter.mode(
-                                  kProfileText,
-                                  BlendMode.srcIn,
-                                ),
+                            Tab(
+                              child: SizedBox(
+                                width: getProportionateScreenWidth(70),
+                                child: Center(child: Text("Saved")),
                               ),
                             ),
-                        ],
+                            Tab(
+                              child: SizedBox(
+                                width: getProportionateScreenWidth(70),
+                                child: Center(child: Text("Liked")),
+                              ),
+                            ),
+                          ],
+                          indicatorSize: TabBarIndicatorSize.label,
+                        ),
                       ),
+                      pinned: true,
                     ),
-                    SizedBox(height: getProportionateScreenHeight(18)),
+                  ];
+                },
+                body: TabBarView(
+                  controller: controller,
+                  children: [
+                    isPostsLoaded
+                        ? ListView.builder(
+                            itemCount: posts!.posts.length,
+                            itemBuilder: (context, index) {
+                              final post = posts!.posts[index];
+                              return GestureDetector(
+                                onTap: () {},
+                                child: PostCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorName: post.author.fullName,
+                                  authorHandle: post.author.username,
+                                  imageUrl: post.author.profileImage,
+                                  postTime: post.createdAt,
+                                  likes: post.count.likes,
+                                  comments: post.count.comments,
+                                  reposts: post.count.reposts,
+                                  bookmarks: post.count.saves,
+                                  content: post.content,
+                                  pictures: post.media,
+                                  currentUser: widget.currentUser,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(child: CircularProgressIndicator()),
+                    isRepostsLoaded
+                        ? ListView.builder(
+                            itemCount: reposts!.posts.length,
+                            itemBuilder: (context, index) {
+                              final repost = reposts!.posts[index];
+
+                              return GestureDetector(
+                                onTap: () {},
+                                child: PostCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorName: repost.author.fullName,
+                                  authorHandle: repost.author.username,
+                                  imageUrl: repost.author.profileImage,
+                                  postTime: repost.createdAt,
+                                  likes: repost.count.likes,
+                                  comments: repost.count.comments,
+                                  reposts: repost.count.reposts,
+                                  bookmarks: repost.count.saves,
+                                  content: repost.content,
+                                  pictures: repost.media,
+                                  currentUser: widget.currentUser,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(child: CircularProgressIndicator()),
+                    isPostsLoaded
+                        ? ListView.builder(
+                            itemCount: mediaPosts!.posts.length,
+                            itemBuilder: (context, index) {
+                              final media = mediaPosts!.posts[index];
+                              return GestureDetector(
+                                onTap: () {},
+                                child: PostCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorName: media.author.fullName,
+                                  authorHandle: media.author.username,
+                                  imageUrl: media.author.profileImage,
+                                  postTime: media.createdAt,
+                                  likes: media.count.likes,
+                                  comments: media.count.comments,
+                                  reposts: media.count.reposts,
+                                  bookmarks: media.count.saves,
+                                  content: media.content,
+                                  pictures: media.media,
+                                  currentUser: widget.currentUser,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(child: CircularProgressIndicator()),
+                    isCommentsLoaded
+                        ? ListView.builder(
+                            itemCount: comments!.posts.length,
+                            itemBuilder: (context, index) {
+                              final comment = comments!.posts[index];
+                              return GestureDetector(
+                                onTap: () {},
+                                child: ReplyCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorHandle: comment.author.username,
+                                  imageUrl: comment.author.profileImage,
+                                  postTime: comment.createdAt,
+                                  likes: comment.count.likes,
+                                  comments: 0,
+                                  reposts: 0,
+                                  bookmarks: 0,
+                                  content: comment.content,
+                                  pictures: [],
+                                  replyerName: comment.author.fullName,
+                                  replyerHandle: comment.author.username,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(child: CircularProgressIndicator()),
+                    isSavedPostsLoaded
+                        ? ListView.builder(
+                            itemCount: savedPosts!.posts.length,
+                            itemBuilder: (context, index) {
+                              final savedPost = savedPosts!.posts[index];
+                              return GestureDetector(
+                                onTap: () {},
+                                child: PostCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorName: savedPost.author.fullName,
+                                  authorHandle: savedPost.author.username,
+                                  imageUrl: savedPost.author.profileImage,
+                                  postTime: savedPost.createdAt,
+                                  likes: savedPost.count.likes,
+                                  comments: savedPost.count.comments,
+                                  reposts: savedPost.count.reposts,
+                                  bookmarks: savedPost.count.saves,
+                                  content: savedPost.content,
+                                  pictures: savedPost.media,
+                                  currentUser: widget.currentUser,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(child: CircularProgressIndicator()),
+                    isLikedPostsLoaded
+                        ? ListView.builder(
+                            itemCount: likedPosts!.posts.length,
+                            itemBuilder: (context, index) {
+                              final likedPost = likedPosts!.posts[index];
+                              return GestureDetector(
+                                onTap: () {},
+                                child: PostCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorName: likedPost.author.fullName,
+                                  authorHandle: likedPost.author.username,
+                                  imageUrl: likedPost.author.profileImage,
+                                  postTime: likedPost.createdAt,
+                                  likes: likedPost.count.likes,
+                                  comments: likedPost.count.comments,
+                                  reposts: likedPost.count.reposts,
+                                  bookmarks: likedPost.count.saves,
+                                  content: likedPost.content,
+                                  pictures: likedPost.media,
+                                  currentUser: widget.currentUser,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(child: CircularProgressIndicator()),
                   ],
                 ),
               ),
-              SliverPersistentHeader(
-                delegate: _SliverAppBarDelegate(
-                  TabBar(
-                    controller: controller,
-                    tabAlignment: TabAlignment.start,
-                    isScrollable: true,
-                    indicatorColor: kLightPurple,
-                    dividerColor: dividerColor,
-                    labelStyle: Theme.of(context).textTheme.bodyMedium!
-                        .copyWith(fontWeight: FontWeight.w500),
-                    unselectedLabelStyle: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(fontWeight: FontWeight.w500),
-                    tabs: [
-                      Tab(
-                        child: SizedBox(
-                          width: getProportionateScreenWidth(70),
-                          child: Center(child: Text("Posts")),
-                        ),
-                      ),
-                      Tab(
-                        child: SizedBox(
-                          width: getProportionateScreenWidth(70),
-                          child: Center(child: Text("Reposts")),
-                        ),
-                      ),
-                      Tab(
-                        child: SizedBox(
-                          width: getProportionateScreenWidth(70),
-                          child: Center(child: Text("Media")),
-                        ),
-                      ),
-                      Tab(
-                        child: SizedBox(
-                          width: getProportionateScreenWidth(70),
-                          child: Center(child: Text("Comments")),
-                        ),
-                      ),
-                      Tab(
-                        child: SizedBox(
-                          width: getProportionateScreenWidth(70),
-                          child: Center(child: Text("Saved")),
-                        ),
-                      ),
-                      Tab(
-                        child: SizedBox(
-                          width: getProportionateScreenWidth(70),
-                          child: Center(child: Text("Liked")),
-                        ),
-                      ),
-                    ],
-                    indicatorSize: TabBarIndicatorSize.label,
-                  ),
-                ),
-                pinned: true,
-              ),
-            ];
-          },
-          body: TabBarView(
-            controller: controller,
-            children: [
-              isPostsLoaded
-                  ? ListView.builder(
-                      itemCount: posts!.posts.length,
-                      itemBuilder: (context, index) {
-                        final post = posts!.posts[index];
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: post.author.fullName,
-                            authorHandle: post.author.username,
-                            imageUrl: post.author.profileImage,
-                            postTime: post.createdAt,
-                            likes: post.count.likes,
-                            comments: post.count.comments,
-                            reposts: post.count.reposts,
-                            bookmarks: post.count.saves,
-                            content: post.content,
-                            pictures: post.media,
-                            currentUser: widget.currentUser
-                          ),
-                        );
-                      },
-                    )
-                  : Center(child: CircularProgressIndicator()),
-              isRepostsLoaded
-                  ? ListView.builder(
-                      itemCount: reposts!.posts.length,
-                      itemBuilder: (context, index) {
-                        final repost = reposts!.posts[index];
-
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: repost.author.fullName,
-                            authorHandle: repost.author.username,
-                            imageUrl: repost.author.profileImage,
-                            postTime: repost.createdAt,
-                            likes: repost.count.likes,
-                            comments: repost.count.comments,
-                            reposts: repost.count.reposts,
-                            bookmarks: repost.count.saves,
-                            content: repost.content,
-                            pictures: repost.media,
-                            currentUser: widget.currentUser
-                          ),
-                        );
-                      },
-                    )
-                  : Center(child: CircularProgressIndicator()),
-              isPostsLoaded
-                  ? ListView.builder(
-                      itemCount: mediaPosts!.posts.length,
-                      itemBuilder: (context, index) {
-                        final media = mediaPosts!.posts[index];
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: media.author.fullName,
-                            authorHandle: media.author.username,
-                            imageUrl: media.author.profileImage,
-                            postTime: media.createdAt,
-                            likes: media.count.likes,
-                            comments: media.count.comments,
-                            reposts: media.count.reposts,
-                            bookmarks: media.count.saves,
-                            content: media.content,
-                            pictures: media.media,
-                            currentUser: widget.currentUser
-                          ),
-                        );
-                      },
-                    )
-                  : Center(child: CircularProgressIndicator()),
-              isCommentsLoaded
-                  ? ListView.builder(
-                      itemCount: comments!.posts.length,
-                      itemBuilder: (context, index) {
-                        final comment = comments!.posts[index];
-                        return GestureDetector(
-                          onTap: () {},
-                          child: ReplyCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorHandle: comment.author.username,
-                            imageUrl: comment.author.profileImage,
-                            postTime: comment.createdAt,
-                            likes: comment.count.likes,
-                            comments: 0,
-                            reposts: 0,
-                            bookmarks: 0,
-                            content: comment.content,
-                            pictures: [],
-                            replyerName: comment.author.fullName,
-                            replyerHandle: comment.author.username,
-                          ),
-                        );
-                      },
-                    )
-                  : Center(child: CircularProgressIndicator()),
-              isSavedPostsLoaded
-                  ? ListView.builder(
-                      itemCount: savedPosts!.posts.length,
-                      itemBuilder: (context, index) {
-                        final savedPost = savedPosts!.posts[index];
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: savedPost.author.fullName,
-                            authorHandle: savedPost.author.username,
-                            imageUrl: savedPost.author.profileImage,
-                            postTime: savedPost.createdAt,
-                            likes: savedPost.count.likes,
-                            comments: savedPost.count.comments,
-                            reposts: savedPost.count.reposts,
-                            bookmarks: savedPost.count.saves,
-                            content: savedPost.content,
-                            pictures: savedPost.media,
-                            currentUser: widget.currentUser,
-                          ),
-                        );
-                      },
-                    )
-                  : Center(child: CircularProgressIndicator()),
-              isLikedPostsLoaded
-                  ? ListView.builder(
-                      itemCount: likedPosts!.posts.length,
-                      itemBuilder: (context, index) {
-                        final likedPost = likedPosts!.posts[index];
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: likedPost.author.fullName,
-                            authorHandle: likedPost.author.username,
-                            imageUrl: likedPost.author.profileImage,
-                            postTime: likedPost.createdAt,
-                            likes: likedPost.count.likes,
-                            comments: likedPost.count.comments,
-                            reposts: likedPost.count.reposts,
-                            bookmarks: likedPost.count.saves,
-                            content: likedPost.content,
-                            pictures: likedPost.media,
-                            currentUser: widget.currentUser,
-                          ),
-                        );
-                      },
-                    )
-                  : Center(child: CircularProgressIndicator()),
-            ],
-          ),
-        ),
-      ),
+            )
+          : Center(child: CircularProgressIndicator()),
     );
   }
 
