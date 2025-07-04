@@ -1,13 +1,40 @@
+import 'dart:convert';
+
 import 'package:app/features/auth/presentation/pages/profile_image_select_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../components/default_button.dart';
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../widgets/form_header.dart';
 
-class SelectUsernameScreen extends StatelessWidget {
+class SelectUsernameScreen extends StatefulWidget {
   const SelectUsernameScreen({super.key});
+
+  @override
+  State<SelectUsernameScreen> createState() => _SelectUsernameScreenState();
+}
+
+class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
+  final usernameFormKey = GlobalKey<FormState>();
+  TextEditingController usernameController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+
+  @override
+  void initState() {
+    usernameController = TextEditingController();
+    nameController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +75,7 @@ class SelectUsernameScreen extends StatelessWidget {
                 ),
                 SizedBox(height: getProportionateScreenHeight(32)),
                 Form(
+                  key: usernameFormKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -60,12 +88,19 @@ class SelectUsernameScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(6)),
                       TextFormField(
+                        controller: usernameController,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
                           hintText: "Enter your username",
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your username';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: getProportionateScreenHeight(20)),
                       Text(
@@ -77,6 +112,7 @@ class SelectUsernameScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(6)),
                       TextFormField(
+                        controller: nameController,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -88,17 +124,53 @@ class SelectUsernameScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: getProportionateScreenHeight(54)),
                       DefaultButton(
-                        press: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ProfileImageSelectScreen(),
-                            ),
-                          );
+                        press: () async {
+                          if (usernameFormKey.currentState!.validate()) {
+                            usernameFormKey.currentState!.save();
+                            final token = await AuthManager.getToken();
+                            final response = await http.put(
+                              Uri.parse('$baseUrl/api/v1/user/profile'),
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer $token',
+                              },
+                              body: jsonEncode({
+                                'username': usernameController.text.trim(),
+                                'fullName': nameController.text.trim(),
+                              }),
+                            );
+
+                            if (response.statusCode == 200) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ProfileImageSelectScreen(),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.red,
+                                  content: Text(
+                                    jsonDecode(response.body)['message']
+                                        .toString()
+                                        .replaceAll(RegExp(r'\[|\]'), ''),
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
                         },
                         text: 'Continue',
                       ),

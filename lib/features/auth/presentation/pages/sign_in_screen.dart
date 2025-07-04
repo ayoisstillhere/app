@@ -98,12 +98,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         decoration: InputDecoration(
                           hintText: "Enter your Email",
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter an email';
-                          }
-                          return null;
-                        },
+                        validator: validateEmail,
                       ),
                       SizedBox(height: getProportionateScreenHeight(20)),
                       Text(
@@ -126,12 +121,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             context,
                           ).textTheme.bodyLarge!.copyWith(color: kGreyFormHint),
                         ),
-                        validator: (value) {
-                          if (value == null || value.length < 8) {
-                            return 'Please enter a valid password';
-                          }
-                          return null;
-                        },
+                        validator: validatePassword,
                       ),
                       SizedBox(height: getProportionateScreenHeight(24)),
                       Row(
@@ -170,7 +160,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             if (response.statusCode == 200) {
                               final responseData = jsonDecode(response.body);
                               final token =
-                                  responseData['access_token']; // Adjust based on your API response
+                                  responseData['access_token'];
 
                               // Store token in SharedPreferences
                               final prefs =
@@ -239,5 +229,49 @@ class _SignInScreenState extends State<SignInScreen> {
         ),
       ),
     );
+  }
+
+  // Email validator function
+  String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+
+    // Regular expression for email validation
+    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+    if (!emailRegExp.hasMatch(value)) {
+      return 'Please enter a valid email address';
+    }
+
+    return null; // Return null if validation passes
+  }
+
+  // Password validator function
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+
+    // Check for at least one uppercase letter
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    // Check for at least one number
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+
+    // Check for at least one special character
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Password must contain at least one special character';
+    }
+
+    return null; // Return null if validation passes
   }
 }

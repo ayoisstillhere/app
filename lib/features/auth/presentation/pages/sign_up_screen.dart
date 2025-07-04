@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../constants.dart';
@@ -10,8 +14,31 @@ import '../widgets/google_button.dart';
 import 'email_verification_screen.dart';
 import 'sign_in_screen.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _signupFormKey = GlobalKey<FormState>();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +79,7 @@ class SignUpScreen extends StatelessWidget {
                 ),
                 SizedBox(height: getProportionateScreenHeight(32)),
                 Form(
+                  key: _signupFormKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -64,12 +92,14 @@ class SignUpScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(6)),
                       TextFormField(
+                        controller: _emailController,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
                           hintText: "Enter your Email",
                         ),
+                        validator: validateEmail,
                       ),
                       SizedBox(height: getProportionateScreenHeight(20)),
                       Text(
@@ -81,6 +111,8 @@ class SignUpScreen extends StatelessWidget {
                       ),
                       SizedBox(height: getProportionateScreenHeight(6)),
                       TextFormField(
+                        obscureText: true,
+                        controller: _passwordController,
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -90,17 +122,51 @@ class SignUpScreen extends StatelessWidget {
                             context,
                           ).textTheme.bodyLarge!.copyWith(color: kGreyFormHint),
                         ),
+                        validator: validatePassword,
                       ),
                       SizedBox(height: getProportionateScreenHeight(16)),
                       DefaultButton(
-                        press: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const EmailVerificationScreen(),
-                            ),
-                          );
+                        press: () async {
+                          if (_signupFormKey.currentState!.validate()) {
+                            _signupFormKey.currentState!.save();
+                            final response = await http.post(
+                              Uri.parse('$baseUrl/api/v1/auth/register'),
+                              headers: {'Content-Type': 'application/json'},
+                              body: jsonEncode({
+                                'email': _emailController.text.trim(),
+                                'password': _passwordController.text.trim(),
+                              }),
+                            );
+                            if (response.statusCode == 201) {
+                              final responseData = jsonDecode(response.body);
+                              final token = responseData['access_token'];
+
+                              // Store the token in SharedPreferences
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setString('auth_token', token);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EmailVerificationScreen(
+                                    email: _emailController.text.trim(),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.red,
+                                  content: Text(
+                                    jsonDecode(response.body)['message']
+                                        .toString()
+                                        .replaceAll(RegExp(r'\[|\]'), ''),
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
                         },
                         text: 'Continue with email',
                       ),
@@ -171,5 +237,49 @@ class SignUpScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Email validator function
+  String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+
+    // Regular expression for email validation
+    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+    if (!emailRegExp.hasMatch(value)) {
+      return 'Please enter a valid email address';
+    }
+
+    return null; // Return null if validation passes
+  }
+
+  // Password validator function
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+
+    // Check for at least one uppercase letter
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    // Check for at least one number
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+
+    // Check for at least one special character
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Password must contain at least one special character';
+    }
+
+    return null; // Return null if validation passes
   }
 }
