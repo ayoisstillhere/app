@@ -167,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen>
                       content: post.content,
                       pictures: post.media,
                       currentUser: widget.currentUser,
+                      postId: post.id,
                     );
                   },
                 )
@@ -190,6 +191,7 @@ class _HomeScreenState extends State<HomeScreen>
                       content: post.content,
                       pictures: post.media,
                       currentUser: widget.currentUser,
+                      postId: post.id,
                     );
                   },
                 )

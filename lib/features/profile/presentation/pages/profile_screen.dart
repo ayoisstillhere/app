@@ -690,6 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   content: post.content,
                                   pictures: post.media,
                                   currentUser: widget.currentUser,
+                                  postId: post.id,
                                 ),
                               );
                             },
@@ -717,6 +718,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   content: repost.content,
                                   pictures: repost.media,
                                   currentUser: widget.currentUser,
+                                  postId: repost.id,
                                 ),
                               );
                             },
@@ -743,6 +745,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   content: media.content,
                                   pictures: media.media,
                                   currentUser: widget.currentUser,
+                                  postId: media.id,
                                 ),
                               );
                             },
@@ -795,6 +798,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   content: savedPost.content,
                                   pictures: savedPost.media,
                                   currentUser: widget.currentUser,
+                                  postId: savedPost.id,
                                 ),
                               );
                             },
@@ -821,6 +825,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   content: likedPost.content,
                                   pictures: likedPost.media,
                                   currentUser: widget.currentUser,
+                                  postId: likedPost.id,
                                 ),
                               );
                             },

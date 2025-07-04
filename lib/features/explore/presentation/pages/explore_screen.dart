@@ -438,6 +438,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                         pictures: exploreResponse!.trending[index].media,
                         forSearch: true,
                         currentUser: widget.currentUser,
+                        postId: exploreResponse!.trending[index].id,
                       ),
                     ),
                   ),
@@ -602,6 +603,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                             content: item.data.content!,
                             pictures: item.data.media!,
                             currentUser: widget.currentUser,
+                            postId: item.data.id!,
                           )
                         : Container(),
                   );
@@ -628,6 +630,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                       content: item.content,
                       pictures: item.media,
                       currentUser: widget.currentUser,
+                      postId: item.id,
                     ),
                   );
                 },
@@ -653,6 +656,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                       content: item.content,
                       pictures: item.media,
                       currentUser: widget.currentUser,
+                      postId: item.id,
                     ),
                   );
                 },

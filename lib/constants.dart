@@ -362,66 +362,6 @@ List<Map<String, dynamic>> mockNotifications = [
   },
 ];
 
-List<Map<String, dynamic>> mockUsers = [
-  {
-    "name": "Ayodele Fagbami",
-    "handle": "ayoisstillhere",
-    "followers": 15000,
-    "following": 50,
-    "isVerified": true,
-    "profilePic":
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "profileBanner":
-        "https://images.unsplash.com/photo-1519125323398-675f0ddb6638?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&w=1000&q=80",
-    "bio":
-        "Afrobeat in my viens. The machine has come | Follow other acccount @kedndaeng2_",
-    "location": "Lagos, NG",
-    "dateJoined": "May 2020",
-  },
-  {
-    "name": "John Doe",
-    "handle": "johndoe",
-    "followers": 100,
-    "following": 50,
-    "isVerified": true,
-    "profilePic":
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "profileBanner":
-        "https://images.unsplash.com/photo-1519046904835-819e6f3a52ec?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&w=1000&q=80",
-    "bio": "Web Developer, UI desinger. Tech girl",
-    "location": "New York, USA",
-    "dateJoined": "December 2019",
-  },
-  {
-    "name": "Jane Smith",
-    "handle": "janesmith",
-    "followers": 150,
-    "following": 75,
-    "isVerified": false,
-    "profilePic":
-        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "profileBanner":
-        "https://images.unsplash.com/photo-1519046904835-819e6f3a52ec?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&w=1000&q=80",
-    "bio": "Software Engineer, UI desinger. Tech girl",
-    "location": "London, UK",
-    "dateJoined": "January 2020",
-  },
-  {
-    "name": "Bob Johnson",
-    "handle": "bobjohnson",
-    "followers": 200,
-    "following": 100,
-    "isVerified": true,
-    "profilePic":
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "profileBanner":
-        "https://images.unsplash.com/photo-1519125323398-675f0ddb6638?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&w=1000&q=80",
-    "bio": "Data Scientist, UI desinger. Tech boy",
-    "location": "San Francisco, USA",
-    "dateJoined": "February 2019",
-  },
-];
-
 List<Map<String, dynamic>> mockListTile = [
   {
     "image":

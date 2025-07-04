@@ -1,21 +1,26 @@
+import 'dart:convert';
+
+import 'package:app/features/home/presentation/widgets/post_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/home/data/models/post_response_model.dart';
 import 'package:app/features/home/domain/entities/post_response_entity.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
-import '../widgets/post_card.dart';
 import '../widgets/reply_card.dart';
 
 class PostDetailsScreen extends StatefulWidget {
   const PostDetailsScreen({
     super.key,
-    required this.post,
+    required this.postId,
     required this.currentUser,
   });
-  final Post post;
+  final String postId;
   final UserEntity currentUser;
 
   @override
@@ -23,7 +28,42 @@ class PostDetailsScreen extends StatefulWidget {
 }
 
 class _PostDetailsScreenState extends State<PostDetailsScreen> {
+  Post? post;
+  bool isPostLoaded = false;
   String dropDownValue = "Most Liked";
+
+  @override
+  void initState() {
+    super.initState();
+    _getPost();
+  }
+
+  Future<void> _getPost() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/${widget.postId}"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      post = PostModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isPostLoaded = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dividerColor =
@@ -68,80 +108,86 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.only(top: getProportionateScreenHeight(8)),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PostCard(
-                dividerColor: dividerColor,
-                iconColor: iconColor,
-                authorName: widget.post.author.fullName,
-                authorHandle: widget.post.author.username,
-                imageUrl: widget.post.author.profileImage,
-                postTime: widget.post.createdAt,
-                likes: widget.post.count.likes,
-                comments: widget.post.count.comments,
-                reposts: widget.post.count.reposts,
-                bookmarks: widget.post.count.saves,
-                content: widget.post.content,
-                pictures: widget.post.media,
-                currentUser: widget.currentUser,
-              ),
-              SizedBox(height: getProportionateScreenHeight(11.09)),
-              Container(
-                padding: EdgeInsets.only(left: getProportionateScreenWidth(21)),
-                child: DropdownButton<String>(
-                  value: dropDownValue,
-                  icon: null,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropDownValue = newValue!;
-                    });
-                  },
-                  underline: Container(),
-                  items: <String>['Most Liked', 'Most Recent'].map((
-                    String value,
-                  ) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: getProportionateScreenHeight(14),
-                        ),
+      body: isPostLoaded
+          ? Padding(
+              padding: EdgeInsets.only(top: getProportionateScreenHeight(8)),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PostCard(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      authorName: post!.author.fullName,
+                      authorHandle: post!.author.username,
+                      imageUrl: post!.author.profileImage,
+                      postTime: post!.createdAt,
+                      likes: post!.count.likes,
+                      comments: post!.count.comments,
+                      reposts: post!.count.reposts,
+                      bookmarks: post!.count.saves,
+                      content: post!.content,
+                      pictures: post!.media,
+                      currentUser: widget.currentUser,
+                      postId: post!.id,
+                      notClickable: true,
+                    ),
+                    SizedBox(height: getProportionateScreenHeight(11.09)),
+                    Container(
+                      padding: EdgeInsets.only(
+                        left: getProportionateScreenWidth(21),
                       ),
-                    );
-                  }).toList(),
+                      child: DropdownButton<String>(
+                        value: dropDownValue,
+                        icon: null,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            dropDownValue = newValue!;
+                          });
+                        },
+                        underline: Container(),
+                        items: <String>['Most Liked', 'Most Recent'].map((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                              style: TextStyle(
+                                fontSize: getProportionateScreenHeight(14),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: mockReplies.length,
+                      itemBuilder: (context, index) {
+                        return ReplyCard(
+                          dividerColor: dividerColor,
+                          iconColor: iconColor,
+                          replyerName: mockReplies[index]["userName"],
+                          replyerHandle: mockReplies[index]["handle"],
+                          imageUrl: mockReplies[index]["userImage"],
+                          postTime: DateTime.now(),
+                          likes: mockReplies[index]["likes"],
+                          comments: mockReplies[index]["comments"],
+                          reposts: mockReplies[index]["reposts"],
+                          bookmarks: mockReplies[index]["bookmarks"],
+                          content: mockReplies[index]["content"],
+                          pictures: mockReplies[index]["pictures"],
+                          authorHandle: mockReplies[index]["handle"],
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: mockReplies.length,
-                itemBuilder: (context, index) {
-                  return ReplyCard(
-                    dividerColor: dividerColor,
-                    iconColor: iconColor,
-                    replyerName: mockReplies[index]["userName"],
-                    replyerHandle: mockReplies[index]["handle"],
-                    imageUrl: mockReplies[index]["userImage"],
-                    postTime: DateTime.now(),
-                    likes: mockReplies[index]["likes"],
-                    comments: mockReplies[index]["comments"],
-                    reposts: mockReplies[index]["reposts"],
-                    bookmarks: mockReplies[index]["bookmarks"],
-                    content: mockReplies[index]["content"],
-                    pictures: mockReplies[index]["pictures"],
-                    authorHandle: mockReplies[index]["handle"],
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 }
