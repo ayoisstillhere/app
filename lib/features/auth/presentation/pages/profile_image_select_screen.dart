@@ -1,15 +1,31 @@
+import 'dart:io';
+
 import 'package:app/components/default_button.dart';
 import 'package:app/components/nav_page.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import '../widgets/form_header.dart';
+import 'package:http_parser/http_parser.dart'; // Required for MediaType
+import 'package:mime/mime.dart'; // Optional: For detecting MIME type dynamically
 
-class ProfileImageSelectScreen extends StatelessWidget {
+class ProfileImageSelectScreen extends StatefulWidget {
   const ProfileImageSelectScreen({super.key});
 
+  @override
+  State<ProfileImageSelectScreen> createState() =>
+      _ProfileImageSelectScreenState();
+}
+
+class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
+  File? _selectedProfileImage;
+  File? _selectedBannerImage;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,23 +68,47 @@ class ProfileImageSelectScreen extends StatelessWidget {
                     children: [
                       Column(
                         children: [
-                          Container(
-                            width: getProportionateScreenWidth(84),
-                            height: getProportionateScreenHeight(84),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenWidth(24),
-                              vertical: getProportionateScreenHeight(24),
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: kGreyInputBorder),
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(
-                                  getProportionateScreenWidth(10),
-                                ),
+                          InkWell(
+                            onTap: () {
+                              _pickProfileImageFromGallery();
+                            },
+                            child: Container(
+                              width: getProportionateScreenWidth(84),
+                              height: getProportionateScreenHeight(84),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: getProportionateScreenWidth(24),
+                                vertical: getProportionateScreenHeight(24),
                               ),
-                            ),
-                            child: SvgPicture.asset(
-                              'assets/icons/picture_icon.svg',
+                              decoration: _selectedProfileImage == null
+                                  ? BoxDecoration(
+                                      border: Border.all(
+                                        color: kGreyInputBorder,
+                                      ),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                    )
+                                  : BoxDecoration(
+                                      border: Border.all(
+                                        color: kGreyInputBorder,
+                                      ),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                      image: DecorationImage(
+                                        image: FileImage(
+                                          _selectedProfileImage!,
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                              child: SvgPicture.asset(
+                                'assets/icons/picture_icon.svg',
+                              ),
                             ),
                           ),
                           SizedBox(height: getProportionateScreenHeight(11)),
@@ -81,23 +121,45 @@ class ProfileImageSelectScreen extends StatelessWidget {
                       Spacer(),
                       Column(
                         children: [
-                          Container(
-                            width: getProportionateScreenWidth(84),
-                            height: getProportionateScreenHeight(84),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenWidth(24),
-                              vertical: getProportionateScreenHeight(24),
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: kGreyInputBorder),
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(
-                                  getProportionateScreenWidth(10),
-                                ),
+                          InkWell(
+                            onTap: () {
+                              _pickBannerImageFromGallery();
+                            },
+                            child: Container(
+                              width: getProportionateScreenWidth(84),
+                              height: getProportionateScreenHeight(84),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: getProportionateScreenWidth(24),
+                                vertical: getProportionateScreenHeight(24),
                               ),
-                            ),
-                            child: SvgPicture.asset(
-                              'assets/icons/picture_icon.svg',
+                              decoration: _selectedBannerImage == null
+                                  ? BoxDecoration(
+                                      border: Border.all(
+                                        color: kGreyInputBorder,
+                                      ),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                    )
+                                  : BoxDecoration(
+                                      border: Border.all(
+                                        color: kGreyInputBorder,
+                                      ),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                      ),
+                                      image: DecorationImage(
+                                        image: FileImage(_selectedBannerImage!),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                              child: SvgPicture.asset(
+                                'assets/icons/picture_icon.svg',
+                              ),
                             ),
                           ),
                           SizedBox(height: getProportionateScreenHeight(11)),
@@ -113,7 +175,44 @@ class ProfileImageSelectScreen extends StatelessWidget {
                 SizedBox(height: getProportionateScreenHeight(43.5)),
                 DefaultButton(
                   text: 'Continue',
-                  press: () {
+                  press: () async {
+                    try {
+                      if (_selectedProfileImage != null) {
+                        final compressedFile = await compressImage(
+                          _selectedProfileImage!,
+                        );
+
+                        await uploadImage(
+                          compressedFile,
+                          '/api/v1/user/upload-profile-image',
+                        );
+                      }
+
+                      if (_selectedBannerImage != null) {
+                        final compressedFile = await compressImage(
+                          _selectedBannerImage!,
+                        );
+                        await uploadImage(
+                          compressedFile,
+                          '/api/v1/user/upload-banner-image',
+                        );
+                      }
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => NavPage()),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: Colors.red,
+                          content: Text(
+                            'Failed to upload image(s). Please try again',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      );
+                    }
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => NavPage()),
@@ -137,6 +236,71 @@ class ProfileImageSelectScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future _pickProfileImageFromGallery() async {
+    final returnedImage = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (returnedImage == null) {
+      return;
+    }
+    setState(() {
+      _selectedProfileImage = File(returnedImage.path);
+    });
+  }
+
+  Future _pickBannerImageFromGallery() async {
+    final returnedImage = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (returnedImage == null) {
+      return;
+    }
+    setState(() {
+      _selectedBannerImage = File(returnedImage.path);
+    });
+  }
+
+  Future<void> uploadImage(File file, String endpoint) async {
+  final token = await AuthManager.getToken();
+  final uri = Uri.parse('$baseUrl$endpoint');
+
+  // Determine the MIME type (e.g., image/png)
+  final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+  final mimeSplit = mimeType.split('/');
+
+  var request = http.MultipartRequest('POST', uri)
+    ..headers['Authorization'] = 'Bearer $token'
+    ..files.add(
+      http.MultipartFile(
+        'file',
+        file.readAsBytes().asStream(),
+        file.lengthSync(),
+        filename: file.path.split('/').last,
+        contentType: MediaType(mimeSplit[0], mimeSplit[1]),
+      ),
+    );
+
+  final response = await request.send();
+
+  if (response.statusCode != 200) {
+    final responseBody = await response.stream.bytesToString();
+    throw Exception('Failed to upload image: ${response.statusCode} - $responseBody');
+  }
+}
+}
+
+Future<File> compressImage(File file) async {
+  final compressedBytes = await FlutterImageCompress.compressWithFile(
+    file.absolute.path,
+    quality: 50, // adjust as needed
+  );
+
+  final compressedFile = File('${file.path}_compressed.jpg')
+    ..writeAsBytesSync(compressedBytes!);
+  return compressedFile;
 }
 
 class SkipButon extends StatelessWidget {
