@@ -416,3 +416,19 @@ List<ChatMessage> messages = [
     isRead: true,
   ),
 ];
+
+
+String formatDuration(DateTime from, DateTime to) {
+  Duration diff = to.difference(from).abs();
+
+  int hours = diff.inHours;
+  int minutes = diff.inMinutes.remainder(60);
+  int seconds = diff.inSeconds.remainder(60);
+
+  List<String> parts = [];
+  if (hours > 0) parts.add('${hours}h');
+  if (minutes > 0) parts.add('${minutes}m');
+  if (seconds > 0 || parts.isEmpty) parts.add('${seconds}s');
+
+  return parts.join(' ');
+}

@@ -18,7 +18,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // Sample messages - replace with your actual data model
 
   void _sendMessage() {
     if (_messageController.text.trim().isNotEmpty) {

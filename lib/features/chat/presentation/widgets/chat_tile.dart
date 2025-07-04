@@ -1,5 +1,6 @@
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -19,7 +20,7 @@ class ChatTile extends StatelessWidget {
   final String image;
   final String name;
   final String lastMessage;
-  final String time;
+  final DateTime time;
   final int unreadMessages;
 
   @override
@@ -68,30 +69,33 @@ class ChatTile extends StatelessWidget {
                         ),
                       ),
                       Spacer(),
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: getProportionateScreenWidth(228),
-                            child: Text(
-                              lastMessage,
+                      SizedBox(
+                        width: getProportionateScreenWidth(245),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            SizedBox(
+                              width: getProportionateScreenWidth(140),
+                              child: Text(
+                                lastMessage,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: getProportionateScreenHeight(12),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            Text(
+                              timeago.format(time),
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: getProportionateScreenHeight(12),
+                                color: kGreyTimeText,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
                             ),
-                          ),
-                          SizedBox(width: getProportionateScreenWidth(3)),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: getProportionateScreenHeight(12),
-                              color: kGreyTimeText,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
