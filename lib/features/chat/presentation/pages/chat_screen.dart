@@ -138,7 +138,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: InkWell(
                 onTap: () {},
                 child: SvgPicture.asset(
-                  "assets/icons/lockAA.svg",
+                  "assets/icons/lock.svg",
                   colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
                   width: getProportionateScreenWidth(24),
                   height: getProportionateScreenHeight(24),

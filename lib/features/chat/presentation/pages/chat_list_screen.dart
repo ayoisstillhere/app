@@ -1,13 +1,16 @@
-import 'package:app/features/chat/presentation/pages/new_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
+import 'package:app/features/chat/presentation/pages/new_chat_screen.dart';
+
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../../../auth/domain/entities/user_entity.dart';
 import '../widgets/chat_tile.dart';
 
 class ChatListScreen extends StatefulWidget {
-  const ChatListScreen({super.key});
+  const ChatListScreen({super.key, required this.currentUser});
+  final UserEntity currentUser;
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
@@ -59,7 +62,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => NewChatScreen()),
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          NewChatScreen(currentUser: widget.currentUser),
+                    ),
                   );
                 },
                 child: SvgPicture.asset(
