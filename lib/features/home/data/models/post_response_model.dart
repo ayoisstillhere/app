@@ -28,6 +28,58 @@ class PostResponseModel extends PostResponseEntity {
   }
 }
 
+class CommentsResponseModel extends CommentsResponseEntity {
+  const CommentsResponseModel({
+    required List<CommentModel> comments,
+    required PaginationModel pagination,
+  }) : super(comments, pagination);
+
+  factory CommentsResponseModel.fromJson(Map<String, dynamic> json) {
+    return CommentsResponseModel(
+      comments: (json['comments'] as List)
+          .map((comment) => CommentModel.fromJson(comment))
+          .toList(),
+      pagination: PaginationModel.fromJson(json['pagination']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'comments': comments
+          .map((comment) => (comment as CommentModel).toJson())
+          .toList(),
+      'pagination': (pagination as PaginationModel).toJson(),
+    };
+  }
+}
+
+class CommentModel extends Comment {
+  const CommentModel({
+    required PostModel super.post,
+    required super.isLiked,
+    required super.isReposted,
+    required super.isSaved,
+  });
+
+  factory CommentModel.fromJson(Map<String, dynamic> json) {
+    return CommentModel(
+      post: PostModel.fromJson(json['post']),
+      isLiked: json['isLiked'] ?? false,
+      isReposted: json['isReposted'] ?? false,
+      isSaved: json['isSaved'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'post': (post as PostModel).toJson(),
+      'isLiked': isLiked,
+      'isReposted': isReposted,
+      'isSaved': isSaved,
+    };
+  }
+}
+
 class PaginationModel extends Pagination {
   const PaginationModel({
     required int page,

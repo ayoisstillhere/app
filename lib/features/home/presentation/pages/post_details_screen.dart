@@ -29,6 +29,7 @@ class PostDetailsScreen extends StatefulWidget {
 
 class _PostDetailsScreenState extends State<PostDetailsScreen> {
   Post? post;
+  CommentsResponseEntity? comments;
   bool isPostLoaded = false;
   String dropDownValue = "Most Liked";
 
@@ -45,10 +46,34 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
-      post = PostModel.fromJson(jsonDecode(response.body));
+      post = PostModel.fromJson(jsonDecode(response.body)["post"]);
+      await _getComments();
       setState(() {
         isPostLoaded = true;
       });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _getComments() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/comments"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      comments = CommentsResponseModel.fromJson(jsonDecode(response.body));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -164,22 +189,25 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: mockReplies.length,
+                      itemCount: comments!.comments.length,
                       itemBuilder: (context, index) {
                         return ReplyCard(
                           dividerColor: dividerColor,
                           iconColor: iconColor,
-                          replyerName: mockReplies[index]["userName"],
-                          replyerHandle: mockReplies[index]["handle"],
-                          imageUrl: mockReplies[index]["userImage"],
-                          postTime: DateTime.now(),
-                          likes: mockReplies[index]["likes"],
-                          comments: mockReplies[index]["comments"],
-                          reposts: mockReplies[index]["reposts"],
-                          bookmarks: mockReplies[index]["bookmarks"],
-                          content: mockReplies[index]["content"],
-                          pictures: mockReplies[index]["pictures"],
-                          authorHandle: mockReplies[index]["handle"],
+                          replyerName:
+                              comments!.comments[index].post.author.fullName,
+                          replyerHandle:
+                              comments!.comments[index].post.author.username,
+                          imageUrl:
+                              comments!.comments[index].post.author.profileImage,
+                          postTime: comments!.comments[index].post.createdAt,
+                          likes: comments!.comments[index].post.count.likes,
+                          comments: comments!.comments[index].post.count.comments,
+                          reposts: comments!.comments[index].post.count.reposts,
+                          bookmarks: comments!.comments[index].post.count.saves,
+                          content: comments!.comments[index].post.content,
+                          pictures: comments!.comments[index].post.media,
+                          authorHandle: post!.author.username,
                         );
                       },
                     ),

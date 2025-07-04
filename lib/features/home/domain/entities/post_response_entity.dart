@@ -11,6 +11,33 @@ class PostResponseEntity extends Equatable {
   List<Object?> get props => [posts, pagination, user];
 }
 
+class CommentsResponseEntity extends Equatable {
+  final List<Comment> comments;
+  final Pagination pagination;
+
+  const CommentsResponseEntity(this.comments, this.pagination);
+
+  @override
+  List<Object?> get props => [comments, pagination];
+}
+
+class Comment extends Equatable {
+  final Post post;
+  final bool isLiked;
+  final bool isReposted;
+  final bool isSaved;
+
+  const Comment({
+    required this.post,
+    required this.isLiked,
+    required this.isReposted,
+    required this.isSaved,
+  });
+
+  @override
+  List<Object?> get props => [post, isLiked, isReposted, isSaved];
+}
+
 class Pagination extends Equatable {
   final int page;
   final int limit;
