@@ -159,8 +159,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             );
                             if (response.statusCode == 200) {
                               final responseData = jsonDecode(response.body);
-                              final token =
-                                  responseData['access_token'];
+                              final token = responseData['access_token'];
 
                               // Store token in SharedPreferences
                               final prefs =

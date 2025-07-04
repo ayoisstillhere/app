@@ -121,7 +121,11 @@ class _HomeScreenState extends State<HomeScreen>
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+            MaterialPageRoute(
+              builder: (context) => CreatePostScreen(
+                profileImage: widget.currentUser.profileImage,
+              ),
+            ),
           );
         },
         shape: const CircleBorder(),
