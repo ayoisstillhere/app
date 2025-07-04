@@ -6,8 +6,16 @@ import '../../../../size_config.dart';
 import '../widgets/chat_suggestion_tile.dart';
 import 'group_chat_screen.dart';
 
-class NewChatScreen extends StatelessWidget {
+class NewChatScreen extends StatefulWidget {
   const NewChatScreen({super.key});
+
+  @override
+  State<NewChatScreen> createState() => _NewChatScreenState();
+}
+
+class _NewChatScreenState extends State<NewChatScreen> {
+  
+
 
   @override
   Widget build(BuildContext context) {
