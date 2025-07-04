@@ -92,13 +92,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: iconColor,
                   ),
                 ),
-                Text(
-                  "Active now",
-                  style: TextStyle(
-                    fontSize: getProportionateScreenHeight(12),
-                    color: iconColor.withOpacity(0.6),
-                  ),
-                ),
               ],
             ),
           ],
@@ -143,6 +136,22 @@ class _ChatScreenState extends State<ChatScreen> {
               height: getProportionateScreenHeight(24),
               width: getProportionateScreenWidth(24),
               child: InkWell(
+                onTap: () {},
+                child: SvgPicture.asset(
+                  "assets/icons/lockAA.svg",
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  width: getProportionateScreenWidth(24),
+                  height: getProportionateScreenHeight(24),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(right: getProportionateScreenWidth(16)),
+            child: SizedBox(
+              height: getProportionateScreenHeight(24),
+              width: getProportionateScreenWidth(24),
+              child: InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
@@ -162,7 +171,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
+          preferredSize: Size.fromHeight(getProportionateScreenHeight(10)),
           child: Container(
             width: double.infinity,
             height: 1,
