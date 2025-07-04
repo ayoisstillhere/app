@@ -1,5 +1,4 @@
 import 'package:app/components/nav_page.dart';
-import 'package:app/features/auth/presentation/pages/profile_image_select_screen.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
@@ -110,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
     final refreshed = await AuthManager.refreshToken();
     
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const ProfileImageSelectScreen()),
+      MaterialPageRoute(builder: (context) => const NavPage()),
     );
   } else {
     // User is not logged in, go to OnboardingScreen
