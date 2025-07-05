@@ -95,14 +95,10 @@ class AuthManager {
         return false;
       }
 
-      // Get device ID (you'll need to implement this or use a constant)
-      final deviceId =
-          "device-12345"; // Replace with actual device ID implementation
-
       final response = await http.post(
         Uri.parse("$baseUrl/api/v1/auth/refresh"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"refreshToken": refreshToken, "deviceId": deviceId}),
+        body: jsonEncode({"refreshToken": refreshToken}),
       );
 
       if (response.statusCode == 200) {
