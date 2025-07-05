@@ -8,8 +8,10 @@ import '../constants.dart';
 
 class AuthManager {
   static const String _tokenKey = 'auth_token';
-  static String? _cachedToken;
   static const String _refreshTokenKey = 'refresh_token';
+  
+  // Cache variables for performance
+  static String? _cachedToken;
   static String? _cachedRefreshToken;
 
   // Get token (with caching for performance)
@@ -33,7 +35,6 @@ class AuthManager {
     _cachedToken = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
-    await prefs.remove(_refreshTokenKey);
   }
 
   // Check if user is logged in
@@ -49,18 +50,24 @@ class AuthManager {
         // Call the logout API endpoint
         final response = await http.post(
           Uri.parse("$baseUrl/api/v1/auth/logout"),
-          headers: {"Authorization": "Bearer $token"},
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
         );
 
-        // Even if the API call fails, we should still clear the token locally
-        // Check response for debugging purposes
-        if (response.statusCode != 200) {}
+        // Log response for debugging if needed
+        if (response.statusCode != 200) {
+          print('Logout API failed with status: ${response.statusCode}');
+        }
       }
     } catch (e) {
       // Log the error but continue with local logout
+      print('Error during logout: $e');
     } finally {
-      // Always clear the token locally
+      // Always clear tokens locally
       await clearToken();
+      await clearRefreshToken();
     }
   }
 
@@ -103,19 +110,60 @@ class AuthManager {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await setToken(data['access_token']);
+        
+        // Update both tokens if provided
+        if (data['access_token'] != null) {
+          await setToken(data['access_token']);
+        }
+        if (data['refresh_token'] != null) {
+          await setRefreshToken(data['refresh_token']);
+        }
+        
         return true;
       } else {
         // If refresh fails, clear tokens and return false
-        await clearToken();
-        await clearRefreshToken();
+        await clearAllTokens();
         return false;
       }
     } catch (e) {
       // Error handling
-      await clearToken();
-      await clearRefreshToken();
+      print('Error refreshing token: $e');
+      await clearAllTokens();
       return false;
     }
+  }
+
+  // Helper method to clear all tokens
+  static Future<void> clearAllTokens() async {
+    await clearToken();
+    await clearRefreshToken();
+  }
+
+  // Check if token is expired (basic check - you might want to implement JWT parsing)
+  static Future<bool> isTokenExpired() async {
+    final token = await getToken();
+    if (token == null) return true;
+    
+    // You can implement JWT token expiration check here
+    // For now, this is a placeholder
+    return false;
+  }
+
+  // Auto-refresh token if needed
+  static Future<String?> getValidToken() async {
+    final token = await getToken();
+    if (token == null) return null;
+    
+    // Check if token is expired and try to refresh
+    if (await isTokenExpired()) {
+      final refreshed = await refreshToken();
+      if (refreshed) {
+        return await getToken();
+      } else {
+        return null;
+      }
+    }
+    
+    return token;
   }
 }

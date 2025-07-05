@@ -31,317 +31,365 @@ class _ChatListScreenState extends State<ChatListScreen> {
     {'label': 'Archived', 'count': 2},
     {'label': 'Requests', 'count': 2},
   ];
+
   GetMessagesResponse? allMessagesResponse;
   GetMessagesResponse? secretMessagesResponse;
   GetMessagesResponse? groupMessagesResponse;
+  GetMessagesResponse? archivedMessagesResponse;
+  GetMessagesResponse? requestsMessagesResponse;
+
   bool isAllMessagesLoaded = false;
   bool isSecretMessagesLoaded = false;
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchConversations(false);
-    _fetchConversations(true);
+    _loadAllConversations();
+  }
+
+  Future<void> _loadAllConversations() async {
+    setState(() => isLoading = true);
+
+    await Future.wait([_fetchConversations(false), _fetchConversations(true)]);
+
+    _processGroupMessages();
+    _updateFilterCounts();
+
+    setState(() => isLoading = false);
   }
 
   Future<void> _fetchConversations(bool isSecret) async {
-    final token = await AuthManager.getToken();
-    String url =
-        '$baseUrl/api/v1/chat/conversations?page=1&limit=20&isSecret=$isSecret';
+    try {
+      final token = await AuthManager.getToken();
+      String url =
+          '$baseUrl/api/v1/chat/conversations?page=1&limit=20&isSecret=$isSecret';
 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Authorization': 'Bearer $token'},
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = GetMessagesResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        if (isSecret) {
+          secretMessagesResponse = responseData;
+          setState(() => isSecretMessagesLoaded = true);
+        } else {
+          allMessagesResponse = responseData;
+          setState(() => isAllMessagesLoaded = true);
+        }
+      } else {
+        _showErrorSnackBar(response.body);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load conversations: $e');
+    }
+  }
+
+  void _processGroupMessages() {
+    if (allMessagesResponse == null) return;
+
+    final groupConversations = allMessagesResponse!.conversations
+        .where((conversation) => conversation.type == 'GROUP')
+        .toList();
+
+    groupMessagesResponse = GetMessagesResponse(
+      conversations: groupConversations,
+      pagination: Pagination(
+        hasMore: allMessagesResponse!.pagination.hasMore,
+        page: allMessagesResponse!.pagination.page,
+        limit: allMessagesResponse!.pagination.limit,
+        totalCount: groupConversations.length,
+        totalPages: allMessagesResponse!.pagination.totalPages,
+      ),
     );
+  }
 
-    if (response.statusCode == 200) {
-      isSecret
-          ? secretMessagesResponse = GetMessagesResponseModel.fromJson(
-              jsonDecode(response.body),
-            )
-          : allMessagesResponse = GetMessagesResponseModel.fromJson(
-              jsonDecode(response.body),
-            );
+  void _updateFilterCounts() {
+    if (allMessagesResponse == null) return;
 
-      setState(() {
-        isSecret ? isSecretMessagesLoaded = true : isAllMessagesLoaded = true;
-      });
-    } else {
+    final allCount = allMessagesResponse!.conversations.length;
+    final groupCount = groupMessagesResponse?.conversations.length ?? 0;
+    final secretCount = secretMessagesResponse?.conversations.length ?? 0;
+
+    setState(() {
+      filters[0]['count'] = allCount;
+      filters[1]['count'] = groupCount;
+      filters[2]['count'] = secretCount;
+      // Update other counts as needed
+    });
+  }
+
+  void _showErrorSnackBar(String errorBody) {
+    final errorMessage = jsonDecode(
+      errorBody,
+    )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
+
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-            style: TextStyle(color: Colors.white),
+            errorMessage,
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       );
     }
   }
 
+  GetMessagesResponse? _getSelectedMessagesResponse() {
+    switch (selectedChip) {
+      case "All":
+        return allMessagesResponse;
+      case "Secret":
+        return secretMessagesResponse;
+      case "Groups":
+        return groupMessagesResponse;
+      case "Archived":
+        return archivedMessagesResponse;
+      case "Requests":
+        return requestsMessagesResponse;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dividerColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kGreyInputFillDark
-        : kGreyInputBorder;
-    final iconColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kWhite
-        : kBlack;
-    final selectedChipColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kGreyInputFillDark
-        : kLightPurple;
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final dividerColor = isDarkMode ? kGreyInputFillDark : kGreyInputBorder;
+    final iconColor = isDarkMode ? kWhite : kBlack;
+    final selectedChipColor = isDarkMode ? kGreyInputFillDark : kLightPurple;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Messages",
-          style: TextStyle(
-            fontSize: getProportionateScreenHeight(24),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        leading: Container(),
-        centerTitle: false,
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: getProportionateScreenWidth(22)),
-            child: SizedBox(
-              height: getProportionateScreenHeight(24),
-              width: getProportionateScreenWidth(24),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          NewChatScreen(currentUser: widget.currentUser),
-                    ),
-                  );
-                },
-                child: SvgPicture.asset(
-                  "assets/icons/edit.svg",
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  width: getProportionateScreenWidth(24),
-                  height: getProportionateScreenHeight(24),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: isSecretMessagesLoaded && isAllMessagesLoaded
-          ? SingleChildScrollView(
-              child: Column(
-                children: [
-                  SizedBox(height: getProportionateScreenHeight(17)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: getProportionateScreenWidth(16),
-                    ),
-                    child: TextFormField(
-                      decoration: _buildChatSearchFieldDecoration(context),
-                    ),
-                  ),
-                  SizedBox(height: getProportionateScreenHeight(34)),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      left: getProportionateScreenWidth(17),
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          SvgPicture.asset(
-                            "assets/icons/sliders-horizontal.svg",
-                            colorFilter: ColorFilter.mode(
-                              iconColor,
-                              BlendMode.srcIn,
-                            ),
-                            width: getProportionateScreenWidth(15),
-                            height: getProportionateScreenHeight(15),
-                          ),
-                          SizedBox(width: getProportionateScreenWidth(11)),
-                          ...filters.map((filter) {
-                            final isSelected = selectedChip == filter['label'];
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: GestureDetector(
-                                onTap: () => setState(
-                                  () => selectedChip = filter['label'],
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? selectedChipColor
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(
-                                      color: dividerColor,
-                                      width: isSelected ? 0 : 1.5,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        filter['label'],
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(12),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        filter['count'].toString(),
-                                        style: TextStyle(
-                                          color: Colors.greenAccent,
-                                          fontSize:
-                                              getProportionateScreenHeight(12),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: getProportionateScreenHeight(34)),
-                  selectedChip == "All"
-                      ? _buildListTileList(dividerColor, allMessagesResponse!)
-                      : selectedChip == "Secret"
-                      ? _buildListTileList(
-                          dividerColor,
-                          secretMessagesResponse!,
-                        )
-                      : selectedChip == "Group"
-                      ? _buildListTileList(dividerColor, groupMessagesResponse!)
-                      : Container(),
-                ],
-              ),
-            )
-          : Center(child: CircularProgressIndicator()),
+      appBar: _buildAppBar(iconColor),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(dividerColor, selectedChipColor, iconColor),
     );
   }
 
-  Widget _buildListTileList(
+  PreferredSizeWidget _buildAppBar(Color iconColor) {
+    return AppBar(
+      title: Text(
+        "Messages",
+        style: TextStyle(
+          fontSize: getProportionateScreenHeight(24),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      leading: Container(),
+      centerTitle: false,
+      actions: [
+        Padding(
+          padding: EdgeInsets.only(right: getProportionateScreenWidth(22)),
+          child: InkWell(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    NewChatScreen(currentUser: widget.currentUser),
+              ),
+            ),
+            child: SvgPicture.asset(
+              "assets/icons/edit.svg",
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              width: getProportionateScreenWidth(24),
+              height: getProportionateScreenHeight(24),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody(
     Color dividerColor,
-    GetMessagesResponse messageResponse,
+    Color selectedChipColor,
+    Color iconColor,
   ) {
-    groupMessagesResponse = GetMessagesResponse(
-      conversations: allMessagesResponse!.conversations
-          .where((conversation) => conversation.type == 'group')
-          .toList(),
-      pagination: Pagination(
-        hasMore: allMessagesResponse!.pagination.hasMore,
-        page: allMessagesResponse!.pagination.page,
-        limit: allMessagesResponse!.pagination.limit,
-        totalCount: allMessagesResponse!.pagination.totalCount,
-        totalPages: allMessagesResponse!.pagination.totalPages,
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SizedBox(height: getProportionateScreenHeight(17)),
+          _buildSearchField(),
+          SizedBox(height: getProportionateScreenHeight(34)),
+          _buildFilterChips(dividerColor, selectedChipColor, iconColor),
+          SizedBox(height: getProportionateScreenHeight(34)),
+          _buildConversationList(dividerColor),
+        ],
       ),
     );
+  }
+
+  Widget _buildSearchField() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: getProportionateScreenWidth(16),
+      ),
+      child: TextFormField(
+        decoration: _buildChatSearchFieldDecoration(context),
+        onChanged: (value) {
+          // Add search functionality here
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(
+    Color dividerColor,
+    Color selectedChipColor,
+    Color iconColor,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(left: getProportionateScreenWidth(17)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            SvgPicture.asset(
+              "assets/icons/sliders-horizontal.svg",
+              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              width: getProportionateScreenWidth(15),
+              height: getProportionateScreenHeight(15),
+            ),
+            SizedBox(width: getProportionateScreenWidth(11)),
+            ...filters.map(
+              (filter) =>
+                  _buildFilterChip(filter, dividerColor, selectedChipColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(
+    Map<String, dynamic> filter,
+    Color dividerColor,
+    Color selectedChipColor,
+  ) {
+    final isSelected = selectedChip == filter['label'];
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () => setState(() => selectedChip = filter['label']),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? selectedChipColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: dividerColor,
+              width: isSelected ? 0 : 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Text(
+                filter['label'],
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(12),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                filter['count'].toString(),
+                style: TextStyle(
+                  color: Colors.greenAccent,
+                  fontSize: getProportionateScreenHeight(12),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConversationList(Color dividerColor) {
+    final selectedResponse = _getSelectedMessagesResponse();
+
+    if (selectedResponse == null || selectedResponse.conversations.isEmpty) {
+      return const Center(child: Text('No conversations found'));
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: getProportionateScreenWidth(18),
       ),
       child: ListView.builder(
         shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: messageResponse.conversations.length,
-        itemBuilder: (context, index) {
-          return ChatTile(
-            dividerColor: dividerColor,
-            image: messageResponse.conversations[index].participants
-                .firstWhere(
-                  (participant) =>
-                      participant.user.username != widget.currentUser.username,
-                )
-                .user
-                .profileImage,
-            name: messageResponse.conversations[index].type == "group"
-                ? messageResponse.conversations[index].name!
-                : messageResponse.conversations[index].participants
-                      .firstWhere(
-                        (participant) =>
-                            participant.user.username !=
-                            widget.currentUser.username,
-                      )
-                      .user
-                      .fullName,
-            lastMessage:
-                messageResponse.conversations[index].lastMessage?.content ??
-                "No message Yet",
-            time:
-                messageResponse.conversations[index].lastMessage?.createdAt ??
-                DateTime.now(),
-            unreadMessages: messageResponse.conversations[index].unreadCount,
-          );
-        },
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: selectedResponse.conversations.length,
+        itemBuilder: (context, index) =>
+            _buildChatTile(selectedResponse.conversations[index], dividerColor),
       ),
     );
   }
 
+  Widget _buildChatTile(dynamic conversation, Color dividerColor) {
+    final isGroupChat = conversation.type == "GROUP";
+    final otherParticipant = isGroupChat
+        ? null
+        : conversation.participants.firstWhere(
+            (participant) =>
+                participant.user.username != widget.currentUser.username,
+          );
+
+    return ChatTile(
+      dividerColor: dividerColor,
+      image: isGroupChat
+          ? "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" // TODO: Add group image
+          : otherParticipant?.user.profileImage,
+      name: isGroupChat
+          ? conversation.name ?? 'Group Chat'
+          : otherParticipant?.user.fullName ?? 'Unknown User',
+      lastMessage: conversation.lastMessage?.content ?? "No message yet",
+      time: conversation.lastMessage?.createdAt ?? DateTime.now(),
+      unreadMessages: conversation.unreadCount ?? 0,
+    );
+  }
+
   InputDecoration _buildChatSearchFieldDecoration(BuildContext context) {
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final borderColor = isDarkMode ? kGreySearchInput : kGreyInputBorder;
+    final iconColor = isDarkMode ? kGreyDarkInputBorder : kGreyInputBorder;
+
     return InputDecoration(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
-        borderSide: BorderSide(
-          color: MediaQuery.of(context).platformBrightness == Brightness.dark
-              ? kGreySearchInput
-              : kGreyInputBorder,
-        ),
+        borderSide: BorderSide(color: borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
-        borderSide: BorderSide(
-          color: MediaQuery.of(context).platformBrightness == Brightness.dark
-              ? kGreySearchInput
-              : kGreyInputBorder,
-        ),
+        borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
-        borderSide: BorderSide(
-          color: MediaQuery.of(context).platformBrightness == Brightness.dark
-              ? kGreySearchInput
-              : kGreyInputBorder,
-        ),
+        borderSide: BorderSide(color: borderColor),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
-        borderSide: BorderSide(
-          color: MediaQuery.of(context).platformBrightness == Brightness.dark
-              ? kGreySearchInput
-              : kGreyInputBorder,
-        ),
+        borderSide: BorderSide(color: borderColor),
       ),
-      fillColor: MediaQuery.of(context).platformBrightness == Brightness.dark
-          ? kGreySearchInput
-          : null,
-      filled: MediaQuery.of(context).platformBrightness == Brightness.dark,
+      fillColor: isDarkMode ? kGreySearchInput : null,
+      filled: isDarkMode,
       prefixIcon: Padding(
         padding: EdgeInsets.all(getProportionateScreenHeight(14)),
         child: SvgPicture.asset(
           "assets/icons/search.svg",
-          colorFilter: ColorFilter.mode(
-            MediaQuery.of(context).platformBrightness == Brightness.dark
-                ? kGreyDarkInputBorder
-                : kGreyInputBorder,
-            BlendMode.srcIn,
-          ),
+          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
           width: getProportionateScreenWidth(14),
           height: getProportionateScreenHeight(14),
         ),

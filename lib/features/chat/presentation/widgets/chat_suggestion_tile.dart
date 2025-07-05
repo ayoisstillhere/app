@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:app/constants.dart';
+import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 
 class ChatSuggestionTile extends StatefulWidget {
@@ -14,6 +19,8 @@ class ChatSuggestionTile extends StatefulWidget {
     required this.isSelected,
     this.showCheckbox = false,
     this.onSelectionChanged,
+    required this.userId,
+    required this.currentUser,
   });
 
   final Color dividerColor;
@@ -23,20 +30,25 @@ class ChatSuggestionTile extends StatefulWidget {
   final bool isSelected;
   final bool showCheckbox;
   final Function(bool)? onSelectionChanged;
+  final String userId;
+  final UserEntity currentUser;
 
   @override
   State<ChatSuggestionTile> createState() => _ChatSuggestionTileState();
 }
 
 class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
+  List<String> selectedUsers = [];
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ChatScreen()),
-        );
+      onTap: () async {
+        if (!widget.showCheckbox) {
+          selectedUsers.add(widget.userId);
+          selectedUsers.add(widget.currentUser.id);
+          await _createChat(selectedUsers);
+        }
       },
       child: Container(
         padding: EdgeInsets.symmetric(
@@ -116,5 +128,56 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
         ),
       ),
     );
+  }
+
+  Future<void> _createChat(List selectedUsers) async {
+    final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
+    final token = await AuthManager.getToken();
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      "participantUserIds": selectedUsers,
+      "type": "DIRECT",
+      "isSecret": false,
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              "$e",
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 }

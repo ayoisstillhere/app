@@ -131,6 +131,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
                         MaterialPageRoute(
                           builder: (context) => GroupChatScreen(
                             followingResponse: followingResponse!,
+                            currentUser: widget.currentUser,
                           ),
                         ),
                       );
@@ -218,6 +219,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
                           name: followingResponse!.following[index].fullName,
                           handle: followingResponse!.following[index].username,
                           isSelected: false,
+                          currentUser: widget.currentUser,
+                          userId: followingResponse!.following[index].id,
                         ),
                       );
                     },

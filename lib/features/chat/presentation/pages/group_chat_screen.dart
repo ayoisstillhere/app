@@ -1,15 +1,26 @@
+import 'dart:convert';
+
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/presentation/pages/chat_screen.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import 'package:app/features/chat/domain/entities/following_response_entity.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import '../widgets/chat_suggestion_tile.dart';
 
 class GroupChatScreen extends StatefulWidget {
-  const GroupChatScreen({super.key, required this.followingResponse});
+  const GroupChatScreen({
+    super.key,
+    required this.followingResponse,
+    required this.currentUser,
+  });
   final FollowingResponse followingResponse;
+  final UserEntity currentUser;
 
   @override
   State<GroupChatScreen> createState() => _GroupChatScreenState();
@@ -182,6 +193,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                           handle: user.username,
                           isSelected: isSelected,
                           showCheckbox: true,
+                          currentUser: widget.currentUser,
+                          userId: user.id,
                           onSelectionChanged: (selected) {
                             if (selected) {
                               toggleUserSelection(user);
@@ -204,7 +217,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               left: getProportionateScreenWidth(33),
               right: getProportionateScreenWidth(33),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  _createGroupChat(
+                    selectedUsers.map((user) => user.id).toList(),
+                    groupNameController.text.trim(),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kLightPurple,
                   padding: EdgeInsets.symmetric(
@@ -334,5 +352,58 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         color: kGreyDarkInputBorder,
       ),
     );
+  }
+
+  Future<void> _createGroupChat(List selectedUsers, String groupName) async {
+    selectedUsers.add(widget.currentUser.id);
+    final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
+    final token = await AuthManager.getToken();
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      "participantUserIds": selectedUsers,
+      "type": "GROUP",
+      "name": groupName,
+      "isSecret": false,
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              "$e",
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 }
