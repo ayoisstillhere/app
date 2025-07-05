@@ -151,7 +151,13 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ChatScreen()),
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              chatId: jsonDecode(response.body)['id'],
+              name: widget.name,
+              imageUrl: widget.image,
+            ),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

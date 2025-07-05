@@ -14,6 +14,7 @@ class ChatTile extends StatelessWidget {
     required this.lastMessage,
     required this.time,
     required this.unreadMessages,
+    required this.chatId,
   });
 
   final Color dividerColor;
@@ -22,6 +23,7 @@ class ChatTile extends StatelessWidget {
   final String lastMessage;
   final DateTime time;
   final int unreadMessages;
+  final String chatId;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,10 @@ class ChatTile extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ChatScreen()),
+          MaterialPageRoute(
+            builder: (context) =>
+                ChatScreen(chatId: chatId, name: name, imageUrl: image),
+          ),
         );
       },
       child: Container(

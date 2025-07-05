@@ -357,6 +357,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       lastMessage: conversation.lastMessage?.content ?? "No message yet",
       time: conversation.lastMessage?.createdAt ?? DateTime.now(),
       unreadMessages: conversation.unreadCount ?? 0,
+      chatId: conversation.id,
     );
   }
 

@@ -1,14 +1,26 @@
+import 'dart:convert';
+
 import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../data/models/chat_message_model.dart';
 import '../widgets/message_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({
+    super.key,
+    required this.chatId,
+    required this.name,
+    required this.imageUrl,
+  });
+  final String chatId;
+  final String name;
+  final String imageUrl;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -18,22 +30,66 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     if (_messageController.text.trim().isNotEmpty) {
-      setState(() {
-        messages.add(
-          ChatMessage(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            text: _messageController.text.trim(),
-            isMe: true,
-            timestamp: DateTime.now(),
-            isRead: false,
+      final url = Uri.parse('$baseUrl/api/v1/chat/messages');
+      final token = await AuthManager.getToken();
+
+      final request = http.MultipartRequest('POST', url)
+        ..headers['accept'] = '*/*'
+        ..headers['Authorization'] = 'Bearer $token';
+
+      // Add form fields
+      request.fields['conversationId'] = widget.chatId;
+      request.fields['type'] = 'TEXT';
+      request.fields['content'] = _messageController.text.trim();
+      request.fields['isViewOnce'] = 'false';
+      request.fields['deleteAfter24Hours'] = 'false';
+      request.fields['isForwarded'] = 'false';
+      // request.fields['replyToId'] = '123e4567-e89b-12d3-a456-426614174000';
+
+      // You can skip this if you're not uploading a file
+      // request.files.add(await http.MultipartFile.fromPath('file', 'path_to_file'));
+
+      try {
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() {
+            messages.add(
+              ChatMessage(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                text: _messageController.text.trim(),
+                isMe: true,
+                timestamp: DateTime.now(),
+                isRead: false,
+              ),
+            );
+          });
+          _messageController.clear();
+          _scrollToBottom();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text(
+                jsonDecode(
+                  response.body,
+                )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(e.toString(), style: TextStyle(color: Colors.white)),
           ),
         );
-      });
-      _messageController.clear();
-      _scrollToBottom();
+      }
     }
   }
 
@@ -72,9 +128,7 @@ class _ChatScreenState extends State<ChatScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                  ),
+                  image: NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -84,7 +138,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Ayodele",
+                  widget.name,
                   style: TextStyle(
                     fontSize: getProportionateScreenHeight(16),
                     fontWeight: FontWeight.w600,
@@ -193,12 +247,17 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final message = messages[index];
-                return MessageBubble(message: message, isDark: isDark);
+                return MessageBubble(
+                  message: message,
+                  isDark: isDark,
+                  imageUrl: widget.imageUrl,
+                );
               },
             ),
           ),
 
           // Message Input
+          // Replace your message input Container with this:
           Container(
             padding: EdgeInsets.only(bottom: getProportionateScreenHeight(16)),
             decoration: BoxDecoration(color: backgroundColor),
@@ -209,7 +268,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   right: getProportionateScreenWidth(14),
                 ),
                 decoration: BoxDecoration(
-                  // color: inputFillColor,
                   borderRadius: BorderRadius.circular(
                     getProportionateScreenWidth(40),
                   ),
@@ -273,22 +331,61 @@ class _ChatScreenState extends State<ChatScreen> {
                           onSubmitted: (_) => _sendMessage(),
                         ),
                       ),
-                      SvgPicture.asset(
-                        "assets/icons/chat_paperclip.svg",
-                        height: getProportionateScreenHeight(21.27),
-                        width: getProportionateScreenWidth(21.27),
-                      ),
-                      SizedBox(width: getProportionateScreenWidth(8)),
-                      SvgPicture.asset(
-                        "assets/icons/chat_mic.svg",
-                        height: getProportionateScreenHeight(21.27),
-                        width: getProportionateScreenWidth(21.27),
-                      ),
-                      SizedBox(width: getProportionateScreenWidth(8)),
-                      SvgPicture.asset(
-                        "assets/icons/chat_image.svg",
-                        height: getProportionateScreenHeight(21.27),
-                        width: getProportionateScreenWidth(21.27),
+                      // Use ValueListenableBuilder to listen to text changes
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _messageController,
+                        builder: (context, value, child) {
+                          final hasText = value.text.trim().isNotEmpty;
+                          return Row(
+                            children: [
+                              // Send button - visible when there's text
+                              if (hasText)
+                                InkWell(
+                                  onTap: () => _sendMessage(),
+                                  child: Container(
+                                    width: getProportionateScreenWidth(55),
+                                    height: getProportionateScreenHeight(34),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: getProportionateScreenHeight(5),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: kChatBubbleGradient,
+                                      borderRadius: BorderRadius.circular(
+                                        getProportionateScreenWidth(20),
+                                      ),
+                                    ),
+                                    child: SvgPicture.asset(
+                                      "assets/icons/send.svg",
+                                      height: getProportionateScreenHeight(
+                                        21.27,
+                                      ),
+                                      width: getProportionateScreenWidth(21.27),
+                                    ),
+                                  ),
+                                ),
+                              // Attachment icons - visible when there's no text
+                              if (!hasText) ...[
+                                SvgPicture.asset(
+                                  "assets/icons/chat_paperclip.svg",
+                                  height: getProportionateScreenHeight(21.27),
+                                  width: getProportionateScreenWidth(21.27),
+                                ),
+                                SizedBox(width: getProportionateScreenWidth(8)),
+                                SvgPicture.asset(
+                                  "assets/icons/chat_mic.svg",
+                                  height: getProportionateScreenHeight(21.27),
+                                  width: getProportionateScreenWidth(21.27),
+                                ),
+                                SizedBox(width: getProportionateScreenWidth(8)),
+                                SvgPicture.asset(
+                                  "assets/icons/chat_image.svg",
+                                  height: getProportionateScreenHeight(21.27),
+                                  width: getProportionateScreenWidth(21.27),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
