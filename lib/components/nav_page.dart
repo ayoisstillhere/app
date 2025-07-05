@@ -70,13 +70,11 @@ class _NavPageState extends State<NavPage> {
       navPages = [
         HomeScreen(currentUser: user),
         ExploreScreen(currentUser: user),
-        ChatListScreen(),
+        ChatListScreen(currentUser: user),
         ProfileScreen(
-          iAmFollowing: false,
-          followsMe: false,
           isVerified: true,
           isFromNav: true,
-          currentUser: user,
+          userName: user.username,
         ),
       ];
       setState(() {
