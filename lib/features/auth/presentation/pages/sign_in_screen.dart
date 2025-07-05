@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../components/nav_page.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../widgets/custom_check_box.dart';
 import '../widgets/form_header.dart';
@@ -83,7 +84,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        "Email",
+                        "Email or Username",
                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w500,
                           color: labelColor,
@@ -160,11 +161,14 @@ class _SignInScreenState extends State<SignInScreen> {
                             if (response.statusCode == 200) {
                               final responseData = jsonDecode(response.body);
                               final token = responseData['access_token'];
+                              final refreshToken =
+                                  responseData['refresh_token'];
 
                               // Store token in SharedPreferences
                               final prefs =
                                   await SharedPreferences.getInstance();
                               await prefs.setString('auth_token', token);
+                              AuthManager.setRefreshToken(refreshToken);
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
                                   builder: (context) => const NavPage(),
@@ -237,11 +241,11 @@ class _SignInScreenState extends State<SignInScreen> {
     }
 
     // Regular expression for email validation
-    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    // final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-    if (!emailRegExp.hasMatch(value)) {
-      return 'Please enter a valid email address';
-    }
+    // if (!emailRegExp.hasMatch(value)) {
+    //   return 'Please enter a valid email address';
+    // }
 
     return null; // Return null if validation passes
   }

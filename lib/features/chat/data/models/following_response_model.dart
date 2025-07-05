@@ -39,14 +39,16 @@ class FollowingModel extends Following {
 
   factory FollowingModel.fromJson(Map<String, dynamic> json) {
     return FollowingModel(
-      id: json['id'],
-      username: json['username'],
-      fullName: json['fullName'],
-      profileImage: json['profileImage'],
-      bio: json['bio'],
-      followerCount: json['followerCount'],
-      followingCount: json['followingCount'],
-      followedAt: DateTime.parse(json['followedAt']),
+      id: json['id'] ?? '',
+      username: json['username'] ?? '',
+      fullName: json['fullName'] ?? '',
+      profileImage: json['profileImage'] ?? '',
+      bio: json['bio'] ?? '',
+      followerCount: json['followerCount'] ?? 0,
+      followingCount: json['followingCount'] ?? 0,
+      followedAt: json['followedAt'] != null
+          ? DateTime.parse(json['followedAt'])
+          : DateTime.now(),
     );
   }
 

@@ -129,7 +129,9 @@ class _NewChatScreenState extends State<NewChatScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const GroupChatScreen(),
+                          builder: (context) => GroupChatScreen(
+                            followingResponse: followingResponse!,
+                          ),
                         ),
                       );
                     },

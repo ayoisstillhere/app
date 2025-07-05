@@ -33,6 +33,7 @@ class AuthManager {
     _cachedToken = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+    await prefs.remove(_refreshTokenKey);
   }
 
   // Check if user is logged in
@@ -106,8 +107,7 @@ class AuthManager {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await setToken(data['accessToken']);
-        await setRefreshToken(data['refreshToken']);
+        await setToken(data['access_token']);
         return true;
       } else {
         // If refresh fails, clear tokens and return false

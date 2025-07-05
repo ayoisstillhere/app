@@ -110,11 +110,8 @@ class _PostCardState extends State<PostCard> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ProfileScreen(
-                          iAmFollowing: false,
-                          followsMe: true,
                           isVerified: true,
-                          currentUser: widget.currentUser,
-                          otherUserName: widget.authorHandle,
+                          userName: widget.authorHandle,
                         ),
                       ),
                     );

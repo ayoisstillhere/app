@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
+import 'package:app/features/chat/domain/entities/following_response_entity.dart';
+
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
 import '../widgets/chat_suggestion_tile.dart';
 
 class GroupChatScreen extends StatefulWidget {
-  const GroupChatScreen({super.key});
+  const GroupChatScreen({super.key, required this.followingResponse});
+  final FollowingResponse followingResponse;
 
   @override
   State<GroupChatScreen> createState() => _GroupChatScreenState();
@@ -14,9 +17,9 @@ class GroupChatScreen extends StatefulWidget {
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
   final TextEditingController groupNameController = TextEditingController();
-  final List<Map<String, dynamic>> selectedUsers = [];
+  final List<Following> selectedUsers = [];
 
-  void toggleUserSelection(Map<String, dynamic> user) {
+  void toggleUserSelection(Following user) {
     setState(() {
       if (selectedUsers.contains(user)) {
         selectedUsers.remove(user);
@@ -26,7 +29,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     });
   }
 
-  void removeSelectedUser(Map<String, dynamic> user) {
+  void removeSelectedUser(Following user) {
     setState(() {
       selectedUsers.remove(user);
     });
@@ -162,9 +165,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               // Suggested Users List
               Expanded(
                 child: ListView.builder(
-                  itemCount: mockListTile.length,
+                  itemCount: widget.followingResponse.following.length,
                   itemBuilder: (context, index) {
-                    final user = mockListTile[index];
+                    final user = widget.followingResponse.following[index];
                     bool isSelected = selectedUsers.contains(user);
                     return Padding(
                       padding: EdgeInsets.symmetric(
@@ -174,9 +177,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         onTap: () => toggleUserSelection(user),
                         child: ChatSuggestionTile(
                           dividerColor: dividerColor,
-                          image: user["image"],
-                          name: user["name"],
-                          handle: user["handle"],
+                          image: user.profileImage,
+                          name: user.fullName,
+                          handle: user.username,
                           isSelected: isSelected,
                           showCheckbox: true,
                           onSelectionChanged: (selected) {
@@ -228,7 +231,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  Widget _buildSelectedUserChip(Map<String, dynamic> user) {
+  Widget _buildSelectedUserChip(Following user) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -241,7 +244,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(user["image"]),
+                  image: NetworkImage(user.profileImage),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -263,7 +266,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         SizedBox(
           width: getProportionateScreenWidth(62),
           child: Text(
-            user["name"],
+            user.fullName,
             style: TextStyle(
               fontSize: getProportionateScreenHeight(12),
               fontWeight: FontWeight.w500,

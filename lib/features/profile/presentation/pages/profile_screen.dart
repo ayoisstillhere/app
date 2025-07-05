@@ -19,21 +19,15 @@ import '../../../home/presentation/widgets/post_Card.dart';
 import '../../../home/presentation/widgets/reply_card.dart';
 
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({
+  const ProfileScreen({
     super.key,
-    required this.iAmFollowing,
-    required this.followsMe,
     required this.isVerified,
     this.isFromNav = false,
-    required this.currentUser,
-    this.otherUserName,
+    required this.userName,
   });
-  final bool iAmFollowing;
-  final bool followsMe;
   final bool isVerified;
   final bool isFromNav;
-  UserEntity currentUser;
-  String? otherUserName;
+  final String userName;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -44,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   late TabController controller;
   bool canMessage = false;
 
+  UserEntity? user;
   PostResponseEntity? posts;
   PostResponseEntity? reposts;
   PostResponseEntity? comments;
@@ -56,25 +51,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool isCommentsLoaded = false;
   bool isSavedPostsLoaded = false;
   bool isLikedPostsLoaded = false;
-  bool isOtherUserLoaded = false;
+  bool isUserLoaded = false;
 
   @override
   void initState() {
     super.initState();
     controller = TabController(length: 6, vsync: this);
     if (mounted) {
-      if (widget.otherUserName != null) {
-        _fetchOtherUser();
-      } else {
-        setState(() {
-          isOtherUserLoaded = true;
-        });
-        _getPosts();
-        _getReposts();
-        _getComments();
-        _getSavedPosts();
-        _getLikedPosts();
-      }
+      _fetchUser();
     }
   }
 
@@ -87,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/posts"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/posts"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -118,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getReposts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/reposts"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/reposts"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -144,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getComments() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/comments"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/comments"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -169,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getSavedPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/saves"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/saves"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -195,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _getLikedPosts() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${widget.currentUser.id}/likes"),
+      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/likes"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -218,17 +202,16 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  Future<void> _fetchOtherUser() async {
-    if (widget.otherUserName == null) return;
+  Future<void> _fetchUser() async {
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/user/profile/${widget.otherUserName}"),
+      Uri.parse("$baseUrl/api/v1/user/profile/${widget.userName}"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
       if (mounted) {
         setState(() {
-          widget.currentUser = UserModel.fromJson(jsonDecode(response.body));
+          user = UserModel.fromJson(jsonDecode(response.body));
         });
         _getPosts();
         _getReposts();
@@ -236,7 +219,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         _getSavedPosts();
         _getLikedPosts();
         setState(() {
-          isOtherUserLoaded = true;
+          isUserLoaded = true;
+          if (!user!.isOwnProfile && (user!.isFollowing || user!.followsYou)) {
+            setState(() {
+              canMessage = true;
+            });
+          }
         });
       }
     } else {
@@ -264,14 +252,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-    if (!widget.currentUser.isOwnProfile &&
-        (widget.iAmFollowing || widget.followsMe)) {
-      setState(() {
-        canMessage = true;
-      });
-    }
+
     return Scaffold(
-      body: isOtherUserLoaded
+      body: isUserLoaded
           ? SafeArea(
               child: NestedScrollView(
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -293,9 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     image: DecorationImage(
-                                      image: NetworkImage(
-                                        widget.currentUser.profileImage,
-                                      ),
+                                      image: NetworkImage(user!.profileImage),
                                       fit: BoxFit.cover,
                                     ),
                                     border: Border.all(
@@ -311,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     Row(
                                       children: [
                                         Text(
-                                          widget.currentUser.fullName,
+                                          user!.fullName,
                                           style: TextStyle(
                                             fontSize:
                                                 getProportionateScreenHeight(
@@ -334,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       ],
                                     ),
                                     Text(
-                                      "@${widget.currentUser.username}",
+                                      "@${user!.username}",
                                       style: TextStyle(
                                         fontSize: getProportionateScreenHeight(
                                           13,
@@ -350,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   children: [
                                     Text(
                                       NumberFormat.compact().format(
-                                        widget.currentUser.followerCount,
+                                        user!.followerCount,
                                       ),
                                       style: TextStyle(
                                         fontSize: getProportionateScreenHeight(
@@ -379,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   children: [
                                     Text(
                                       NumberFormat.compact().format(
-                                        widget.currentUser.followingCount,
+                                        user!.followingCount,
                                       ),
                                       style: TextStyle(
                                         fontSize: getProportionateScreenHeight(
@@ -422,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       width: getProportionateScreenWidth(10),
                                     ),
                                     Text(
-                                      widget.currentUser.location,
+                                      user!.location,
                                       style: TextStyle(
                                         fontSize: getProportionateScreenHeight(
                                           12,
@@ -443,7 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       width: getProportionateScreenWidth(10),
                                     ),
                                     Text(
-                                      'Since ${DateFormat('MMMM yyyy').format(widget.currentUser.dateJoined)}',
+                                      'Since ${DateFormat('MMMM yyyy').format(user!.dateJoined)}',
                                       style: TextStyle(
                                         fontSize: getProportionateScreenHeight(
                                           12,
@@ -458,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   height: getProportionateScreenHeight(9),
                                 ),
                                 SocialText(
-                                  text: widget.currentUser.bio,
+                                  text: user!.bio,
                                   baseStyle: Theme.of(context)
                                       .textTheme
                                       .bodyLarge!
@@ -483,7 +464,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ),
                             child: Row(
                               children: [
-                                if (widget.currentUser.isOwnProfile)
+                                if (user!.isOwnProfile)
                                   InkWell(
                                     onTap: () {},
                                     child: Container(
@@ -505,11 +486,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       ),
                                     ),
                                   ),
-                                if (!widget.currentUser.isOwnProfile &&
-                                    !widget.iAmFollowing &&
-                                    !widget.followsMe)
+                                if (!user!.isOwnProfile &&
+                                    !user!.isFollowing &&
+                                    !user!.followsYou)
                                   InkWell(
-                                    onTap: () {},
+                                    onTap: () async {
+                                      await _followUser();
+                                    },
                                     child: Container(
                                       height: getProportionateScreenHeight(27),
                                       width: canMessage
@@ -524,10 +507,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       child: Center(child: Text("Follow")),
                                     ),
                                   ),
-                                if (!widget.currentUser.isOwnProfile &&
-                                    widget.iAmFollowing)
+                                if (!user!.isOwnProfile && user!.isFollowing)
                                   InkWell(
-                                    onTap: () {},
+                                    onTap: () async {
+                                      await _unfollowUser();
+                                    },
                                     child: Container(
                                       height: getProportionateScreenHeight(27),
                                       width: canMessage
@@ -545,11 +529,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       child: Center(child: Text("Unfollow")),
                                     ),
                                   ),
-                                if (!widget.currentUser.isOwnProfile &&
-                                    widget.followsMe &&
-                                    !widget.iAmFollowing)
+                                if (!user!.isOwnProfile &&
+                                    user!.followsYou &&
+                                    !user!.isFollowing)
                                   InkWell(
-                                    onTap: () {},
+                                    onTap: () async {
+                                      await _followUser();
+                                    },
                                     child: Container(
                                       height: getProportionateScreenHeight(27),
                                       width: canMessage
@@ -584,8 +570,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     child: Center(child: Text("Share Profile")),
                                   ),
                                 ),
-                                if (!widget.currentUser.isOwnProfile &&
-                                    (widget.iAmFollowing || widget.followsMe))
+                                if (!user!.isOwnProfile &&
+                                    (user!.isFollowing || user!.followsYou))
                                   Spacer(),
                                 if (canMessage)
                                   InkWell(
@@ -689,7 +675,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   bookmarks: post.count.saves,
                                   content: post.content,
                                   pictures: post.media,
-                                  currentUser: widget.currentUser,
+                                  currentUser: user!,
                                   postId: post.id,
                                 ),
                               );
@@ -717,7 +703,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   bookmarks: repost.count.saves,
                                   content: repost.content,
                                   pictures: repost.media,
-                                  currentUser: widget.currentUser,
+                                  currentUser: user!,
                                   postId: repost.id,
                                 ),
                               );
@@ -744,7 +730,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   bookmarks: media.count.saves,
                                   content: media.content,
                                   pictures: media.media,
-                                  currentUser: widget.currentUser,
+                                  currentUser: user!,
                                   postId: media.id,
                                 ),
                               );
@@ -797,7 +783,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   bookmarks: savedPost.count.saves,
                                   content: savedPost.content,
                                   pictures: savedPost.media,
-                                  currentUser: widget.currentUser,
+                                  currentUser: user!,
                                   postId: savedPost.id,
                                 ),
                               );
@@ -824,7 +810,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   bookmarks: likedPost.count.saves,
                                   content: likedPost.content,
                                   pictures: likedPost.media,
-                                  currentUser: widget.currentUser,
+                                  currentUser: user!,
                                   postId: likedPost.id,
                                 ),
                               );
@@ -849,10 +835,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       alignment: Alignment.topCenter,
       width: double.infinity,
-      decoration: widget.currentUser.bannerImage != null
+      decoration: user!.bannerImage != null
           ? BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(widget.currentUser.bannerImage),
+                image: NetworkImage(user!.bannerImage),
                 fit: BoxFit.cover,
               ),
             )
@@ -883,9 +869,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
           InkWell(
-            onTap: widget.currentUser.isOwnProfile
-                ? _onMyMoreButtonTap
-                : _onMoreButtonTap,
+            onTap: user!.isOwnProfile ? _onMyMoreButtonTap : _onMoreButtonTap,
             child: SvgPicture.asset(
               "assets/icons/more-vertical.svg",
               colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
@@ -951,7 +935,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         getProportionateScreenHeight(100),
       ),
       items: [
-        if (widget.iAmFollowing)
+        if (user!.isFollowing)
           PopupMenuItem<String>(
             value: 'Unfollow',
             child: Text(
@@ -985,6 +969,62 @@ class _ProfileScreenState extends State<ProfileScreen>
       ],
     );
     if (selected == 'Unfollow' && mounted) {}
+  }
+
+  Future<void> _followUser() async {
+    final token = await AuthManager.getToken();
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/api/v1/user/follow"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"userId": user!.id}),
+    );
+
+    if (response.statusCode == 200) {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) =>
+                ProfileScreen(isVerified: true, userName: user!.username),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to follow user. Please try again.")),
+      );
+    }
+  }
+
+  Future<void> _unfollowUser() async {
+    final token = await AuthManager.getToken();
+
+    final response = await http.delete(
+      Uri.parse("$baseUrl/api/v1/user/unfollow"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"userId": user!.id}),
+    );
+
+    if (response.statusCode == 200) {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) =>
+                ProfileScreen(isVerified: true, userName: user!.username),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to unfollow user. Please try again.")),
+      );
+    }
   }
 }
 
