@@ -1,45 +1,50 @@
 import '../../domain/entities/get_messages_response_entity.dart';
 
-class GetMessagesResponseModel extends GetMessagesResponse {
-  GetMessagesResponseModel({
+class GetMessageResponseModel extends GetMessageResponse {
+  GetMessageResponseModel({
     required List<ConversationModel> conversations,
     required PaginationModel pagination,
   }) : super(conversations: conversations, pagination: pagination);
 
-  factory GetMessagesResponseModel.fromJson(Map<String, dynamic> json) {
-    return GetMessagesResponseModel(
+  factory GetMessageResponseModel.fromJson(Map<String, dynamic> json) {
+    return GetMessageResponseModel(
       conversations: (json['conversations'] as List)
-          .map((conv) => ConversationModel.fromJson(conv))
+          .map((e) => ConversationModel.fromJson(e))
           .toList(),
       pagination: PaginationModel.fromJson(json['pagination']),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'conversations': (conversations as List<ConversationModel>)
-          .map((conv) => conv.toJson())
-          .toList(),
-      'pagination': (pagination as PaginationModel).toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'conversations': conversations
+        .map((e) => (e as ConversationModel).toJson())
+        .toList(),
+    'pagination': (pagination as PaginationModel).toJson(),
+  };
 }
 
 class ConversationModel extends Conversation {
   ConversationModel({
     required super.id,
-    super.name,
+    required super.name,
     required super.type,
     required super.isSecret,
     required super.hasDisappearingMessages,
-    super.encryptionKey,
+    required super.encryptionKey,
     required super.createdAt,
     required super.updatedAt,
-    required List<ParticipantModel> super.participants,
-    required List<MessageModel> super.messages,
-    MessageModel? super.lastMessage,
+    required List<ParticipantModel> participants,
+    required List<MessageModel> messages,
+    required super.isConversationMutedForMe,
+    required super.isConversationArchivedForMe,
+    required super.isConversationRequestForMe,
+    required MessageModel? lastMessage,
     required super.unreadCount,
-  });
+  }) : super(
+         participants: participants,
+         messages: messages,
+         lastMessage: lastMessage,
+       );
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
     return ConversationModel(
@@ -52,11 +57,14 @@ class ConversationModel extends Conversation {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       participants: (json['participants'] as List)
-          .map((p) => ParticipantModel.fromJson(p))
+          .map((e) => ParticipantModel.fromJson(e))
           .toList(),
       messages: (json['messages'] as List)
-          .map((m) => MessageModel.fromJson(m))
+          .map((e) => MessageModel.fromJson(e))
           .toList(),
+      isConversationMutedForMe: json['isConversationMutedForMe'],
+      isConversationArchivedForMe: json['isConversationArchivedForMe'],
+      isConversationRequestForMe: json['isConversationRequestForMe'],
       lastMessage: json['lastMessage'] != null
           ? MessageModel.fromJson(json['lastMessage'])
           : null,
@@ -64,28 +72,27 @@ class ConversationModel extends Conversation {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'type': type,
-      'isSecret': isSecret,
-      'hasDisappearingMessages': hasDisappearingMessages,
-      'encryptionKey': encryptionKey,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'participants': (participants as List<ParticipantModel>)
-          .map((p) => p.toJson())
-          .toList(),
-      'messages': (messages as List<MessageModel>)
-          .map((m) => m.toJson())
-          .toList(),
-      'lastMessage': lastMessage != null
-          ? (lastMessage as MessageModel).toJson()
-          : null,
-      'unreadCount': unreadCount,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'type': type,
+    'isSecret': isSecret,
+    'hasDisappearingMessages': hasDisappearingMessages,
+    'encryptionKey': encryptionKey,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'participants': participants
+        .map((e) => (e as ParticipantModel).toJson())
+        .toList(),
+    'messages': messages.map((e) => (e as MessageModel).toJson()).toList(),
+    'isConversationMutedForMe': isConversationMutedForMe,
+    'isConversationArchivedForMe': isConversationArchivedForMe,
+    'isConversationRequestForMe': isConversationRequestForMe,
+    'lastMessage': lastMessage != null
+        ? (lastMessage as MessageModel).toJson()
+        : null,
+    'unreadCount': unreadCount,
+  };
 }
 
 class MessageModel extends Message {
@@ -104,9 +111,9 @@ class MessageModel extends Message {
     required super.replyToId,
     required super.createdAt,
     required super.updatedAt,
-    required SenderModel super.sender,
+    required SenderModel sender,
     required super.reactions,
-  });
+  }) : super(sender: sender);
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
@@ -120,7 +127,7 @@ class MessageModel extends Message {
       encryptionMetadata: json['encryptionMetadata'],
       isForwarded: json['isForwarded'],
       isViewOnce: json['isViewOnce'],
-      expireAt: DateTime.parse(json['expireAt']),
+      expireAt: json['expireAt'],
       replyToId: json['replyToId'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
@@ -129,26 +136,24 @@ class MessageModel extends Message {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'conversationId': conversationId,
-      'senderId': senderId,
-      'type': type,
-      'content': content,
-      'mediaUrl': mediaUrl,
-      'mediaType': mediaType,
-      'encryptionMetadata': encryptionMetadata,
-      'isForwarded': isForwarded,
-      'isViewOnce': isViewOnce,
-      'expireAt': expireAt.toIso8601String(),
-      'replyToId': replyToId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'sender': (sender as SenderModel).toJson(),
-      'reactions': reactions,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'conversationId': conversationId,
+    'senderId': senderId,
+    'type': type,
+    'content': content,
+    'mediaUrl': mediaUrl,
+    'mediaType': mediaType,
+    'encryptionMetadata': encryptionMetadata,
+    'isForwarded': isForwarded,
+    'isViewOnce': isViewOnce,
+    'expireAt': expireAt,
+    'replyToId': replyToId,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'sender': (sender as SenderModel).toJson(),
+    'reactions': reactions,
+  };
 }
 
 class SenderModel extends Sender {
@@ -161,9 +166,10 @@ class SenderModel extends Sender {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {'username': username, 'profileImage': profileImage};
-  }
+  Map<String, dynamic> toJson() => {
+    'username': username,
+    'profileImage': profileImage,
+  };
 }
 
 class ParticipantModel extends Participant {
@@ -174,8 +180,11 @@ class ParticipantModel extends Participant {
     required super.joinedAt,
     required super.lastReadAt,
     required super.conversationId,
-    required UserModel super.user,
-  });
+    required super.isConversationMutedForMe,
+    required super.isConversationArchivedForMe,
+    required super.isConversationRequestForMe,
+    required UserModel user,
+  }) : super(user: user);
 
   factory ParticipantModel.fromJson(Map<String, dynamic> json) {
     return ParticipantModel(
@@ -185,21 +194,25 @@ class ParticipantModel extends Participant {
       joinedAt: DateTime.parse(json['joinedAt']),
       lastReadAt: DateTime.parse(json['lastReadAt']),
       conversationId: json['conversationId'],
+      isConversationMutedForMe: json['isConversationMutedForMe'],
+      isConversationArchivedForMe: json['isConversationArchivedForMe'],
+      isConversationRequestForMe: json['isConversationRequestForMe'],
       user: UserModel.fromJson(json['user']),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'userId': userId,
-      'isAdmin': isAdmin,
-      'joinedAt': joinedAt.toIso8601String(),
-      'lastReadAt': lastReadAt.toIso8601String(),
-      'conversationId': conversationId,
-      'user': (user as UserModel).toJson(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'isAdmin': isAdmin,
+    'joinedAt': joinedAt.toIso8601String(),
+    'lastReadAt': lastReadAt.toIso8601String(),
+    'conversationId': conversationId,
+    'isConversationMutedForMe': isConversationMutedForMe,
+    'isConversationArchivedForMe': isConversationArchivedForMe,
+    'isConversationRequestForMe': isConversationRequestForMe,
+    'user': (user as UserModel).toJson(),
+  };
 }
 
 class UserModel extends User {
@@ -217,13 +230,11 @@ class UserModel extends User {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'username': username,
-      'profileImage': profileImage,
-      'fullName': fullName,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'username': username,
+    'profileImage': profileImage,
+    'fullName': fullName,
+  };
 }
 
 class PaginationModel extends Pagination {
@@ -245,13 +256,11 @@ class PaginationModel extends Pagination {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'page': page,
-      'limit': limit,
-      'totalCount': totalCount,
-      'totalPages': totalPages,
-      'hasMore': hasMore,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'page': page,
+    'limit': limit,
+    'totalCount': totalCount,
+    'totalPages': totalPages,
+    'hasMore': hasMore,
+  };
 }

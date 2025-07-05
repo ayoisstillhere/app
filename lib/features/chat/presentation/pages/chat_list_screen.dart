@@ -32,11 +32,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
     {'label': 'Requests', 'count': 2},
   ];
 
-  GetMessagesResponse? allMessagesResponse;
-  GetMessagesResponse? secretMessagesResponse;
-  GetMessagesResponse? groupMessagesResponse;
-  GetMessagesResponse? archivedMessagesResponse;
-  GetMessagesResponse? requestsMessagesResponse;
+  GetMessageResponse? allMessagesResponse;
+  GetMessageResponse? secretMessagesResponse;
+  GetMessageResponse? groupMessagesResponse;
+  GetMessageResponse? archivedMessagesResponse;
+  GetMessageResponse? requestsMessagesResponse;
 
   bool isAllMessagesLoaded = false;
   bool isSecretMessagesLoaded = false;
@@ -71,7 +71,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
 
       if (response.statusCode == 200) {
-        final responseData = GetMessagesResponseModel.fromJson(
+        final responseData = GetMessageResponseModel.fromJson(
           jsonDecode(response.body),
         );
 
@@ -97,7 +97,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         .where((conversation) => conversation.type == 'GROUP')
         .toList();
 
-    groupMessagesResponse = GetMessagesResponse(
+    groupMessagesResponse = GetMessageResponse(
       conversations: groupConversations,
       pagination: Pagination(
         hasMore: allMessagesResponse!.pagination.hasMore,
@@ -142,7 +142,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  GetMessagesResponse? _getSelectedMessagesResponse() {
+  GetMessageResponse? _getSelectedMessagesResponse() {
     switch (selectedChip) {
       case "All":
         return allMessagesResponse;

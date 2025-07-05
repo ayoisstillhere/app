@@ -1,8 +1,11 @@
-class GetMessagesResponse {
+class GetMessageResponse {
   final List<Conversation> conversations;
   final Pagination pagination;
 
-  GetMessagesResponse({required this.conversations, required this.pagination});
+  GetMessageResponse({
+    required this.conversations,
+    required this.pagination,
+  });
 }
 
 class Conversation {
@@ -11,11 +14,14 @@ class Conversation {
   final String type;
   final bool isSecret;
   final bool hasDisappearingMessages;
-  final String? encryptionKey;
+  final String encryptionKey;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<Participant> participants;
   final List<Message> messages;
+  final bool isConversationMutedForMe;
+  final bool isConversationArchivedForMe;
+  final bool isConversationRequestForMe;
   final Message? lastMessage;
   final int unreadCount;
 
@@ -30,6 +36,9 @@ class Conversation {
     required this.updatedAt,
     required this.participants,
     required this.messages,
+    required this.isConversationMutedForMe,
+    required this.isConversationArchivedForMe,
+    required this.isConversationRequestForMe,
     required this.lastMessage,
     required this.unreadCount,
   });
@@ -46,7 +55,7 @@ class Message {
   final dynamic encryptionMetadata;
   final bool isForwarded;
   final bool isViewOnce;
-  final DateTime expireAt;
+  final dynamic expireAt;
   final dynamic replyToId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -77,7 +86,10 @@ class Sender {
   final String username;
   final String profileImage;
 
-  Sender({required this.username, required this.profileImage});
+  Sender({
+    required this.username,
+    required this.profileImage,
+  });
 }
 
 class Participant {
@@ -87,6 +99,9 @@ class Participant {
   final DateTime joinedAt;
   final DateTime lastReadAt;
   final String conversationId;
+  final bool isConversationMutedForMe;
+  final bool isConversationArchivedForMe;
+  final bool isConversationRequestForMe;
   final User user;
 
   Participant({
@@ -96,6 +111,9 @@ class Participant {
     required this.joinedAt,
     required this.lastReadAt,
     required this.conversationId,
+    required this.isConversationMutedForMe,
+    required this.isConversationArchivedForMe,
+    required this.isConversationRequestForMe,
     required this.user,
   });
 }
