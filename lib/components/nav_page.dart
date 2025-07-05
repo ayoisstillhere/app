@@ -152,38 +152,50 @@ class _NavPageState extends State<NavPage> {
         iconSize: getProportionateScreenHeight(24),
         items: [
           BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              "assets/icons/home.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
+            icon: Opacity(
+              opacity: _page == 0 ? 1.0 : 0.5,
+              child: SvgPicture.asset(
+                "assets/icons/home.svg",
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                width: getProportionateScreenWidth(24),
+                height: getProportionateScreenHeight(24),
+              ),
             ),
           ),
           BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              "assets/icons/search.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
+            icon: Opacity(
+              opacity: _page == 1 ? 1.0 : 0.5,
+              child: SvgPicture.asset(
+                "assets/icons/search.svg",
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                width: getProportionateScreenWidth(24),
+                height: getProportionateScreenHeight(24),
+              ),
             ),
           ),
           BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              "assets/icons/message_icon.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
+            icon: Opacity(
+              opacity: _page == 2 ? 1.0 : 0.5,
+              child: SvgPicture.asset(
+                "assets/icons/message_icon.svg",
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                width: getProportionateScreenWidth(24),
+                height: getProportionateScreenHeight(24),
+              ),
             ),
           ),
           BottomNavigationBarItem(
-            icon: Container(
-              height: getProportionateScreenHeight(34),
-              width: getProportionateScreenWidth(34),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: NetworkImage(currentUser!.profileImage),
-                  fit: BoxFit.cover,
+            icon: Opacity(
+              opacity: _page == 3 ? 1.0 : 0.5,
+              child: Container(
+                height: getProportionateScreenHeight(34),
+                width: getProportionateScreenWidth(34),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: NetworkImage(currentUser!.profileImage),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
