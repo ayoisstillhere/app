@@ -168,6 +168,9 @@ class _HomeScreenState extends State<HomeScreen>
                       pictures: post.media,
                       currentUser: widget.currentUser,
                       postId: post.id,
+                      isLiked: post.isLiked,
+                      isReposted: post.isReposted,
+                      isSaved: post.isSaved,
                     );
                   },
                 )
@@ -192,6 +195,9 @@ class _HomeScreenState extends State<HomeScreen>
                       pictures: post.media,
                       currentUser: widget.currentUser,
                       postId: post.id,
+                      isLiked: post.isLiked,
+                      isReposted: post.isReposted,
+                      isSaved: post.isSaved,
                     );
                   },
                 )

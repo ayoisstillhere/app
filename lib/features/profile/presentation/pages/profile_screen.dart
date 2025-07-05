@@ -677,6 +677,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   pictures: post.media,
                                   currentUser: user!,
                                   postId: post.id,
+                                  isLiked: post.isLiked,
+                                  isReposted: post.isReposted,
+                                  isSaved: post.isSaved,
                                 ),
                               );
                             },
@@ -705,6 +708,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   pictures: repost.media,
                                   currentUser: user!,
                                   postId: repost.id,
+                                  isLiked: repost.isLiked,
+                                  isReposted: repost.isReposted,
+                                  isSaved: repost.isSaved,
                                 ),
                               );
                             },
@@ -732,6 +738,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   pictures: media.media,
                                   currentUser: user!,
                                   postId: media.id,
+                                  isLiked: media.isLiked,
+                                  isReposted: media.isReposted,
+                                  isSaved: media.isSaved,
                                 ),
                               );
                             },
@@ -785,6 +794,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   pictures: savedPost.media,
                                   currentUser: user!,
                                   postId: savedPost.id,
+                                  isLiked: savedPost.isLiked,
+                                  isReposted: savedPost.isReposted,
+                                  isSaved: savedPost.isSaved,
                                 ),
                               );
                             },
@@ -812,6 +824,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   pictures: likedPost.media,
                                   currentUser: user!,
                                   postId: likedPost.id,
+                                  isLiked: likedPost.isLiked,
+                                  isReposted: likedPost.isReposted,
+                                  isSaved: likedPost.isSaved,
                                 ),
                               );
                             },

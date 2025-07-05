@@ -29,6 +29,9 @@ class PostCard extends StatefulWidget {
     required this.currentUser,
     required this.postId,
     this.notClickable = false,
+    required this.isLiked,
+    required this.isReposted,
+    required this.isSaved,
   });
 
   final Color dividerColor;
@@ -37,16 +40,19 @@ class PostCard extends StatefulWidget {
   final String authorHandle;
   final String imageUrl;
   final DateTime postTime;
-  final int likes;
+  int likes;
   final int comments;
-  final int reposts;
-  final int bookmarks;
+  int reposts;
+  int bookmarks;
   final String content;
   final List<dynamic> pictures;
   final bool forSearch;
   final UserEntity currentUser;
   final String postId;
   final bool notClickable;
+  bool isLiked;
+  bool isReposted;
+  bool isSaved;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -55,6 +61,39 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   late PageController _pageController;
   int _currentPage = 0;
+
+  void _onLike() {
+    setState(() {
+      if (widget.isLiked) {
+        widget.likes--;
+      } else {
+        widget.likes++;
+      }
+      widget.isLiked = !widget.isLiked;
+    });
+  }
+
+  void _onRepost() {
+    setState(() {
+      if (widget.isReposted) {
+        widget.reposts--;
+      } else {
+        widget.reposts++;
+      }
+      widget.isReposted = !widget.isReposted;
+    });
+  }
+
+  void _onSave() {
+    setState(() {
+      if (widget.isSaved) {
+        widget.bookmarks--;
+      } else {
+        widget.bookmarks++;
+      }
+      widget.isSaved = !widget.isSaved;
+    });
+  }
 
   @override
   void initState() {
@@ -285,80 +324,119 @@ class _PostCardState extends State<PostCard> {
               ),
               child: Row(
                 children: [
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {},
-                        child: SvgPicture.asset(
-                          "assets/icons/heart.svg",
-                          height: getProportionateScreenHeight(15.55),
-                          width: getProportionateScreenWidth(15.55),
-                          colorFilter: ColorFilter.mode(
-                            widget.iconColor,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: getProportionateScreenWidth(5)),
-                      Text('${widget.likes}'),
-                    ],
+                  SizedBox(
+                    width: getProportionateScreenWidth(36.55),
+                    child: Row(
+                      children: [
+                        widget.isLiked
+                            ? InkWell(
+                                onTap: _onLike,
+                                child: SvgPicture.asset(
+                                  "assets/icons/heart_red.svg",
+                                  height: getProportionateScreenHeight(15.55),
+                                  width: getProportionateScreenWidth(15.55),
+                                ),
+                              )
+                            : InkWell(
+                                onTap: _onLike,
+                                child: SvgPicture.asset(
+                                  "assets/icons/heart.svg",
+                                  height: getProportionateScreenHeight(15.55),
+                                  width: getProportionateScreenWidth(15.55),
+                                  colorFilter: ColorFilter.mode(
+                                    widget.iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                        Spacer(),
+                        Text('${widget.likes}'),
+                      ],
+                    ),
                   ),
                   Spacer(),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {},
-                        child: SvgPicture.asset(
-                          "assets/icons/chats.svg",
-                          height: getProportionateScreenHeight(15.55),
-                          width: getProportionateScreenWidth(15.55),
-                          colorFilter: ColorFilter.mode(
-                            widget.iconColor,
-                            BlendMode.srcIn,
+                  SizedBox(
+                    width: getProportionateScreenWidth(36.55),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () {},
+                          child: SvgPicture.asset(
+                            "assets/icons/chats.svg",
+                            height: getProportionateScreenHeight(15.55),
+                            width: getProportionateScreenWidth(15.55),
+                            colorFilter: ColorFilter.mode(
+                              widget.iconColor,
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: getProportionateScreenWidth(5)),
-                      Text('${widget.comments}'),
-                    ],
+                        Spacer(),
+                        Text('${widget.comments}'),
+                      ],
+                    ),
                   ),
                   Spacer(),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {},
-                        child: SvgPicture.asset(
-                          "assets/icons/repost.svg",
-                          height: getProportionateScreenHeight(15.55),
-                          width: getProportionateScreenWidth(15.55),
-                          colorFilter: ColorFilter.mode(
-                            widget.iconColor,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: getProportionateScreenWidth(5)),
-                      Text('${widget.reposts}'),
-                    ],
+                  SizedBox(
+                    width: getProportionateScreenWidth(36.55),
+                    child: Row(
+                      children: [
+                        widget.isReposted
+                            ? InkWell(
+                                onTap: _onRepost,
+                                child: SvgPicture.asset(
+                                  "assets/icons/repeat_green.svg",
+                                  height: getProportionateScreenHeight(15.55),
+                                  width: getProportionateScreenWidth(15.55),
+                                ),
+                              )
+                            : InkWell(
+                                onTap: _onRepost,
+                                child: SvgPicture.asset(
+                                  "assets/icons/repost.svg",
+                                  height: getProportionateScreenHeight(15.55),
+                                  width: getProportionateScreenWidth(15.55),
+                                  colorFilter: ColorFilter.mode(
+                                    widget.iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                        Spacer(),
+                        Text('${widget.reposts}'),
+                      ],
+                    ),
                   ),
                   Spacer(),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {},
-                        child: SvgPicture.asset(
-                          "assets/icons/bookmark.svg",
-                          height: getProportionateScreenHeight(15.55),
-                          width: getProportionateScreenWidth(15.55),
-                          colorFilter: ColorFilter.mode(
-                            widget.iconColor,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: getProportionateScreenWidth(5)),
-                      Text('${widget.bookmarks}'),
-                    ],
+                  SizedBox(
+                    width: getProportionateScreenWidth(36.55),
+                    child: Row(
+                      children: [
+                        widget.isSaved
+                            ? InkWell(
+                                onTap: _onSave,
+                                child: Icon(
+                                  Icons.bookmark,
+                                  size: getProportionateScreenHeight(15.55),
+                                  color: kLightPurple,
+                                ),
+                              )
+                            : InkWell(
+                                onTap: _onSave,
+                                child: SvgPicture.asset(
+                                  "assets/icons/bookmark.svg",
+                                  height: getProportionateScreenHeight(15.55),
+                                  width: getProportionateScreenWidth(15.55),
+                                  colorFilter: ColorFilter.mode(
+                                    widget.iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                        Spacer(),
+                        Text('${widget.bookmarks}'),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -156,6 +156,9 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                       currentUser: widget.currentUser,
                       postId: post!.id,
                       notClickable: true,
+                      isLiked: post!.isLiked,
+                      isReposted: post!.isReposted,
+                      isSaved: post!.isSaved,
                     ),
                     SizedBox(height: getProportionateScreenHeight(11.09)),
                     Container(
@@ -198,11 +201,15 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                               comments!.comments[index].post.author.fullName,
                           replyerHandle:
                               comments!.comments[index].post.author.username,
-                          imageUrl:
-                              comments!.comments[index].post.author.profileImage,
+                          imageUrl: comments!
+                              .comments[index]
+                              .post
+                              .author
+                              .profileImage,
                           postTime: comments!.comments[index].post.createdAt,
                           likes: comments!.comments[index].post.count.likes,
-                          comments: comments!.comments[index].post.count.comments,
+                          comments:
+                              comments!.comments[index].post.count.comments,
                           reposts: comments!.comments[index].post.count.reposts,
                           bookmarks: comments!.comments[index].post.count.saves,
                           content: comments!.comments[index].post.content,

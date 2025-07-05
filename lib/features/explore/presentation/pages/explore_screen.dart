@@ -439,6 +439,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                         forSearch: true,
                         currentUser: widget.currentUser,
                         postId: exploreResponse!.trending[index].id,
+                        isLiked: false,
+                        isReposted: false,
+                        isSaved: false,
                       ),
                     ),
                   ),
@@ -604,6 +607,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                             pictures: item.data.media!,
                             currentUser: widget.currentUser,
                             postId: item.data.id!,
+                            isLiked: item.data.isLiked!,
+                            isReposted: item.data.isReposted!,
+                            isSaved: item.data.isSaved!,
                           )
                         : Container(),
                   );
@@ -631,6 +637,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                       pictures: item.media,
                       currentUser: widget.currentUser,
                       postId: item.id,
+                      isLiked: item.isLiked,
+                      isReposted: item.isReposted,
+                      isSaved: item.isSaved,
                     ),
                   );
                 },
@@ -657,6 +666,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                       pictures: item.media,
                       currentUser: widget.currentUser,
                       postId: item.id,
+                      isLiked: item.isLiked,
+                      isReposted: item.isReposted,
+                      isSaved: item.isSaved,
                     ),
                   );
                 },
