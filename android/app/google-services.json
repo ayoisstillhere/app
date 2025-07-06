@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "966329839831",
+    "project_id": "hiraofficial-a762e",
+    "storage_bucket": "hiraofficial-a762e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966329839831:android:5b514c2bf42b942a6dc092",
+        "android_client_info": {
+          "package_name": "com.hira.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZeeBgWLyXyYVMe_PSlZmspy7ZIjzAFQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966329839831:android:75824ba7b4558f806dc092",
+        "android_client_info": {
+          "package_name": "com.hiraofficial.hira"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZeeBgWLyXyYVMe_PSlZmspy7ZIjzAFQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
