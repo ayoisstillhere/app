@@ -51,7 +51,24 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     BlocProvider.of<ChatCubit>(context).getTextMessages();
+    _markAllAssRead();
     super.initState();
+  }
+
+  Future<void> _markAllAssRead() async {
+    final token = await AuthManager.getToken();
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/chat/conversations/${widget.chatId}/mark-all-read',
+    );
+
+    final response = await http.put(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      // Successfully marked all messages as read
+    } else {}
   }
 
   Future<void> _sendMessage() async {
