@@ -1,14 +1,19 @@
 import 'dart:convert';
 
-import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/text_message_entity.dart';
+import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
+
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import '../../../../services/encryption_service.dart'; // Add this import
 import '../../../../size_config.dart';
-import '../../data/models/chat_message_model.dart';
+import '../cubit/chat_cubit.dart';
 import '../widgets/message_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -17,10 +22,14 @@ class ChatScreen extends StatefulWidget {
     required this.chatId,
     required this.name,
     required this.imageUrl,
+    required this.currentUser,
+    required this.encryptionKey,
   });
   final String chatId;
   final String name;
   final String imageUrl;
+  final UserEntity currentUser;
+  final String encryptionKey;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -29,6 +38,21 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final EncryptionService _encryptionService;
+
+  @override
+  void initState() {
+    // Initialize encryption service
+    _encryptionService = EncryptionService();
+    // Set up the master encryption key (you should get this from secure storage)
+    // For now, using a placeholder - replace with your actual master key
+    _encryptionService.setSecretKey(
+      '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
+    );
+
+    BlocProvider.of<ChatCubit>(context).getTextMessages();
+    super.initState();
+  }
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isNotEmpty) {
@@ -39,10 +63,30 @@ class _ChatScreenState extends State<ChatScreen> {
         ..headers['accept'] = '*/*'
         ..headers['Authorization'] = 'Bearer $token';
 
-      // Add form fields
+      // Encrypt the message content before sending
+      String encryptedContent;
+      try {
+        encryptedContent = _encryptionService.encryptWithConversationKey(
+          _messageController.text.trim(),
+          widget.encryptionKey,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to encrypt message: ${e.toString()}',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Add form fields with encrypted content
       request.fields['conversationId'] = widget.chatId;
       request.fields['type'] = 'TEXT';
-      request.fields['content'] = _messageController.text.trim();
+      request.fields['content'] = encryptedContent; // Send encrypted content
       request.fields['isViewOnce'] = 'false';
       request.fields['deleteAfter24Hours'] = 'false';
       request.fields['isForwarded'] = 'false';
@@ -56,17 +100,6 @@ class _ChatScreenState extends State<ChatScreen> {
         final response = await http.Response.fromStream(streamedResponse);
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          setState(() {
-            messages.add(
-              ChatMessage(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                text: _messageController.text.trim(),
-                isMe: true,
-                timestamp: DateTime.now(),
-                isRead: false,
-              ),
-            );
-          });
           _messageController.clear();
           _scrollToBottom();
         } else {
@@ -91,6 +124,41 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     }
+  }
+
+  // Method to decrypt message content
+  String _decryptMessageContent(String encryptedContent) {
+    try {
+      return _encryptionService.decryptWithConversationKey(
+        encryptedContent,
+        widget.encryptionKey,
+      );
+    } catch (e) {
+      // Return placeholder text if decryption fails
+      // In production, you might want to handle this differently
+      return '[Message could not be decrypted]';
+    }
+  }
+
+  // Method to create decrypted message entity
+  TextMessageEntity _createDecryptedMessage(TextMessageEntity original) {
+    final decryptedContent = _decryptMessageContent(original.content);
+
+    // Create a new TextMessageEntity with decrypted content
+    // You'll need to adjust this based on your TextMessageEntity constructor
+    return TextMessageEntity(
+      decryptedContent,
+      original.conversationId,
+      original.createdAt,
+      original.expiredAt,
+      original.id,
+      original.isForwarded,
+      original.isViewOnce,
+      original.mediaUrl,
+      original.reactions,
+      original.senderId,
+      original.type,
+    );
   }
 
   void _scrollToBottom() {
@@ -232,168 +300,215 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // Messages List
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.only(
-                left: getProportionateScreenWidth(13),
-                right: getProportionateScreenWidth(17),
-                top: getProportionateScreenHeight(8),
-                bottom: getProportionateScreenHeight(8),
-              ),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                return MessageBubble(
-                  message: message,
-                  isDark: isDark,
-                  imageUrl: widget.imageUrl,
+      body: BlocBuilder<ChatCubit, ChatState>(
+        builder: (context, state) {
+          if (state is ChatLoaded) {
+            // Decrypt messages as they're processed
+            List<TextMessageEntity> requiredMessages = [];
+            for (TextMessageEntity textMessageEntity in state.messages) {
+              if (textMessageEntity.conversationId == widget.chatId) {
+                final decryptedMessage = _createDecryptedMessage(
+                  textMessageEntity,
                 );
-              },
-            ),
-          ),
+                requiredMessages.add(decryptedMessage);
+              }
+            }
 
-          // Message Input
-          // Replace your message input Container with this:
-          Container(
-            padding: EdgeInsets.only(bottom: getProportionateScreenHeight(16)),
-            decoration: BoxDecoration(color: backgroundColor),
-            child: SafeArea(
-              child: Container(
-                margin: EdgeInsets.only(
-                  left: getProportionateScreenWidth(15),
-                  right: getProportionateScreenWidth(14),
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    getProportionateScreenWidth(40),
+            // Sort by timestamp (newest first)
+            requiredMessages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+            return Column(
+              children: [
+                // Messages List
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: EdgeInsets.only(
+                      left: getProportionateScreenWidth(13),
+                      right: getProportionateScreenWidth(17),
+                      top: getProportionateScreenHeight(8),
+                      bottom: getProportionateScreenHeight(8),
+                    ),
+                    itemCount: requiredMessages.length,
+                    itemBuilder: (context, index) {
+                      final message = requiredMessages[index];
+                      return MessageBubble(
+                        message: message, // This now contains decrypted content
+                        isDark: isDark,
+                        imageUrl: widget.imageUrl,
+                        currentUser: widget.currentUser,
+                      );
+                    },
                   ),
-                  color: inputFillColor,
                 ),
-                child: Padding(
+
+                // Message Input
+                Container(
                   padding: EdgeInsets.only(
-                    left: getProportionateScreenWidth(5),
-                    top: getProportionateScreenHeight(8),
-                    bottom: getProportionateScreenHeight(7),
-                    right: getProportionateScreenWidth(15),
+                    bottom: getProportionateScreenHeight(16),
                   ),
-                  child: Row(
-                    children: [
-                      // Camera button
-                      InkWell(
-                        onTap: () {
-                          // Handle camera action
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(
-                            getProportionateScreenWidth(8),
-                          ),
-                          height: getProportionateScreenHeight(39),
-                          width: getProportionateScreenWidth(39),
-                          decoration: BoxDecoration(
-                            gradient: kChatBubbleGradient,
-                            shape: BoxShape.circle,
-                          ),
-                          child: SvgPicture.asset(
-                            "assets/icons/chat_camera.svg",
-                            height: getProportionateScreenHeight(21.27),
-                            width: getProportionateScreenWidth(21.27),
-                          ),
-                        ),
+                  decoration: BoxDecoration(color: backgroundColor),
+                  child: SafeArea(
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        left: getProportionateScreenWidth(15),
+                        right: getProportionateScreenWidth(14),
                       ),
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: InputDecoration(
-                            hintText: "Message...",
-                            hintStyle: TextStyle(
-                              fontSize: getProportionateScreenHeight(14),
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            fillColor: Colors.transparent,
-                            filled: false,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenWidth(16),
-                              vertical: getProportionateScreenHeight(12),
-                            ),
-                          ),
-                          style: TextStyle(
-                            color: iconColor,
-                            fontSize: getProportionateScreenHeight(14),
-                          ),
-                          onSubmitted: (_) => _sendMessage(),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          getProportionateScreenWidth(40),
                         ),
+                        color: inputFillColor,
                       ),
-                      // Use ValueListenableBuilder to listen to text changes
-                      ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _messageController,
-                        builder: (context, value, child) {
-                          final hasText = value.text.trim().isNotEmpty;
-                          return Row(
-                            children: [
-                              // Send button - visible when there's text
-                              if (hasText)
-                                InkWell(
-                                  onTap: () => _sendMessage(),
-                                  child: Container(
-                                    width: getProportionateScreenWidth(55),
-                                    height: getProportionateScreenHeight(34),
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: getProportionateScreenHeight(5),
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: kChatBubbleGradient,
-                                      borderRadius: BorderRadius.circular(
-                                        getProportionateScreenWidth(20),
-                                      ),
-                                    ),
-                                    child: SvgPicture.asset(
-                                      "assets/icons/send.svg",
-                                      height: getProportionateScreenHeight(
-                                        21.27,
-                                      ),
-                                      width: getProportionateScreenWidth(21.27),
-                                    ),
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: getProportionateScreenWidth(5),
+                          top: getProportionateScreenHeight(8),
+                          bottom: getProportionateScreenHeight(7),
+                          right: getProportionateScreenWidth(15),
+                        ),
+                        child: Row(
+                          children: [
+                            // Camera button
+                            InkWell(
+                              onTap: () {
+                                // Handle camera action
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(
+                                  getProportionateScreenWidth(8),
+                                ),
+                                height: getProportionateScreenHeight(39),
+                                width: getProportionateScreenWidth(39),
+                                decoration: BoxDecoration(
+                                  gradient: kChatBubbleGradient,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: SvgPicture.asset(
+                                  "assets/icons/chat_camera.svg",
+                                  height: getProportionateScreenHeight(21.27),
+                                  width: getProportionateScreenWidth(21.27),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: TextField(
+                                controller: _messageController,
+                                decoration: InputDecoration(
+                                  hintText: "Message...",
+                                  hintStyle: TextStyle(
+                                    fontSize: getProportionateScreenHeight(14),
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  fillColor: Colors.transparent,
+                                  filled: false,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: getProportionateScreenWidth(16),
+                                    vertical: getProportionateScreenHeight(12),
                                   ),
                                 ),
-                              // Attachment icons - visible when there's no text
-                              if (!hasText) ...[
-                                SvgPicture.asset(
-                                  "assets/icons/chat_paperclip.svg",
-                                  height: getProportionateScreenHeight(21.27),
-                                  width: getProportionateScreenWidth(21.27),
+                                style: TextStyle(
+                                  color: iconColor,
+                                  fontSize: getProportionateScreenHeight(14),
                                 ),
-                                SizedBox(width: getProportionateScreenWidth(8)),
-                                SvgPicture.asset(
-                                  "assets/icons/chat_mic.svg",
-                                  height: getProportionateScreenHeight(21.27),
-                                  width: getProportionateScreenWidth(21.27),
-                                ),
-                                SizedBox(width: getProportionateScreenWidth(8)),
-                                SvgPicture.asset(
-                                  "assets/icons/chat_image.svg",
-                                  height: getProportionateScreenHeight(21.27),
-                                  width: getProportionateScreenWidth(21.27),
-                                ),
-                              ],
-                            ],
-                          );
-                        },
+                                onSubmitted: (_) => _sendMessage(),
+                              ),
+                            ),
+                            // Use ValueListenableBuilder to listen to text changes
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _messageController,
+                              builder: (context, value, child) {
+                                final hasText = value.text.trim().isNotEmpty;
+                                return Row(
+                                  children: [
+                                    // Send button - visible when there's text
+                                    if (hasText)
+                                      InkWell(
+                                        onTap: () => _sendMessage(),
+                                        child: Container(
+                                          width: getProportionateScreenWidth(
+                                            55,
+                                          ),
+                                          height: getProportionateScreenHeight(
+                                            34,
+                                          ),
+                                          padding: EdgeInsets.symmetric(
+                                            vertical:
+                                                getProportionateScreenHeight(5),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: kChatBubbleGradient,
+                                            borderRadius: BorderRadius.circular(
+                                              getProportionateScreenWidth(20),
+                                            ),
+                                          ),
+                                          child: SvgPicture.asset(
+                                            "assets/icons/send.svg",
+                                            height:
+                                                getProportionateScreenHeight(
+                                                  21.27,
+                                                ),
+                                            width: getProportionateScreenWidth(
+                                              21.27,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    // Attachment icons - visible when there's no text
+                                    if (!hasText) ...[
+                                      SvgPicture.asset(
+                                        "assets/icons/chat_paperclip.svg",
+                                        height: getProportionateScreenHeight(
+                                          21.27,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          21.27,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: getProportionateScreenWidth(8),
+                                      ),
+                                      SvgPicture.asset(
+                                        "assets/icons/chat_mic.svg",
+                                        height: getProportionateScreenHeight(
+                                          21.27,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          21.27,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: getProportionateScreenWidth(8),
+                                      ),
+                                      SvgPicture.asset(
+                                        "assets/icons/chat_image.svg",
+                                        height: getProportionateScreenHeight(
+                                          21.27,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          21.27,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-        ],
+              ],
+            );
+          }
+          return Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }

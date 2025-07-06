@@ -1,224 +1,224 @@
-import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:pointycastle/export.dart';
+import 'package:encrypt/encrypt.dart';
 
-class FlutterEncryptionService {
+/// Encryption service providing AES-256-GCM encryption capabilities
+class EncryptionService {
   static const String _algorithm = 'AES-256-GCM';
   static const int _keyLength = 32; // 256 bits
   static const int _ivLength = 16; // 128 bits
-  static const int _tagLength = 16; // 128 bits for GCM tag
+  
+  late final Uint8List _secretKey;
+  final Random _random = Random.secure();
 
-  FlutterEncryptionService();
+  /// Constructor that accepts an optional encryption key
+  /// If no key is provided, you should set it using setSecretKey()
+  EncryptionService({String? encryptionKey}) {
+    if (encryptionKey != null) {
+      _secretKey = _hexStringToBytes(encryptionKey);
+    }
+  }
 
-  /// Generates a unique encryption key for a conversation (64 hex characters)
-  String generateConversationKey() {
+  /// Set the secret key from a hex string (equivalent to environment variable)
+  void setSecretKey(String hexKey) {
+    _secretKey = _hexStringToBytes(hexKey);
+  }
+
+  /// Generate a random encryption key (for initial setup)
+  static String generateSecretKey() {
     final random = Random.secure();
-    final bytes = Uint8List(_keyLength);
-    for (int i = 0; i < _keyLength; i++) {
+    final bytes = Uint8List(32);
+    for (int i = 0; i < 32; i++) {
       bytes[i] = random.nextInt(256);
     }
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return _bytesToHexString(bytes);
   }
 
-  /// Encrypts text with a specific conversation key
-  /// Returns format: iv:tag:encrypted (same as Node.js service)
+  /// Generates a unique encryption key for a conversation (for enhanced security)
+  String generateConversationKey() {
+    final bytes = Uint8List(_keyLength);
+    for (int i = 0; i < _keyLength; i++) {
+      bytes[i] = _random.nextInt(256);
+    }
+    return _bytesToHexString(bytes);
+  }
+
+  /// Encrypts data with a specific conversation key
   String encryptWithConversationKey(String text, String conversationKey) {
     try {
-      // Convert hex key to bytes
-      final keyBytes = _hexToBytes(conversationKey);
-      if (keyBytes.length != _keyLength) {
-        throw Exception('Invalid conversation key length');
-      }
-
-      // Convert text to bytes
-      final plainBytes = utf8.encode(text);
-
-      // Generate random IV
-      final iv = _generateSecureRandom(_ivLength);
-
-      // Encrypt using AES-GCM
-      final result = _encryptAesGcm(plainBytes, keyBytes, iv);
-
-      // Format: iv:tag:encrypted (same as Node.js)
-      final ivHex = iv.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-      final tagHex = result['tag']!
-          .map((b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
-      final encryptedHex = result['encrypted']!
-          .map((b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
-
+      final key = _hexStringToBytes(conversationKey);
+      final iv = _generateRandomBytes(_ivLength);
+      
+      final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
+      final encrypted = encrypter.encrypt(text, iv: IV(iv));
+      
+      // Format: iv:tag:encrypted
+      final ivHex = _bytesToHexString(iv);
+      final tagHex = _bytesToHexString(encrypted.bytes.sublist(encrypted.bytes.length - 16));
+      final encryptedHex = _bytesToHexString(encrypted.bytes.sublist(0, encrypted.bytes.length - 16));
+      
       return '$ivHex:$tagHex:$encryptedHex';
     } catch (error) {
-      throw Exception('Failed to encrypt with conversation key: $error');
+      _logError('Conversation encryption error: $error');
+      throw Exception('Failed to encrypt with conversation key');
     }
   }
 
-  /// Decrypts text with a specific conversation key
-  /// Expects format: iv:tag:encrypted
-  String decryptWithConversationKey(
-    String encryptedData,
-    String conversationKey,
-  ) {
+  /// Decrypts data with a specific conversation key
+  String decryptWithConversationKey(String encryptedData, String conversationKey) {
     try {
-      // Parse the encrypted data
+      final key = _hexStringToBytes(conversationKey);
       final parts = encryptedData.split(':');
+      
       if (parts.length != 3) {
         throw Exception('Invalid encrypted data format');
       }
 
-      final ivBytes = _hexToBytes(parts[0]);
-      final tagBytes = _hexToBytes(parts[1]);
-      final encryptedBytes = _hexToBytes(parts[2]);
-
-      // Convert hex key to bytes
-      final keyBytes = _hexToBytes(conversationKey);
-      if (keyBytes.length != _keyLength) {
-        throw Exception('Invalid conversation key length');
-      }
-
-      // Decrypt using AES-GCM
-      final decryptedBytes = _decryptAesGcm(
-        encryptedBytes,
-        keyBytes,
-        ivBytes,
-        tagBytes,
-      );
-
-      // Convert back to string
-      return utf8.decode(decryptedBytes);
+      final iv = _hexStringToBytes(parts[0]);
+      final tag = _hexStringToBytes(parts[1]);
+      final encryptedBytes = _hexStringToBytes(parts[2]);
+      
+      // Combine encrypted data and tag for decryption
+      final combinedData = Uint8List.fromList([...encryptedBytes, ...tag]);
+      
+      final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
+      final encrypted = Encrypted(combinedData);
+      
+      final decrypted = encrypter.decrypt(encrypted, iv: IV(iv));
+      return decrypted;
     } catch (error) {
-      throw Exception('Failed to decrypt with conversation key: $error');
+      _logError('Conversation decryption error: $error');
+      throw Exception('Failed to decrypt with conversation key');
     }
   }
 
-  /// Encrypts buffer/bytes with conversation key
-  /// Returns a map with encryptedData and metadata
-  Map<String, dynamic> encryptBufferWithConversationKey(
-    Uint8List buffer,
-    String conversationKey,
-  ) {
+  /// Encrypts buffer with conversation key
+  EncryptionResult encryptBufferWithConversationKey(Uint8List buffer, String conversationKey) {
     try {
-      // Convert hex key to bytes
-      final keyBytes = _hexToBytes(conversationKey);
-      if (keyBytes.length != _keyLength) {
-        throw Exception('Invalid conversation key length');
-      }
-
-      // Generate random IV
-      final iv = _generateSecureRandom(_ivLength);
-
-      // Encrypt using AES-GCM
-      final result = _encryptAesGcm(buffer, keyBytes, iv);
-
-      // Create metadata: iv:tag
-      final ivHex = iv.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-      final tagHex = result['tag']!
-          .map((b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
+      final key = _hexStringToBytes(conversationKey);
+      final iv = _generateRandomBytes(_ivLength);
+      
+      final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
+      final encrypted = encrypter.encryptBytes(buffer, iv: IV(iv));
+      
+      // Separate encrypted data and tag
+      final encryptedData = encrypted.bytes.sublist(0, encrypted.bytes.length - 16);
+      final tag = encrypted.bytes.sublist(encrypted.bytes.length - 16);
+      
+      final ivHex = _bytesToHexString(iv);
+      final tagHex = _bytesToHexString(tag);
       final metadata = '$ivHex:$tagHex';
-
-      return {
-        'encryptedData': Uint8List.fromList(result['encrypted']!),
-        'metadata': metadata,
-      };
+      
+      return EncryptionResult(
+        encryptedData: Uint8List.fromList(encryptedData),
+        metadata: metadata,
+      );
     } catch (error) {
-      throw Exception('Failed to encrypt buffer with conversation key: $error');
+      _logError('Buffer conversation encryption error: $error');
+      throw Exception('Failed to encrypt buffer with conversation key');
     }
   }
 
-  /// Decrypts buffer/bytes with conversation key
-  Uint8List decryptBufferWithConversationKey(
-    Uint8List encryptedBuffer,
-    String metadata,
-    String conversationKey,
-  ) {
+  /// Decrypts buffer with conversation key
+  Uint8List decryptBufferWithConversationKey(Uint8List encryptedBuffer, String metadata, String conversationKey) {
     try {
-      // Parse metadata
+      final key = _hexStringToBytes(conversationKey);
       final parts = metadata.split(':');
+      
       if (parts.length != 2) {
         throw Exception('Invalid metadata format');
       }
 
-      final ivBytes = _hexToBytes(parts[0]);
-      final tagBytes = _hexToBytes(parts[1]);
-
-      // Convert hex key to bytes
-      final keyBytes = _hexToBytes(conversationKey);
-      if (keyBytes.length != _keyLength) {
-        throw Exception('Invalid conversation key length');
-      }
-
-      // Decrypt using AES-GCM
-      final decrypted = _decryptAesGcm(
-        encryptedBuffer,
-        keyBytes,
-        ivBytes,
-        tagBytes,
-      );
-
+      final iv = _hexStringToBytes(parts[0]);
+      final tag = _hexStringToBytes(parts[1]);
+      
+      // Combine encrypted data and tag for decryption
+      final combinedData = Uint8List.fromList([...encryptedBuffer, ...tag]);
+      
+      final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
+      final encrypted = Encrypted(combinedData);
+      
+      final decrypted = encrypter.decryptBytes(encrypted, iv: IV(iv));
       return Uint8List.fromList(decrypted);
     } catch (error) {
-      throw Exception('Failed to decrypt buffer with conversation key: $error');
+      _logError('Buffer conversation decryption error: $error');
+      throw Exception('Failed to decrypt buffer with conversation key');
     }
-  }
-
-  /// Internal method to encrypt using AES-GCM
-  Map<String, List<int>> _encryptAesGcm(
-    List<int> plaintext,
-    List<int> key,
-    List<int> iv,
-  ) {
-    final cipher = GCMBlockCipher(AESEngine());
-    final keyParam = KeyParameter(Uint8List.fromList(key));
-    final ivParam = ParametersWithIV(keyParam, Uint8List.fromList(iv));
-
-    cipher.init(true, ivParam); // true for encryption
-
-    final ciphertext = cipher.process(Uint8List.fromList(plaintext));
-    final tag = cipher.mac;
-
-    return {'encrypted': ciphertext, 'tag': tag};
-  }
-
-  /// Internal method to decrypt using AES-GCM
-  List<int> _decryptAesGcm(
-    List<int> ciphertext,
-    List<int> key,
-    List<int> iv,
-    List<int> tag,
-  ) {
-    final cipher = GCMBlockCipher(AESEngine());
-    final keyParam = KeyParameter(Uint8List.fromList(key));
-    final ivParam = ParametersWithIV(keyParam, Uint8List.fromList(iv));
-
-    cipher.init(false, ivParam); // false for decryption
-
-    // Combine ciphertext and tag for GCM decryption
-    final ciphertextWithTag = Uint8List.fromList([...ciphertext, ...tag]);
-
-    final plaintext = cipher.process(ciphertextWithTag);
-
-    return plaintext;
-  }
-
-  /// Generate secure random bytes
-  List<int> _generateSecureRandom(int length) {
-    final random = Random.secure();
-    final bytes = <int>[];
-    for (int i = 0; i < length; i++) {
-      bytes.add(random.nextInt(256));
-    }
-    return bytes;
   }
 
   /// Helper method to convert hex string to bytes
-  Uint8List _hexToBytes(String hex) {
+  static Uint8List _hexStringToBytes(String hex) {
     final result = Uint8List(hex.length ~/ 2);
     for (int i = 0; i < hex.length; i += 2) {
       result[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
     }
     return result;
   }
+
+  /// Helper method to convert bytes to hex string
+  static String _bytesToHexString(Uint8List bytes) {
+    return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// Generate random bytes
+  Uint8List _generateRandomBytes(int length) {
+    final bytes = Uint8List(length);
+    for (int i = 0; i < length; i++) {
+      bytes[i] = _random.nextInt(256);
+    }
+    return bytes;
+  }
+
+  /// Simple logging method (replace with your preferred logging solution)
+  void _logError(String message) {
+    print('EncryptionService Error: $message');
+  }
+}
+
+/// Result class for buffer encryption operations
+class EncryptionResult {
+  final Uint8List encryptedData;
+  final String metadata;
+
+  EncryptionResult({
+    required this.encryptedData,
+    required this.metadata,
+  });
+}
+
+/// Example usage and testing
+void main() {
+  // Example usage
+  final encryptionService = EncryptionService();
+  
+  // Set up the secret key (in a real app, this would come from secure storage)
+  final secretKey = EncryptionService.generateSecretKey();
+  encryptionService.setSecretKey(secretKey);
+  
+  // Generate a conversation key
+  final conversationKey = encryptionService.generateConversationKey();
+  print('Generated conversation key: $conversationKey');
+  
+  // Test string encryption/decryption
+  const testMessage = 'This is a secret message!';
+  final encrypted = encryptionService.encryptWithConversationKey(testMessage, conversationKey);
+  print('Encrypted: $encrypted');
+  
+  final decrypted = encryptionService.decryptWithConversationKey(encrypted, conversationKey);
+  print('Decrypted: $decrypted');
+  print('Match: ${testMessage == decrypted}');
+  
+  // Test buffer encryption/decryption
+  final testBuffer = Uint8List.fromList('Hello, World!'.codeUnits);
+  final bufferResult = encryptionService.encryptBufferWithConversationKey(testBuffer, conversationKey);
+  print('Buffer encrypted, metadata: ${bufferResult.metadata}');
+  
+  final decryptedBuffer = encryptionService.decryptBufferWithConversationKey(
+    bufferResult.encryptedData,
+    bufferResult.metadata,
+    conversationKey,
+  );
+  final decryptedString = String.fromCharCodes(decryptedBuffer);
+  print('Buffer decrypted: $decryptedString');
+  print('Buffer match: ${String.fromCharCodes(testBuffer) == decryptedString}');
 }

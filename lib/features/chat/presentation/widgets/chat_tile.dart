@@ -1,6 +1,8 @@
-import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
+
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -15,6 +17,8 @@ class ChatTile extends StatelessWidget {
     required this.time,
     required this.unreadMessages,
     required this.chatId,
+    required this.currentUser,
+    required this.encryptionKey,
   });
 
   final Color dividerColor;
@@ -24,6 +28,8 @@ class ChatTile extends StatelessWidget {
   final DateTime time;
   final int unreadMessages;
   final String chatId;
+  final UserEntity currentUser;
+  final String encryptionKey;
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +38,13 @@ class ChatTile extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                ChatScreen(chatId: chatId, name: name, imageUrl: image),
+            builder: (context) => ChatScreen(
+              chatId: chatId,
+              name: name,
+              imageUrl: image,
+              currentUser: currentUser,
+              encryptionKey: encryptionKey,
+            ),
           ),
         );
       },

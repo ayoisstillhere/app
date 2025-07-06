@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../widgets/chat_tile.dart';
@@ -23,6 +24,7 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
+  late final EncryptionService _encryptionService;
   String selectedChip = "All";
   final List<Map<String, dynamic>> filters = [
     {'label': 'All', 'count': 15},
@@ -46,6 +48,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void initState() {
     super.initState();
     _loadAllConversations();
+    // Initialize encryption service
+    _encryptionService = EncryptionService();
+    // Set up the master encryption key (you should get this from secure storage)
+    // For now, using a placeholder - replace with your actual master key
+    _encryptionService.setSecretKey(
+      '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
+    );
   }
 
   Future<void> _loadAllConversations() async {
@@ -337,6 +346,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
+  String _decryptMessageContent(String encryptedContent, String encryptionKey) {
+    try {
+      return _encryptionService.decryptWithConversationKey(
+        encryptedContent,
+        encryptionKey,
+      );
+    } catch (e) {
+      // Return placeholder text if decryption fails
+      // In production, you might want to handle this differently
+      return '[Message could not be decrypted]';
+    }
+  }
+
   Widget _buildChatTile(dynamic conversation, Color dividerColor) {
     final isGroupChat = conversation.type == "GROUP";
     final otherParticipant = isGroupChat
@@ -354,10 +376,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
       name: isGroupChat
           ? conversation.name ?? 'Group Chat'
           : otherParticipant?.user.fullName ?? 'Unknown User',
-      lastMessage: conversation.lastMessage?.content ?? "No message yet",
+      lastMessage: conversation.lastMessage?.content == null
+          ? "No message yet"
+          : _decryptMessageContent(
+              conversation.lastMessage!.content,
+              conversation.encryptionKey,
+            ),
       time: conversation.lastMessage?.createdAt ?? DateTime.now(),
       unreadMessages: conversation.unreadCount ?? 0,
       chatId: conversation.id,
+      currentUser: widget.currentUser,
+      encryptionKey: conversation.encryptionKey,
     );
   }
 

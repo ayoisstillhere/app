@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/text_message_entity.dart';
+
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
-import '../../data/models/chat_message_model.dart';
 
 class MessageBubble extends StatelessWidget {
-  final ChatMessage message;
+  final TextMessageEntity message;
   final bool isDark;
   final String imageUrl;
+  final UserEntity currentUser;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.isDark,
     required this.imageUrl,
+    required this.currentUser,
   });
 
   String _formatTime(DateTime timestamp) {
@@ -31,29 +35,28 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMe = message.senderId == currentUser.id;
     final bubbleColor = isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
 
-    final textColor = message.isMe ? kWhite : (isDark ? kWhite : kBlack);
+    final textColor = isMe ? kWhite : (isDark ? kWhite : kBlack);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(2)),
       child: Row(
-        mainAxisAlignment: message.isMe
+        mainAxisAlignment: isMe
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
         children: [
-          if (!message.isMe) ...[
+          if (!isMe) ...[
             Container(
               height: getProportionateScreenHeight(24),
               width: getProportionateScreenWidth(24),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(
-                    imageUrl,
-                  ),
+                  image: NetworkImage(imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -71,7 +74,7 @@ class MessageBubble extends StatelessWidget {
                   horizontal: getProportionateScreenWidth(16),
                   vertical: getProportionateScreenHeight(10),
                 ),
-                decoration: message.isMe
+                decoration: isMe
                     ? BoxDecoration(
                         borderRadius: BorderRadius.circular(
                           getProportionateScreenWidth(10),
@@ -88,7 +91,7 @@ class MessageBubble extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      message.text,
+                      message.content,
                       style: TextStyle(
                         color: textColor,
                         fontSize: getProportionateScreenHeight(14),
@@ -100,22 +103,12 @@ class MessageBubble extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _formatTime(message.timestamp),
+                          _formatTime(message.createdAt.toDate()),
                           style: TextStyle(
                             color: textColor.withValues(alpha: 0.6),
                             fontSize: getProportionateScreenHeight(10),
                           ),
                         ),
-                        if (message.isMe) ...[
-                          SizedBox(width: getProportionateScreenWidth(4)),
-                          Icon(
-                            message.isRead ? Icons.done_all : Icons.done,
-                            color: message.isRead
-                                ? Colors.blue
-                                : textColor.withValues(alpha: 0.6),
-                            size: getProportionateScreenWidth(12),
-                          ),
-                        ],
                       ],
                     ),
                   ],
