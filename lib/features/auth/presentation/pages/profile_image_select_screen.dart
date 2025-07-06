@@ -264,32 +264,34 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
   }
 
   Future<void> uploadImage(File file, String endpoint) async {
-  final token = await AuthManager.getToken();
-  final uri = Uri.parse('$baseUrl$endpoint');
+    final token = await AuthManager.getToken();
+    final uri = Uri.parse('$baseUrl$endpoint');
 
-  // Determine the MIME type (e.g., image/png)
-  final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
-  final mimeSplit = mimeType.split('/');
+    // Determine the MIME type (e.g., image/png)
+    final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+    final mimeSplit = mimeType.split('/');
 
-  var request = http.MultipartRequest('POST', uri)
-    ..headers['Authorization'] = 'Bearer $token'
-    ..files.add(
-      http.MultipartFile(
-        'file',
-        file.readAsBytes().asStream(),
-        file.lengthSync(),
-        filename: file.path.split('/').last,
-        contentType: MediaType(mimeSplit[0], mimeSplit[1]),
-      ),
-    );
+    var request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(
+        http.MultipartFile(
+          'file',
+          file.readAsBytes().asStream(),
+          file.lengthSync(),
+          filename: file.path.split('/').last,
+          contentType: MediaType(mimeSplit[0], mimeSplit[1]),
+        ),
+      );
 
-  final response = await request.send();
+    final response = await request.send();
 
-  if (response.statusCode != 200) {
-    final responseBody = await response.stream.bytesToString();
-    throw Exception('Failed to upload image: ${response.statusCode} - $responseBody');
+    if (response.statusCode != 200) {
+      final responseBody = await response.stream.bytesToString();
+      throw Exception(
+        'Failed to upload image: ${response.statusCode} - $responseBody',
+      );
+    }
   }
-}
 }
 
 Future<File> compressImage(File file) async {

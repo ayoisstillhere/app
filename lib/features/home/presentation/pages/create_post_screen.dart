@@ -1,8 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:app/size_config.dart';
 
@@ -19,7 +24,9 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _postController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
+  List<File> selectedImages = [];
 
   @override
   void initState() {
@@ -27,6 +34,176 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _postController.addListener(() {
       setState(() {});
     });
+  }
+
+  Future<File> compressImage(File file) async {
+    final compressedBytes = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      quality: 50, // adjust as needed
+    );
+
+    final compressedFile = File('${file.path}_compressed.jpg')
+      ..writeAsBytesSync(compressedBytes!);
+    return compressedFile;
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          isLoading = true;
+        });
+
+        List<File> compressedImages = [];
+        for (XFile image in images) {
+          File originalFile = File(image.path);
+          File compressedFile = await compressImage(originalFile);
+          compressedImages.add(compressedFile);
+        }
+
+        setState(() {
+          selectedImages.addAll(compressedImages);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error picking images: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        setState(() {
+          isLoading = true;
+        });
+
+        File originalFile = File(image.path);
+        File compressedFile = await compressImage(originalFile);
+
+        setState(() {
+          selectedImages.add(compressedFile);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error taking photo: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      selectedImages.removeAt(index);
+    });
+  }
+
+  Future<void> _createPost() async {
+    if (_postController.text.isEmpty && selectedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Please add some content or images',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final token = await AuthManager.getToken();
+      final uri = Uri.parse('$baseUrl/api/v1/posts');
+
+      var request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..fields['content'] = _postController.text.trim();
+
+      // Add images with proper MIME type detection
+      for (int i = 0; i < selectedImages.length; i++) {
+        final file = selectedImages[i];
+        final mimeType =
+            lookupMimeType(file.path) ?? 'application/octet-stream';
+        final mimeSplit = mimeType.split('/');
+
+        request.files.add(
+          http.MultipartFile(
+            'media',
+            file.readAsBytes().asStream(),
+            file.lengthSync(),
+            filename: file.path.split('/').last,
+            contentType: MediaType(mimeSplit[0], mimeSplit[1]),
+          ),
+        );
+      }
+
+      // Add empty links field if no links
+      request.files.add(
+        http.MultipartFile.fromBytes("links", [], filename: ""),
+      );
+
+      final response = await request.send();
+
+      if (response.statusCode == 201) {
+        Navigator.pop(context);
+      } else {
+        final responseBody = await response.stream.bytesToString();
+        final errorMessage = jsonDecode(
+          responseBody,
+        )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(errorMessage, style: TextStyle(color: Colors.white)),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error creating post: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -50,6 +227,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kBlack
         : Colors.transparent;
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(getProportionateScreenHeight(70)),
@@ -120,7 +298,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               child: TextFormField(
                                 controller: _postController,
                                 decoration: InputDecoration(
-                                  hintText: "what’s on your mind?",
+                                  hintText: "what's on your mind?",
                                   hintStyle: TextStyle(
                                     fontSize: getProportionateScreenWidth(16),
                                     color: kGreyFormHint,
@@ -141,85 +319,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         Spacer(),
                         Row(
                           children: [
-                            SvgPicture.asset(
-                              "assets/icons/post_image.svg",
-                              height: getProportionateScreenHeight(18),
-                              width: getProportionateScreenWidth(18),
+                            InkWell(
+                              onTap: _pickImageFromGallery,
+                              child: SvgPicture.asset(
+                                "assets/icons/post_image.svg",
+                                height: getProportionateScreenHeight(18),
+                                width: getProportionateScreenWidth(18),
+                              ),
                             ),
                             SizedBox(width: getProportionateScreenWidth(26)),
-                            SvgPicture.asset(
-                              "assets/icons/post_camera.svg",
-                              height: getProportionateScreenHeight(18),
-                              width: getProportionateScreenWidth(18),
+                            InkWell(
+                              onTap: _pickImageFromCamera,
+                              child: SvgPicture.asset(
+                                "assets/icons/post_camera.svg",
+                                height: getProportionateScreenHeight(18),
+                                width: getProportionateScreenWidth(18),
+                              ),
                             ),
                             SizedBox(width: getProportionateScreenWidth(26)),
-                            SvgPicture.asset(
-                              "assets/icons/post_link.svg",
-                              height: getProportionateScreenHeight(18),
-                              width: getProportionateScreenWidth(18),
+                            InkWell(
+                              onTap: () {},
+                              child: SvgPicture.asset(
+                                "assets/icons/post_link.svg",
+                                height: getProportionateScreenHeight(18),
+                                width: getProportionateScreenWidth(18),
+                              ),
                             ),
                             Spacer(),
                             InkWell(
-                              onTap: () async {
-                                setState(() {
-                                  isLoading = true;
-                                });
-                                if (_postController.text.isNotEmpty) {
-                                  final token = await AuthManager.getToken();
-                                  final request = http.MultipartRequest(
-                                    "POST",
-                                    Uri.parse("$baseUrl/api/v1/posts"),
-                                  );
-                                  request.headers["Authorization"] =
-                                      "Bearer $token";
-                                  request.fields["content"] = _postController
-                                      .text
-                                      .trim();
-                                  request.files.add(
-                                    http.MultipartFile.fromBytes(
-                                      "links",
-                                      [],
-                                      filename: "",
-                                    ),
-                                  );
-                                  request.files.add(
-                                    http.MultipartFile.fromBytes(
-                                      "media",
-                                      [],
-                                      filename: "",
-                                    ),
-                                  );
-                                  final response = await request.send();
-                                  if (response.statusCode == 201) {
-                                    Navigator.pop(context);
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: Colors.red,
-                                        content: Text(
-                                          jsonDecode(
-                                            response.reasonPhrase!,
-                                          )['message'].toString().replaceAll(
-                                            RegExp(r'\[|\]'),
-                                            '',
-                                          ),
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  if (mounted) {
-                                    setState(() {
-                                      isLoading = false;
-                                    });
-                                  }
-                                }
-                              },
+                              onTap: _createPost,
                               child: Container(
                                 height: getProportionateScreenHeight(30),
                                 width: getProportionateScreenWidth(50),
                                 decoration: BoxDecoration(
-                                  color: _postController.text.isNotEmpty
+                                  color:
+                                      (_postController.text.isNotEmpty ||
+                                          selectedImages.isNotEmpty)
                                       ? kLightPurple
                                       : kLightPurple.withValues(alpha: 0.4),
                                   borderRadius: BorderRadius.circular(10),
@@ -242,6 +377,78 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     ),
                   ),
                 ),
+                // Display selected images
+                if (selectedImages.isNotEmpty)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(getProportionateScreenWidth(14)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Selected Images (${selectedImages.length})",
+                            style: TextStyle(
+                              fontSize: getProportionateScreenWidth(16),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(10)),
+                          Expanded(
+                            child: GridView.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing:
+                                        getProportionateScreenWidth(10),
+                                    mainAxisSpacing:
+                                        getProportionateScreenHeight(10),
+                                    childAspectRatio: 1,
+                                  ),
+                              itemCount: selectedImages.length,
+                              itemBuilder: (context, index) {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          getProportionateScreenWidth(10),
+                                        ),
+                                        image: DecorationImage(
+                                          image: FileImage(
+                                            selectedImages[index],
+                                          ),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 5,
+                                      right: 5,
+                                      child: InkWell(
+                                        onTap: () => _removeImage(index),
+                                        child: Container(
+                                          padding: EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
     );
