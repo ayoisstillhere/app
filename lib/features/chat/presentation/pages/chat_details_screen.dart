@@ -5,7 +5,15 @@ import '../../../../constants.dart';
 import '../../../../size_config.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
-  const ChatDetailsScreen({super.key});
+  const ChatDetailsScreen({
+    super.key,
+    required this.chatId,
+    required this.chatName,
+    required this.chatImage,
+  });
+  final String chatId;
+  final String chatName;
+  final String chatImage;
 
   @override
   State<ChatDetailsScreen> createState() => _ChatDetailsScreenState();
@@ -120,16 +128,14 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
-                          image: NetworkImage(
-                            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                          ),
+                          image: NetworkImage(widget.chatImage),
                           fit: BoxFit.cover,
                         ),
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(19.5)),
                     Text(
-                      "Ayodele",
+                      widget.chatName,
                       style: TextStyle(
                         fontSize: getProportionateScreenHeight(24),
                         fontWeight: FontWeight.w500,
