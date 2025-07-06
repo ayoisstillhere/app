@@ -13,6 +13,7 @@ class TextMessageEntity extends Equatable {
   final Map<String, dynamic> reactions;
   final String senderId;
   final String type;
+  final String? encryptionMetadata;
   const TextMessageEntity(
     this.content,
     this.conversationId,
@@ -25,6 +26,7 @@ class TextMessageEntity extends Equatable {
     this.reactions,
     this.senderId,
     this.type,
+    this.encryptionMetadata,
   );
 
   @override
@@ -40,5 +42,6 @@ class TextMessageEntity extends Equatable {
     reactions,
     senderId,
     type,
+    encryptionMetadata
   ];
 }

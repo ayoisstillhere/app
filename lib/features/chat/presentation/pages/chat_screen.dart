@@ -168,9 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
             filename: _selectedFile!.file.path.split('/').last,
           ),
         );
-
-        // Store encryption metadata in content field
-        request.fields['content'] = encryptionResult.metadata;
+        request.fields['encryptionMetadata'] = encryptionResult.metadata;
       }
 
       final streamedResponse = await request.send();
@@ -349,6 +347,7 @@ class _ChatScreenState extends State<ChatScreen> {
       original.reactions,
       original.senderId,
       original.type,
+      original.encryptionMetadata,
     );
   }
 

@@ -14,6 +14,7 @@ class TextMessageModel extends TextMessageEntity {
     required Map<String, dynamic> reactions,
     required String senderId,
     required String type,
+    final String? encryptionMetadata,
   }) : super(
          content,
          conversationId,
@@ -26,6 +27,7 @@ class TextMessageModel extends TextMessageEntity {
          reactions,
          senderId,
          type,
+         encryptionMetadata,
        );
 
   factory TextMessageModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class TextMessageModel extends TextMessageEntity {
       reactions: json['reactions'],
       senderId: json['senderId'],
       type: json['type'],
+      encryptionMetadata: json['encryptionMetadata'],
     );
   }
 
@@ -57,6 +60,8 @@ class TextMessageModel extends TextMessageEntity {
       reactions: (documentSnapshot.data()! as dynamic)['reactions'],
       senderId: (documentSnapshot.data()! as dynamic)['senderId'],
       type: (documentSnapshot.data()! as dynamic)['type'],
+      encryptionMetadata:
+          (documentSnapshot.data()! as dynamic)['encryptionMetadata'],
     );
   }
 
@@ -72,5 +77,6 @@ class TextMessageModel extends TextMessageEntity {
     'reactions': reactions,
     'senderId': senderId,
     'type': type,
+    'encryptionMetadata': encryptionMetadata,
   };
 }
