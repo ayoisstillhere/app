@@ -19,6 +19,8 @@ class ChatTile extends StatelessWidget {
     required this.chatId,
     required this.currentUser,
     required this.encryptionKey,
+    required this.chatHandle,
+    required this.isGroup,
   });
 
   final Color dividerColor;
@@ -30,6 +32,8 @@ class ChatTile extends StatelessWidget {
   final String chatId;
   final UserEntity currentUser;
   final String encryptionKey;
+  final String chatHandle;
+  final bool isGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +48,8 @@ class ChatTile extends StatelessWidget {
               imageUrl: image,
               currentUser: currentUser,
               encryptionKey: encryptionKey,
+              isGroup: isGroup,
+              chatHandle: chatHandle,
             ),
           ),
         );

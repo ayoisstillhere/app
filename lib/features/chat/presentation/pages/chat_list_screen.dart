@@ -397,6 +397,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
             chatId: conversation.id,
             currentUser: widget.currentUser,
             encryptionKey: conversation.encryptionKey,
+            chatHandle: conversation.participants
+                .firstWhere(
+                  (participant) =>
+                      participant.user.username != widget.currentUser.username,
+                )
+                .user
+                .username,
+            isGroup: conversation.type == "GROUP",
           );
   }
 

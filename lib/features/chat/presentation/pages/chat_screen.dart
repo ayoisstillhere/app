@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -45,12 +45,16 @@ class ChatScreen extends StatefulWidget {
     required this.imageUrl,
     required this.currentUser,
     required this.encryptionKey,
+    this.chatHandle,
+    required this.isGroup,
   });
   final String chatId;
   final String name;
   final String imageUrl;
   final UserEntity currentUser;
   final String encryptionKey;
+  final String? chatHandle;
+  final bool isGroup;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -580,6 +584,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         chatId: widget.chatId,
                         chatName: widget.name,
                         chatImage: widget.imageUrl,
+                        chatHandle: widget.chatHandle,
+                        currentUser: widget.currentUser,
+                        isGroup: widget.isGroup,
                       ),
                     ),
                   );
