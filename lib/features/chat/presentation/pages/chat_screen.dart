@@ -205,12 +205,15 @@ class _ChatScreenState extends State<ChatScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.name,
-                  style: TextStyle(
-                    fontSize: getProportionateScreenHeight(16),
-                    fontWeight: FontWeight.w600,
-                    color: iconColor,
+                SizedBox(
+                  width: getProportionateScreenWidth(75),
+                  child: Text(
+                    widget.name,
+                    style: TextStyle(
+                      fontSize: getProportionateScreenHeight(16),
+                      fontWeight: FontWeight.w600,
+                      color: iconColor,
+                    ),
                   ),
                 ),
               ],
@@ -315,7 +318,7 @@ class _ChatScreenState extends State<ChatScreen> {
             }
 
             // Sort by timestamp (newest first)
-            requiredMessages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            requiredMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
             return Column(
               children: [
