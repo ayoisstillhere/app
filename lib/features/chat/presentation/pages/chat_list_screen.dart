@@ -388,10 +388,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
             name: isGroupChat
                 ? conversation.name ?? 'Group Chat'
                 : otherParticipant?.user.fullName ?? 'Unknown User',
-            lastMessage: _decryptMessageContent(
-              conversation.lastMessage!.content,
-              conversation.encryptionKey,
-            ),
+            lastMessage: conversation.lastMessage?.type == "TEXT"
+                ? _decryptMessageContent(
+                    conversation.lastMessage!.content,
+                    conversation.encryptionKey,
+                  )
+                : conversation.lastMessage.type.toString(),
             time: conversation.lastMessage?.createdAt ?? DateTime.now(),
             unreadMessages: conversation.unreadCount ?? 0,
             chatId: conversation.id,
