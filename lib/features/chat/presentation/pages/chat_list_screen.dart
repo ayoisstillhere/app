@@ -368,26 +368,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 participant.user.username != widget.currentUser.username,
           );
 
-    return ChatTile(
-      dividerColor: dividerColor,
-      image: isGroupChat
-          ? "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" // TODO: Add group image
-          : otherParticipant?.user.profileImage,
-      name: isGroupChat
-          ? conversation.name ?? 'Group Chat'
-          : otherParticipant?.user.fullName ?? 'Unknown User',
-      lastMessage: conversation.lastMessage?.content == null
-          ? "No message yet"
-          : _decryptMessageContent(
+    return conversation.lastMessage?.content == null
+        ? Container()
+        : ChatTile(
+            dividerColor: dividerColor,
+            image: isGroupChat
+                ? "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" // TODO: Add group image
+                : otherParticipant?.user.profileImage,
+            name: isGroupChat
+                ? conversation.name ?? 'Group Chat'
+                : otherParticipant?.user.fullName ?? 'Unknown User',
+            lastMessage: _decryptMessageContent(
               conversation.lastMessage!.content,
               conversation.encryptionKey,
             ),
-      time: conversation.lastMessage?.createdAt ?? DateTime.now(),
-      unreadMessages: conversation.unreadCount ?? 0,
-      chatId: conversation.id,
-      currentUser: widget.currentUser,
-      encryptionKey: conversation.encryptionKey,
-    );
+            time: conversation.lastMessage?.createdAt ?? DateTime.now(),
+            unreadMessages: conversation.unreadCount ?? 0,
+            chatId: conversation.id,
+            currentUser: widget.currentUser,
+            encryptionKey: conversation.encryptionKey,
+          );
   }
 
   InputDecoration _buildChatSearchFieldDecoration(BuildContext context) {

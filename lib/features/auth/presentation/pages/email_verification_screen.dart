@@ -84,113 +84,115 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               )
             : BoxDecoration(),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(
-              horizontal: getProportionateScreenWidth(25),
-            ),
-            child: Column(
-              children: <Widget>[
-                SizedBox(height: getProportionateScreenHeight(64)),
-                FormHeader(
-                  isSignUp: false,
-                  title: 'Email Verification',
-                  subtitle:
-                      'An OTP (One-time Password) has been sent to your mail for verfication',
-                ),
-                SizedBox(height: getProportionateScreenHeight(32)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: OtpTextFormField(
-                        focusNode: _firstFocusNode,
-                        nextFocusNode: _secondFocusNode,
-                        controller: _controller1,
-                      ),
-                    ),
-                    SizedBox(width: getProportionateScreenWidth(13.4)),
-                    Expanded(
-                      child: OtpTextFormField(
-                        focusNode: _secondFocusNode,
-                        nextFocusNode: _thirdFocusNode,
-                        controller: _controller2,
-                      ),
-                    ),
-                    SizedBox(width: getProportionateScreenWidth(13.4)),
-                    Expanded(
-                      child: OtpTextFormField(
-                        focusNode: _thirdFocusNode,
-                        nextFocusNode: _fourthFocusNode,
-                        controller: _controller3,
-                      ),
-                    ),
-                    SizedBox(width: getProportionateScreenWidth(13.4)),
-                    Expanded(
-                      child: OtpTextFormField(
-                        focusNode: _fourthFocusNode,
-                        nextFocusNode: _fifthFocusNode,
-                        controller: _controller4,
-                      ),
-                    ),
-                    SizedBox(width: getProportionateScreenWidth(13.4)),
-                    Expanded(
-                      child: OtpTextFormField(
-                        focusNode: _fifthFocusNode,
-                        nextFocusNode: _sixthFocusNode,
-                        controller: _controller5,
-                      ),
-                    ),
-                    SizedBox(width: getProportionateScreenWidth(13.4)),
-                    Expanded(
-                      child: OtpTextFormField(
-                        focusNode: _sixthFocusNode,
-                        controller: _controller6,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: getProportionateScreenHeight(155)),
-                DefaultButton(
-                  text: "Verify",
-                  press: () async {
-                    final response = await http.post(
-                      Uri.parse('$baseUrl/api/v1/auth/verify-email'),
-                      headers: {'Content-Type': 'application/json'},
-                      body: json.encode({
-                        'email': widget.email,
-                        'otp':
-                            _controller1.text +
-                            _controller2.text +
-                            _controller3.text +
-                            _controller4.text +
-                            _controller5.text +
-                            _controller6.text,
-                      }),
-                    );
-                    if (response.statusCode == 200) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const VerificationSuccessfulScreen(),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(
+                horizontal: getProportionateScreenWidth(25),
+              ),
+              child: Column(
+                children: <Widget>[
+                  SizedBox(height: getProportionateScreenHeight(64)),
+                  FormHeader(
+                    isSignUp: false,
+                    title: 'Email Verification',
+                    subtitle:
+                        'An OTP (One-time Password) has been sent to your mail for verfication',
+                  ),
+                  SizedBox(height: getProportionateScreenHeight(32)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: OtpTextFormField(
+                          focusNode: _firstFocusNode,
+                          nextFocusNode: _secondFocusNode,
+                          controller: _controller1,
                         ),
+                      ),
+                      SizedBox(width: getProportionateScreenWidth(13.4)),
+                      Expanded(
+                        child: OtpTextFormField(
+                          focusNode: _secondFocusNode,
+                          nextFocusNode: _thirdFocusNode,
+                          controller: _controller2,
+                        ),
+                      ),
+                      SizedBox(width: getProportionateScreenWidth(13.4)),
+                      Expanded(
+                        child: OtpTextFormField(
+                          focusNode: _thirdFocusNode,
+                          nextFocusNode: _fourthFocusNode,
+                          controller: _controller3,
+                        ),
+                      ),
+                      SizedBox(width: getProportionateScreenWidth(13.4)),
+                      Expanded(
+                        child: OtpTextFormField(
+                          focusNode: _fourthFocusNode,
+                          nextFocusNode: _fifthFocusNode,
+                          controller: _controller4,
+                        ),
+                      ),
+                      SizedBox(width: getProportionateScreenWidth(13.4)),
+                      Expanded(
+                        child: OtpTextFormField(
+                          focusNode: _fifthFocusNode,
+                          nextFocusNode: _sixthFocusNode,
+                          controller: _controller5,
+                        ),
+                      ),
+                      SizedBox(width: getProportionateScreenWidth(13.4)),
+                      Expanded(
+                        child: OtpTextFormField(
+                          focusNode: _sixthFocusNode,
+                          controller: _controller6,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: getProportionateScreenHeight(155)),
+                  DefaultButton(
+                    text: "Verify",
+                    press: () async {
+                      final response = await http.post(
+                        Uri.parse('$baseUrl/api/v1/auth/verify-email'),
+                        headers: {'Content-Type': 'application/json'},
+                        body: json.encode({
+                          'email': widget.email,
+                          'otp':
+                              _controller1.text +
+                              _controller2.text +
+                              _controller3.text +
+                              _controller4.text +
+                              _controller5.text +
+                              _controller6.text,
+                        }),
                       );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: Colors.red,
-                          content: Text(
-                            jsonDecode(response.body)['message']
-                                .toString()
-                                .replaceAll(RegExp(r'\[|\]'), ''),
-                            style: TextStyle(color: Colors.white),
+                      if (response.statusCode == 200) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const VerificationSuccessfulScreen(),
                           ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text(
+                              jsonDecode(response.body)['message']
+                                  .toString()
+                                  .replaceAll(RegExp(r'\[|\]'), ''),
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

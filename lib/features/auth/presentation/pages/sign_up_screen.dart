@@ -65,173 +65,175 @@ class _SignUpScreenState extends State<SignUpScreen> {
               )
             : BoxDecoration(),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(
-              horizontal: getProportionateScreenWidth(25),
-            ),
-            child: Column(
-              children: <Widget>[
-                SizedBox(height: getProportionateScreenHeight(31.5)),
-                FormHeader(
-                  isSignUp: true,
-                  title: 'Create an account',
-                  subtitle: 'Join the conversation',
-                ),
-                SizedBox(height: getProportionateScreenHeight(32)),
-                Form(
-                  key: _signupFormKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        "Email",
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: labelColor,
-                        ),
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(6)),
-                      TextFormField(
-                        controller: _emailController,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter your Email",
-                        ),
-                        validator: validateEmail,
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(20)),
-                      Text(
-                        "Password",
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: labelColor,
-                        ),
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(6)),
-                      TextFormField(
-                        obscureText: true,
-                        controller: _passwordController,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "••••••••",
-                          hintStyle: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge!.copyWith(color: kGreyFormHint),
-                        ),
-                        validator: validatePassword,
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(16)),
-                      DefaultButton(
-                        press: () async {
-                          if (_signupFormKey.currentState!.validate()) {
-                            _signupFormKey.currentState!.save();
-                            final response = await http.post(
-                              Uri.parse('$baseUrl/api/v1/auth/register'),
-                              headers: {'Content-Type': 'application/json'},
-                              body: jsonEncode({
-                                'email': _emailController.text.trim(),
-                                'password': _passwordController.text.trim(),
-                              }),
-                            );
-                            if (response.statusCode == 201) {
-                              final responseData = jsonDecode(response.body);
-                              final token = responseData['access_token'];
-
-                              // Store the token in SharedPreferences
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.setString('auth_token', token);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EmailVerificationScreen(
-                                    email: _emailController.text.trim(),
-                                  ),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Colors.red,
-                                  content: Text(
-                                    jsonDecode(response.body)['message']
-                                        .toString()
-                                        .replaceAll(RegExp(r'\[|\]'), ''),
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        text: 'Continue with email',
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(24)),
-                      SizedBox(
-                        width: double.infinity,
-                        child: SvgPicture.asset(
-                          "assets/images/or.svg",
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(24)),
-                      GoogleButton(press: () {}, isSignin: false),
-                      // SizedBox(height: getProportionateScreenHeight(12)),
-                      // FacebookButton(press: () {}, isSignin: false),
-                      // SizedBox(height: getProportionateScreenHeight(12)),
-                      // AppleButton(press: () {}, isSignin: false),
-                      SizedBox(height: getProportionateScreenHeight(32)),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CustomCheckbox(),
-                          SizedBox(width: getProportionateScreenWidth(8)),
-                          Text(
-                            "I agree to the Terms and Privacy Policy",
-                            style: Theme.of(context).textTheme.bodyMedium!
-                                .copyWith(fontWeight: FontWeight.w500),
-                          ),
-                          Spacer(),
-                        ],
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(32)),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Already have an account?",
-                            style: Theme.of(context).textTheme.bodyMedium!
-                                .copyWith(fontWeight: FontWeight.w500),
-                          ),
-                          SizedBox(width: getProportionateScreenWidth(4)),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SignInScreen(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              "Log in",
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    color: kLightPurple,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(
+                horizontal: getProportionateScreenWidth(25),
+              ),
+              child: Column(
+                children: <Widget>[
+                  SizedBox(height: getProportionateScreenHeight(31.5)),
+                  FormHeader(
+                    isSignUp: true,
+                    title: 'Create an account',
+                    subtitle: 'Join the conversation',
                   ),
-                ),
-              ],
+                  SizedBox(height: getProportionateScreenHeight(32)),
+                  Form(
+                    key: _signupFormKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          "Email",
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: labelColor,
+                              ),
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(6)),
+                        TextFormField(
+                          controller: _emailController,
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w500),
+                          decoration: InputDecoration(
+                            hintText: "Enter your Email",
+                          ),
+                          validator: validateEmail,
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(20)),
+                        Text(
+                          "Password",
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: labelColor,
+                              ),
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(6)),
+                        TextFormField(
+                          obscureText: true,
+                          controller: _passwordController,
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w500),
+                          decoration: InputDecoration(
+                            hintText: "••••••••",
+                            hintStyle: Theme.of(context).textTheme.bodyLarge!
+                                .copyWith(color: kGreyFormHint),
+                          ),
+                          validator: validatePassword,
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(16)),
+                        DefaultButton(
+                          press: () async {
+                            if (_signupFormKey.currentState!.validate()) {
+                              _signupFormKey.currentState!.save();
+                              final response = await http.post(
+                                Uri.parse('$baseUrl/api/v1/auth/register'),
+                                headers: {'Content-Type': 'application/json'},
+                                body: jsonEncode({
+                                  'email': _emailController.text.trim(),
+                                  'password': _passwordController.text.trim(),
+                                }),
+                              );
+                              if (response.statusCode == 201) {
+                                final responseData = jsonDecode(response.body);
+                                final token = responseData['access_token'];
+
+                                // Store the token in SharedPreferences
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString('auth_token', token);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EmailVerificationScreen(
+                                          email: _emailController.text.trim(),
+                                        ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.red,
+                                    content: Text(
+                                      jsonDecode(response.body)['message']
+                                          .toString()
+                                          .replaceAll(RegExp(r'\[|\]'), ''),
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          text: 'Continue with email',
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(24)),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SvgPicture.asset(
+                            "assets/images/or.svg",
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(24)),
+                        GoogleButton(press: () {}, isSignin: false),
+                        // SizedBox(height: getProportionateScreenHeight(12)),
+                        // FacebookButton(press: () {}, isSignin: false),
+                        // SizedBox(height: getProportionateScreenHeight(12)),
+                        // AppleButton(press: () {}, isSignin: false),
+                        SizedBox(height: getProportionateScreenHeight(32)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CustomCheckbox(),
+                            SizedBox(width: getProportionateScreenWidth(8)),
+                            Text(
+                              "I agree to the Terms and Privacy Policy",
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(fontWeight: FontWeight.w500),
+                            ),
+                            Spacer(),
+                          ],
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(32)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Already have an account?",
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(width: getProportionateScreenWidth(4)),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignInScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                "Log in",
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: kLightPurple,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

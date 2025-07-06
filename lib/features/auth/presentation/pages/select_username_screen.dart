@@ -61,123 +61,125 @@ class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
               )
             : BoxDecoration(),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(
-              horizontal: getProportionateScreenWidth(25),
-            ),
-            child: Column(
-              children: <Widget>[
-                SizedBox(height: getProportionateScreenHeight(76.91)),
-                FormHeader(
-                  isSignUp: false,
-                  title: 'Select A Username',
-                  subtitle: 'see what username is available',
-                ),
-                SizedBox(height: getProportionateScreenHeight(32)),
-                Form(
-                  key: usernameFormKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        "Username",
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: labelColor,
-                        ),
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(6)),
-                      TextFormField(
-                        controller: usernameController,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter your username",
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your username';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(20)),
-                      Text(
-                        "Name",
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: labelColor,
-                        ),
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(6)),
-                      TextFormField(
-                        controller: nameController,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter your name",
-                          hintStyle: Theme.of(context).textTheme.bodyMedium!
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(
+                horizontal: getProportionateScreenWidth(25),
+              ),
+              child: Column(
+                children: <Widget>[
+                  SizedBox(height: getProportionateScreenHeight(76.91)),
+                  FormHeader(
+                    isSignUp: false,
+                    title: 'Select A Username',
+                    subtitle: 'see what username is available',
+                  ),
+                  SizedBox(height: getProportionateScreenHeight(32)),
+                  Form(
+                    key: usernameFormKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          "Username",
+                          style: Theme.of(context).textTheme.bodyMedium!
                               .copyWith(
-                                color: kGreyFormHint,
                                 fontWeight: FontWeight.w500,
+                                color: labelColor,
                               ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(54)),
-                      DefaultButton(
-                        press: () async {
-                          if (usernameFormKey.currentState!.validate()) {
-                            usernameFormKey.currentState!.save();
-                            final token = await AuthManager.getToken();
-                            final response = await http.put(
-                              Uri.parse('$baseUrl/api/v1/user/profile'),
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer $token',
-                              },
-                              body: jsonEncode({
-                                'username': usernameController.text.trim(),
-                                'fullName': nameController.text.trim(),
-                              }),
-                            );
-
-                            if (response.statusCode == 200) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ProfileImageSelectScreen(),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: Colors.red,
-                                  content: Text(
-                                    jsonDecode(response.body)['message']
-                                        .toString()
-                                        .replaceAll(RegExp(r'\[|\]'), ''),
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              );
+                        SizedBox(height: getProportionateScreenHeight(6)),
+                        TextFormField(
+                          controller: usernameController,
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w500),
+                          decoration: InputDecoration(
+                            hintText: "Enter your username",
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your username';
                             }
-                          }
-                        },
-                        text: 'Continue',
-                      ),
-                    ],
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(20)),
+                        Text(
+                          "Name",
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: labelColor,
+                              ),
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(6)),
+                        TextFormField(
+                          controller: nameController,
+                          style: Theme.of(context).textTheme.bodyMedium!
+                              .copyWith(fontWeight: FontWeight.w500),
+                          decoration: InputDecoration(
+                            hintText: "Enter your name",
+                            hintStyle: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  color: kGreyFormHint,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(54)),
+                        DefaultButton(
+                          press: () async {
+                            if (usernameFormKey.currentState!.validate()) {
+                              usernameFormKey.currentState!.save();
+                              final token = await AuthManager.getToken();
+                              final response = await http.put(
+                                Uri.parse('$baseUrl/api/v1/user/profile'),
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': 'Bearer $token',
+                                },
+                                body: jsonEncode({
+                                  'username': usernameController.text.trim(),
+                                  'fullName': nameController.text.trim(),
+                                }),
+                              );
+
+                              if (response.statusCode == 200) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ProfileImageSelectScreen(),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.red,
+                                    content: Text(
+                                      jsonDecode(response.body)['message']
+                                          .toString()
+                                          .replaceAll(RegExp(r'\[|\]'), ''),
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          text: 'Continue',
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
