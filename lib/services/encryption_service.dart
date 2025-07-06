@@ -7,7 +7,7 @@ class EncryptionService {
   static const String _algorithm = 'AES-256-GCM';
   static const int _keyLength = 32; // 256 bits
   static const int _ivLength = 16; // 128 bits
-  
+
   late final Uint8List _secretKey;
   final Random _random = Random.secure();
 
@@ -48,15 +48,19 @@ class EncryptionService {
     try {
       final key = _hexStringToBytes(conversationKey);
       final iv = _generateRandomBytes(_ivLength);
-      
+
       final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
       final encrypted = encrypter.encrypt(text, iv: IV(iv));
-      
+
       // Format: iv:tag:encrypted
       final ivHex = _bytesToHexString(iv);
-      final tagHex = _bytesToHexString(encrypted.bytes.sublist(encrypted.bytes.length - 16));
-      final encryptedHex = _bytesToHexString(encrypted.bytes.sublist(0, encrypted.bytes.length - 16));
-      
+      final tagHex = _bytesToHexString(
+        encrypted.bytes.sublist(encrypted.bytes.length - 16),
+      );
+      final encryptedHex = _bytesToHexString(
+        encrypted.bytes.sublist(0, encrypted.bytes.length - 16),
+      );
+
       return '$ivHex:$tagHex:$encryptedHex';
     } catch (error) {
       _logError('Conversation encryption error: $error');
@@ -65,11 +69,14 @@ class EncryptionService {
   }
 
   /// Decrypts data with a specific conversation key
-  String decryptWithConversationKey(String encryptedData, String conversationKey) {
+  String decryptWithConversationKey(
+    String encryptedData,
+    String conversationKey,
+  ) {
     try {
       final key = _hexStringToBytes(conversationKey);
       final parts = encryptedData.split(':');
-      
+
       if (parts.length != 3) {
         throw Exception('Invalid encrypted data format');
       }
@@ -77,13 +84,13 @@ class EncryptionService {
       final iv = _hexStringToBytes(parts[0]);
       final tag = _hexStringToBytes(parts[1]);
       final encryptedBytes = _hexStringToBytes(parts[2]);
-      
+
       // Combine encrypted data and tag for decryption
       final combinedData = Uint8List.fromList([...encryptedBytes, ...tag]);
-      
+
       final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
       final encrypted = Encrypted(combinedData);
-      
+
       final decrypted = encrypter.decrypt(encrypted, iv: IV(iv));
       return decrypted;
     } catch (error) {
@@ -93,22 +100,28 @@ class EncryptionService {
   }
 
   /// Encrypts buffer with conversation key
-  EncryptionResult encryptBufferWithConversationKey(Uint8List buffer, String conversationKey) {
+  EncryptionResult encryptBufferWithConversationKey(
+    Uint8List buffer,
+    String conversationKey,
+  ) {
     try {
       final key = _hexStringToBytes(conversationKey);
       final iv = _generateRandomBytes(_ivLength);
-      
+
       final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
       final encrypted = encrypter.encryptBytes(buffer, iv: IV(iv));
-      
+
       // Separate encrypted data and tag
-      final encryptedData = encrypted.bytes.sublist(0, encrypted.bytes.length - 16);
+      final encryptedData = encrypted.bytes.sublist(
+        0,
+        encrypted.bytes.length - 16,
+      );
       final tag = encrypted.bytes.sublist(encrypted.bytes.length - 16);
-      
+
       final ivHex = _bytesToHexString(iv);
       final tagHex = _bytesToHexString(tag);
       final metadata = '$ivHex:$tagHex';
-      
+
       return EncryptionResult(
         encryptedData: Uint8List.fromList(encryptedData),
         metadata: metadata,
@@ -120,24 +133,28 @@ class EncryptionService {
   }
 
   /// Decrypts buffer with conversation key
-  Uint8List decryptBufferWithConversationKey(Uint8List encryptedBuffer, String metadata, String conversationKey) {
+  Uint8List decryptBufferWithConversationKey(
+    Uint8List encryptedBuffer,
+    String metadata,
+    String conversationKey,
+  ) {
     try {
       final key = _hexStringToBytes(conversationKey);
       final parts = metadata.split(':');
-      
+
       if (parts.length != 2) {
         throw Exception('Invalid metadata format');
       }
 
       final iv = _hexStringToBytes(parts[0]);
       final tag = _hexStringToBytes(parts[1]);
-      
+
       // Combine encrypted data and tag for decryption
       final combinedData = Uint8List.fromList([...encryptedBuffer, ...tag]);
-      
+
       final encrypter = Encrypter(AES(Key(key), mode: AESMode.gcm));
       final encrypted = Encrypted(combinedData);
-      
+
       final decrypted = encrypter.decryptBytes(encrypted, iv: IV(iv));
       return Uint8List.fromList(decrypted);
     } catch (error) {
@@ -180,39 +197,45 @@ class EncryptionResult {
   final Uint8List encryptedData;
   final String metadata;
 
-  EncryptionResult({
-    required this.encryptedData,
-    required this.metadata,
-  });
+  EncryptionResult({required this.encryptedData, required this.metadata});
 }
 
 /// Example usage and testing
 void main() {
   // Example usage
   final encryptionService = EncryptionService();
-  
+
   // Set up the secret key (in a real app, this would come from secure storage)
   final secretKey = EncryptionService.generateSecretKey();
   encryptionService.setSecretKey(secretKey);
-  
+
   // Generate a conversation key
   final conversationKey = encryptionService.generateConversationKey();
   print('Generated conversation key: $conversationKey');
-  
+
   // Test string encryption/decryption
   const testMessage = 'This is a secret message!';
-  final encrypted = encryptionService.encryptWithConversationKey(testMessage, conversationKey);
+  final encrypted = encryptionService.encryptWithConversationKey(
+    testMessage,
+    conversationKey,
+  );
   print('Encrypted: $encrypted');
-  
-  final decrypted = encryptionService.decryptWithConversationKey(encrypted, conversationKey);
+
+  final decrypted = encryptionService.decryptWithConversationKey(
+    encrypted,
+    conversationKey,
+  );
   print('Decrypted: $decrypted');
   print('Match: ${testMessage == decrypted}');
-  
+
   // Test buffer encryption/decryption
   final testBuffer = Uint8List.fromList('Hello, World!'.codeUnits);
-  final bufferResult = encryptionService.encryptBufferWithConversationKey(testBuffer, conversationKey);
+  final bufferResult = encryptionService.encryptBufferWithConversationKey(
+    testBuffer,
+    conversationKey,
+  );
   print('Buffer encrypted, metadata: ${bufferResult.metadata}');
-  
+
   final decryptedBuffer = encryptionService.decryptBufferWithConversationKey(
     bufferResult.encryptedData,
     bufferResult.metadata,

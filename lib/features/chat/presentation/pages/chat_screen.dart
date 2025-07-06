@@ -1,9 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:video_player/video_player.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
@@ -11,10 +19,27 @@ import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
-import '../../../../services/encryption_service.dart'; // Add this import
+import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
 import '../cubit/chat_cubit.dart';
 import '../widgets/message_bubble.dart';
+
+// ignore: constant_identifier_names
+enum MessageType { TEXT, AUDIO, VIDEO, IMAGE, FILE }
+
+class SelectedFile {
+  final File file;
+  final MessageType type;
+  final String? thumbnail;
+  final Duration? duration;
+
+  SelectedFile({
+    required this.file,
+    required this.type,
+    this.thumbnail,
+    this.duration,
+  });
+}
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
@@ -39,20 +64,34 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final EncryptionService _encryptionService;
+  final ImagePicker _imagePicker = ImagePicker();
+  late FlutterSoundRecorder _audioRecorder;
+
+  SelectedFile? _selectedFile;
+  bool _isRecording = false;
+  bool _isSending = false;
+  String? _recordingPath;
+  VideoPlayerController? _videoController;
 
   @override
   void initState() {
-    // Initialize encryption service
+    super.initState();
+    _initializeServices();
+    BlocProvider.of<ChatCubit>(context).getTextMessages();
+    _markAllAssRead();
+  }
+
+  void _initializeServices() {
     _encryptionService = EncryptionService();
-    // Set up the master encryption key (you should get this from secure storage)
-    // For now, using a placeholder - replace with your actual master key
     _encryptionService.setSecretKey(
       '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
     );
+    _audioRecorder = FlutterSoundRecorder();
+    _initializeAudioRecorder();
+  }
 
-    BlocProvider.of<ChatCubit>(context).getTextMessages();
-    _markAllAssRead();
-    super.initState();
+  Future<void> _initializeAudioRecorder() async {
+    await _audioRecorder.openRecorder();
   }
 
   Future<void> _markAllAssRead() async {
@@ -71,8 +110,14 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {}
   }
 
-  Future<void> _sendMessage(String type) async {
-    if (_messageController.text.trim().isNotEmpty) {
+  Future<void> _sendMessage(MessageType type) async {
+    if (_isSending) return;
+
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
       final url = Uri.parse('$baseUrl/api/v1/chat/messages');
       final token = await AuthManager.getToken();
 
@@ -80,70 +125,210 @@ class _ChatScreenState extends State<ChatScreen> {
         ..headers['accept'] = '*/*'
         ..headers['Authorization'] = 'Bearer $token';
 
-      // Encrypt the message content before sending
-      String encryptedContent;
-      try {
-        encryptedContent = _encryptionService.encryptWithConversationKey(
-          _messageController.text.trim(),
-          widget.encryptionKey,
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            content: Text(
-              'Failed to encrypt message: ${e.toString()}',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        );
-        return;
-      }
-
-      // Add form fields with encrypted content
+      // Add basic form fields
       request.fields['conversationId'] = widget.chatId;
-      request.fields['type'] = type;
-      request.fields['content'] = encryptedContent; // Send encrypted content
+      request.fields['type'] = type.name;
       request.fields['isViewOnce'] = 'false';
       request.fields['deleteAfter24Hours'] = 'false';
       request.fields['isForwarded'] = 'false';
-      // request.fields['replyToId'] = '123e4567-e89b-12d3-a456-426614174000';
 
-      // You can skip this if you're not uploading a file
-      // request.files.add(await http.MultipartFile.fromPath('file', 'path_to_file'));
+      if (type == MessageType.TEXT) {
+        // Handle text messages
+        if (_messageController.text.trim().isEmpty) return;
 
-      try {
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
+        final encryptedContent = _encryptionService.encryptWithConversationKey(
+          _messageController.text.trim(),
+          widget.encryptionKey,
+        );
+        request.fields['content'] = encryptedContent;
+      } else {
+        // Handle file messages
+        if (_selectedFile == null) return;
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          _messageController.clear();
-          _scrollToBottom();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red,
-              content: Text(
-                jsonDecode(
-                  response.body,
-                )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            content: Text(e.toString(), style: TextStyle(color: Colors.white)),
+        final compressedFile = await compressImage(
+          File(_selectedFile!.file.path),
+        );
+
+        final fileBytes = await compressedFile.readAsBytes();
+        final encryptionResult = _encryptionService
+            .encryptBufferWithConversationKey(fileBytes, widget.encryptionKey);
+
+        // Create a temporary file with encrypted data
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File(
+          '${tempDir.path}/encrypted_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        await tempFile.writeAsBytes(encryptionResult.encryptedData);
+
+        // Add encrypted file to request
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'file',
+            tempFile.path,
+            filename: _selectedFile!.file.path.split('/').last,
           ),
         );
+
+        // Store encryption metadata in content field
+        request.fields['content'] = encryptionResult.metadata;
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _messageController.clear();
+        _clearSelectedFile();
+        _scrollToBottom();
+
+        // Refresh messages to show the new one
+        BlocProvider.of<ChatCubit>(context).getTextMessages();
+      } else {
+        _showErrorSnackBar(
+          jsonDecode(
+            response.body,
+          )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+        );
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to send message: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(message, style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  // Camera functionality
+  Future<void> _takePicture() async {
+    final permission = await Permission.camera.request();
+    if (permission.isGranted) {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        _setSelectedFile(File(image.path), MessageType.IMAGE);
       }
     }
   }
 
-  // Method to decrypt message content
+  // Gallery functionality
+  Future<void> _pickImageFromGallery() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      _setSelectedFile(File(image.path), MessageType.IMAGE);
+    }
+  }
+
+  // File picker functionality
+  Future<void> _pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final file = File(result.files.first.path!);
+      final extension = result.files.first.extension?.toLowerCase();
+
+      MessageType type = MessageType.FILE;
+      if (extension != null) {
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
+          type = MessageType.IMAGE;
+        } else if (['mp4', 'mov', 'avi', 'mkv'].contains(extension)) {
+          type = MessageType.VIDEO;
+        } else if (['mp3', 'wav', 'aac', 'm4a'].contains(extension)) {
+          type = MessageType.AUDIO;
+        }
+      }
+
+      _setSelectedFile(file, type);
+    }
+  }
+
+  // Audio recording functionality
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _stopRecording();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    final permission = await Permission.microphone.request();
+    if (permission.isGranted) {
+      final tempDir = await getTemporaryDirectory();
+      _recordingPath =
+          '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
+
+      await _audioRecorder.startRecorder(
+        toFile: _recordingPath,
+        codec: Codec.aacADTS,
+      );
+
+      setState(() {
+        _isRecording = true;
+      });
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    await _audioRecorder.stopRecorder();
+
+    if (_recordingPath != null) {
+      _setSelectedFile(File(_recordingPath!), MessageType.AUDIO);
+    }
+
+    setState(() {
+      _isRecording = false;
+    });
+  }
+
+  void _setSelectedFile(File file, MessageType type) {
+    setState(() {
+      _selectedFile = SelectedFile(file: file, type: type);
+    });
+
+    // Initialize video controller if it's a video file
+    if (type == MessageType.VIDEO) {
+      _videoController = VideoPlayerController.file(file);
+      _videoController!.initialize().then((_) {
+        setState(() {});
+      });
+    }
+  }
+
+  void _clearSelectedFile() {
+    setState(() {
+      _selectedFile = null;
+    });
+
+    if (_videoController != null) {
+      _videoController!.dispose();
+      _videoController = null;
+    }
+  }
+
   String _decryptMessageContent(String encryptedContent) {
     try {
       return _encryptionService.decryptWithConversationKey(
@@ -151,18 +336,13 @@ class _ChatScreenState extends State<ChatScreen> {
         widget.encryptionKey,
       );
     } catch (e) {
-      // Return placeholder text if decryption fails
-      // In production, you might want to handle this differently
       return '[Message could not be decrypted]';
     }
   }
 
-  // Method to create decrypted message entity
   TextMessageEntity _createDecryptedMessage(TextMessageEntity original) {
     final decryptedContent = _decryptMessageContent(original.content);
 
-    // Create a new TextMessageEntity with decrypted content
-    // You'll need to adjust this based on your TextMessageEntity constructor
     return TextMessageEntity(
       decryptedContent,
       original.conversationId,
@@ -188,6 +368,106 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  Widget _buildSelectedFilePreview() {
+    if (_selectedFile == null) return SizedBox.shrink();
+
+    return Container(
+      margin: EdgeInsets.all(getProportionateScreenWidth(15)),
+      padding: EdgeInsets.all(getProportionateScreenWidth(10)),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(getProportionateScreenWidth(10)),
+      ),
+      child: Row(
+        children: [
+          // File preview
+          Container(
+            width: getProportionateScreenWidth(60),
+            height: getProportionateScreenHeight(60),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(
+                getProportionateScreenWidth(8),
+              ),
+              color: Colors.grey[300],
+            ),
+            child: _buildFilePreviewWidget(),
+          ),
+          SizedBox(width: getProportionateScreenWidth(10)),
+          // File info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _selectedFile!.file.path.split('/').last,
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(14),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  _selectedFile!.type.name,
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(12),
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Remove button
+          IconButton(
+            onPressed: _clearSelectedFile,
+            icon: Icon(Icons.close, size: getProportionateScreenWidth(20)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilePreviewWidget() {
+    if (_selectedFile == null) return SizedBox.shrink();
+
+    switch (_selectedFile!.type) {
+      case MessageType.IMAGE:
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
+          child: Image.file(
+            _selectedFile!.file,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        );
+      case MessageType.VIDEO:
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
+          child:
+              _videoController != null && _videoController!.value.isInitialized
+              ? AspectRatio(
+                  aspectRatio: _videoController!.value.aspectRatio,
+                  child: VideoPlayer(_videoController!),
+                )
+              : Container(
+                  color: Colors.black,
+                  child: Icon(Icons.video_library, color: Colors.white),
+                ),
+        );
+      case MessageType.AUDIO:
+        return Icon(Icons.audiotrack, size: getProportionateScreenWidth(30));
+      case MessageType.FILE:
+        return Icon(
+          Icons.insert_drive_file,
+          size: getProportionateScreenWidth(30),
+        );
+      default:
+        return SizedBox.shrink();
+    }
   }
 
   @override
@@ -327,18 +607,18 @@ class _ChatScreenState extends State<ChatScreen> {
       body: BlocBuilder<ChatCubit, ChatState>(
         builder: (context, state) {
           if (state is ChatLoaded) {
-            // Decrypt messages as they're processed
             List<TextMessageEntity> requiredMessages = [];
             for (TextMessageEntity textMessageEntity in state.messages) {
               if (textMessageEntity.conversationId == widget.chatId) {
-                final decryptedMessage = _createDecryptedMessage(
-                  textMessageEntity,
-                );
-                requiredMessages.add(decryptedMessage);
+                if (textMessageEntity.type == "TEXT") {
+                  final decryptedMessage = _createDecryptedMessage(
+                    textMessageEntity,
+                  );
+                  requiredMessages.add(decryptedMessage);
+                } else {}
               }
             }
 
-            // Sort by timestamp (newest first)
             requiredMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
             return Column(
@@ -357,7 +637,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (context, index) {
                       final message = requiredMessages[index];
                       return MessageBubble(
-                        message: message, // This now contains decrypted content
+                        message: message,
                         isDark: isDark,
                         imageUrl: widget.imageUrl,
                         currentUser: widget.currentUser,
@@ -365,6 +645,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
                 ),
+
+                // File Preview
+                _buildSelectedFilePreview(),
 
                 // Message Input
                 Container(
@@ -395,9 +678,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: [
                             // Camera button
                             InkWell(
-                              onTap: () {
-                                // Handle camera action
-                              },
+                              onTap: _takePicture,
                               child: Container(
                                 padding: EdgeInsets.all(
                                   getProportionateScreenWidth(8),
@@ -415,63 +696,184 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                               ),
                             ),
-                            Expanded(
-                              child: TextField(
-                                controller: _messageController,
-                                decoration: InputDecoration(
-                                  hintText: "Message...",
-                                  hintStyle: TextStyle(
+                            // Text input - only show if no file selected
+                            if (_selectedFile == null)
+                              Expanded(
+                                child: TextField(
+                                  controller: _messageController,
+                                  decoration: InputDecoration(
+                                    hintText: "Message...",
+                                    hintStyle: TextStyle(
+                                      fontSize: getProportionateScreenHeight(
+                                        14,
+                                      ),
+                                    ),
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    fillColor: Colors.transparent,
+                                    filled: false,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: getProportionateScreenWidth(
+                                        16,
+                                      ),
+                                      vertical: getProportionateScreenHeight(
+                                        12,
+                                      ),
+                                    ),
+                                  ),
+                                  style: TextStyle(
+                                    color: iconColor,
                                     fontSize: getProportionateScreenHeight(14),
                                   ),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  errorBorder: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  fillColor: Colors.transparent,
-                                  filled: false,
-                                  contentPadding: EdgeInsets.symmetric(
+                                  onSubmitted: (_) =>
+                                      _sendMessage(MessageType.TEXT),
+                                ),
+                              ),
+                            // File selected indicator
+                            if (_selectedFile != null)
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
                                     horizontal: getProportionateScreenWidth(16),
                                     vertical: getProportionateScreenHeight(12),
                                   ),
+                                  child: Text(
+                                    '${_selectedFile!.type.name} selected',
+                                    style: TextStyle(
+                                      color: iconColor,
+                                      fontSize: getProportionateScreenHeight(
+                                        14,
+                                      ),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
                                 ),
-                                style: TextStyle(
-                                  color: iconColor,
-                                  fontSize: getProportionateScreenHeight(14),
-                                ),
-                                onSubmitted: (_) => _sendMessage('TEXT'),
                               ),
-                            ),
-                            // Use ValueListenableBuilder to listen to text changes
-                            ValueListenableBuilder<TextEditingValue>(
-                              valueListenable: _messageController,
-                              builder: (context, value, child) {
-                                final hasText = value.text.trim().isNotEmpty;
-                                return Row(
-                                  children: [
-                                    // Send button - visible when there's text
-                                    if (hasText)
-                                      InkWell(
-                                        onTap: () => _sendMessage('TEXT'),
-                                        child: Container(
+                            // Action buttons
+                            if (_selectedFile != null)
+                              // Send button for files
+                              InkWell(
+                                onTap: _isSending
+                                    ? null
+                                    : () => _sendMessage(_selectedFile!.type),
+                                child: Container(
+                                  width: getProportionateScreenWidth(55),
+                                  height: getProportionateScreenHeight(34),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: getProportionateScreenHeight(5),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: kChatBubbleGradient,
+                                    borderRadius: BorderRadius.circular(
+                                      getProportionateScreenWidth(20),
+                                    ),
+                                  ),
+                                  child: _isSending
+                                      ? SizedBox(
                                           width: getProportionateScreenWidth(
-                                            55,
+                                            20,
                                           ),
                                           height: getProportionateScreenHeight(
-                                            34,
+                                            20,
                                           ),
-                                          padding: EdgeInsets.symmetric(
-                                            vertical:
-                                                getProportionateScreenHeight(5),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
                                           ),
-                                          decoration: BoxDecoration(
-                                            gradient: kChatBubbleGradient,
-                                            borderRadius: BorderRadius.circular(
-                                              getProportionateScreenWidth(20),
+                                        )
+                                      : SvgPicture.asset(
+                                          "assets/icons/send.svg",
+                                          height: getProportionateScreenHeight(
+                                            21.27,
+                                          ),
+                                          width: getProportionateScreenWidth(
+                                            21.27,
+                                          ),
+                                        ),
+                                ),
+                              )
+                            else
+                              // Text message controls
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _messageController,
+                                builder: (context, value, child) {
+                                  final hasText = value.text.trim().isNotEmpty;
+                                  return Row(
+                                    children: [
+                                      // Send button for text
+                                      if (hasText)
+                                        InkWell(
+                                          onTap: _isSending
+                                              ? null
+                                              : () => _sendMessage(
+                                                  MessageType.TEXT,
+                                                ),
+                                          child: Container(
+                                            width: getProportionateScreenWidth(
+                                              55,
                                             ),
+                                            height:
+                                                getProportionateScreenHeight(
+                                                  34,
+                                                ),
+                                            padding: EdgeInsets.symmetric(
+                                              vertical:
+                                                  getProportionateScreenHeight(
+                                                    5,
+                                                  ),
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: kChatBubbleGradient,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    getProportionateScreenWidth(
+                                                      20,
+                                                    ),
+                                                  ),
+                                            ),
+                                            child: _isSending
+                                                ? SizedBox(
+                                                    width:
+                                                        getProportionateScreenWidth(
+                                                          20,
+                                                        ),
+                                                    height:
+                                                        getProportionateScreenHeight(
+                                                          20,
+                                                        ),
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.white),
+                                                    ),
+                                                  )
+                                                : SvgPicture.asset(
+                                                    "assets/icons/send.svg",
+                                                    height:
+                                                        getProportionateScreenHeight(
+                                                          21.27,
+                                                        ),
+                                                    width:
+                                                        getProportionateScreenWidth(
+                                                          21.27,
+                                                        ),
+                                                  ),
                                           ),
+                                        ),
+                                      // Attachment icons
+                                      if (!hasText) ...[
+                                        InkWell(
+                                          onTap: _pickFile,
                                           child: SvgPicture.asset(
-                                            "assets/icons/send.svg",
+                                            "assets/icons/chat_paperclip.svg",
                                             height:
                                                 getProportionateScreenHeight(
                                                   21.27,
@@ -481,56 +883,61 @@ class _ChatScreenState extends State<ChatScreen> {
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    // Attachment icons - visible when there's no text
-                                    if (!hasText) ...[
-                                      InkWell(
-                                        onTap: () {},
-                                        child: SvgPicture.asset(
-                                          "assets/icons/chat_paperclip.svg",
-                                          height: getProportionateScreenHeight(
-                                            21.27,
-                                          ),
-                                          width: getProportionateScreenWidth(
-                                            21.27,
+                                        SizedBox(
+                                          width: getProportionateScreenWidth(8),
+                                        ),
+                                        InkWell(
+                                          onTap: _toggleRecording,
+                                          child: Container(
+                                            padding: _isRecording
+                                                ? EdgeInsets.all(2)
+                                                : EdgeInsets.zero,
+                                            decoration: _isRecording
+                                                ? BoxDecoration(
+                                                    color: Colors.red,
+                                                    shape: BoxShape.circle,
+                                                  )
+                                                : null,
+                                            child: SvgPicture.asset(
+                                              "assets/icons/chat_mic.svg",
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    21.27,
+                                                  ),
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    21.27,
+                                                  ),
+                                              colorFilter: _isRecording
+                                                  ? ColorFilter.mode(
+                                                      Colors.white,
+                                                      BlendMode.srcIn,
+                                                    )
+                                                  : null,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(
-                                        width: getProportionateScreenWidth(8),
-                                      ),
-                                      InkWell(
-                                        onTap: () {},
-                                        child: SvgPicture.asset(
-                                          "assets/icons/chat_mic.svg",
-                                          height: getProportionateScreenHeight(
-                                            21.27,
-                                          ),
-                                          width: getProportionateScreenWidth(
-                                            21.27,
+                                        SizedBox(
+                                          width: getProportionateScreenWidth(8),
+                                        ),
+                                        InkWell(
+                                          onTap: _pickImageFromGallery,
+                                          child: SvgPicture.asset(
+                                            "assets/icons/chat_image.svg",
+                                            height:
+                                                getProportionateScreenHeight(
+                                                  21.27,
+                                                ),
+                                            width: getProportionateScreenWidth(
+                                              21.27,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(
-                                        width: getProportionateScreenWidth(8),
-                                      ),
-                                      InkWell(
-                                        onTap: () {},
-                                        child: SvgPicture.asset(
-                                          "assets/icons/chat_image.svg",
-                                          height: getProportionateScreenHeight(
-                                            21.27,
-                                          ),
-                                          width: getProportionateScreenWidth(
-                                            21.27,
-                                          ),
-                                        ),
-                                      ),
+                                      ],
                                     ],
-                                  ],
-                                );
-                              },
-                            ),
+                                  );
+                                },
+                              ),
                           ],
                         ),
                       ),
@@ -550,6 +957,19 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _audioRecorder.closeRecorder();
+    _videoController?.dispose();
     super.dispose();
+  }
+
+  Future<File> compressImage(File file) async {
+    final compressedBytes = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      quality: 50, // adjust as needed
+    );
+
+    final compressedFile = File('${file.path}_compressed.jpg')
+      ..writeAsBytesSync(compressedBytes!);
+    return compressedFile;
   }
 }
