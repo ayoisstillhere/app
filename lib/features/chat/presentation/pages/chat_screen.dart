@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -128,7 +127,6 @@ class _ChatScreenState extends State<ChatScreen> {
       // Add basic form fields
       request.fields['conversationId'] = widget.chatId;
       request.fields['type'] = type.name;
-      request.fields['isViewOnce'] = 'false';
       request.fields['deleteAfter24Hours'] = 'false';
       request.fields['isForwarded'] = 'false';
 
@@ -145,11 +143,13 @@ class _ChatScreenState extends State<ChatScreen> {
         // Handle file messages
         if (_selectedFile == null) return;
 
-        final compressedFile = await compressImage(
-          File(_selectedFile!.file.path),
-        );
+        File fileToSend = _selectedFile!.file;
 
-        final fileBytes = await compressedFile.readAsBytes();
+        if (type == MessageType.IMAGE || type == MessageType.VIDEO) {
+          fileToSend = await compressImage(File(_selectedFile!.file.path));
+        }
+
+        final fileBytes = await fileToSend.readAsBytes();
         final encryptionResult = _encryptionService
             .encryptBufferWithConversationKey(fileBytes, widget.encryptionKey);
 
@@ -210,18 +210,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Camera functionality
   Future<void> _takePicture() async {
-    final permission = await Permission.camera.request();
-    if (permission.isGranted) {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
 
-      if (image != null) {
-        _setSelectedFile(File(image.path), MessageType.IMAGE);
-      }
+    if (image != null) {
+      _setSelectedFile(File(image.path), MessageType.IMAGE);
     }
   }
 
@@ -275,21 +272,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
-    final permission = await Permission.microphone.request();
-    if (permission.isGranted) {
-      final tempDir = await getTemporaryDirectory();
-      _recordingPath =
-          '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
+    final tempDir = await getTemporaryDirectory();
+    _recordingPath =
+        '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
 
-      await _audioRecorder.startRecorder(
-        toFile: _recordingPath,
-        codec: Codec.aacADTS,
-      );
+    await _audioRecorder.startRecorder(
+      toFile: _recordingPath,
+      codec: Codec.aacADTS,
+    );
 
-      setState(() {
-        _isRecording = true;
-      });
-    }
+    setState(() {
+      _isRecording = true;
+    });
   }
 
   Future<void> _stopRecording() async {

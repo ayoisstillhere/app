@@ -142,7 +142,6 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
     final body = jsonEncode({
       "participantUserIds": selectedUsers,
       "type": "DIRECT",
-      "isSecret": false,
     });
 
     try {

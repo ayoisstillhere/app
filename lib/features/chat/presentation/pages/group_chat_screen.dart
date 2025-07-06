@@ -368,7 +368,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       "participantUserIds": selectedUsers,
       "type": "GROUP",
       "name": groupName,
-      "isSecret": false,
     });
 
     try {
