@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -16,6 +17,7 @@ class ChatDetailsScreen extends StatefulWidget {
     this.chatHandle,
     required this.currentUser,
     required this.isGroup,
+    required this.participants,
   });
   final String chatId;
   final String chatName;
@@ -23,6 +25,7 @@ class ChatDetailsScreen extends StatefulWidget {
   final String? chatHandle;
   final UserEntity currentUser;
   final bool isGroup;
+  final List<Participant> participants;
 
   @override
   State<ChatDetailsScreen> createState() => _ChatDetailsScreenState();
@@ -176,7 +179,229 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                         ],
                       ),
                       child: widget.isGroup
-                          ? Row()
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProfileScreen(
+                                          isVerified: true,
+                                          userName: widget.chatHandle!,
+                                          currentUser: widget.currentUser,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SvgPicture.asset(
+                                        "assets/icons/group_add.svg",
+                                        colorFilter: ColorFilter.mode(
+                                          iconColor,
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          18.38,
+                                        ),
+                                        height: getProportionateScreenHeight(
+                                          18.38,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: getProportionateScreenHeight(
+                                          4.6,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Add",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(
+                                                11.49,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () {},
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SvgPicture.asset(
+                                        "assets/icons/group_search.svg",
+                                        colorFilter: ColorFilter.mode(
+                                          iconColor,
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          18.38,
+                                        ),
+                                        height: getProportionateScreenHeight(
+                                          18.38,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: getProportionateScreenHeight(
+                                          4.6,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Search",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(
+                                                11.49,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                InkWell(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: Text(
+                                            "Block User",
+                                            style: TextStyle(
+                                              fontSize:
+                                                  getProportionateScreenHeight(
+                                                    18,
+                                                  ),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          content: Text(
+                                            "Are you sure you want to Block Ayodele?",
+                                            style: TextStyle(
+                                              fontSize:
+                                                  getProportionateScreenHeight(
+                                                    16,
+                                                  ),
+                                              fontWeight: FontWeight.normal,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                "Cancel",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        16,
+                                                      ),
+                                                  fontWeight: FontWeight.normal,
+                                                  color: kAccentColor,
+                                                ),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                "Block",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        16,
+                                                      ),
+                                                  fontWeight: FontWeight.normal,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SvgPicture.asset(
+                                        "assets/icons/group_mute.svg",
+                                        colorFilter: ColorFilter.mode(
+                                          iconColor,
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          18.38,
+                                        ),
+                                        height: getProportionateScreenHeight(
+                                          18.38,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: getProportionateScreenHeight(
+                                          4.6,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Mute",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(
+                                                11.49,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () {},
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SvgPicture.asset(
+                                        "assets/icons/group_leave.svg",
+                                        colorFilter: ColorFilter.mode(
+                                          iconColor,
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          18.38,
+                                        ),
+                                        height: getProportionateScreenHeight(
+                                          18.38,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: getProportionateScreenHeight(
+                                          4.6,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Leave",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(
+                                                11.49,
+                                              ),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -429,13 +654,96 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                               ),
                             ),
                             SizedBox(height: getProportionateScreenHeight(26)),
-                            InkWell(
-                              onTap: _onMoreButtonTap,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Dissapearing Messages",
+                            widget.isGroup
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Invite Link",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(15),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        "https://t.me/FlutterChat",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(13),
+                                          fontWeight: FontWeight.normal,
+                                          color: kProfileText,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : InkWell(
+                                    onTap: _onMoreButtonTap,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Dissapearing Messages",
+                                          style: TextStyle(
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  15,
+                                                ),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          "Off",
+                                          style: TextStyle(
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  13,
+                                                ),
+                                            fontWeight: FontWeight.normal,
+                                            color: kProfileText,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                            SizedBox(height: getProportionateScreenHeight(26)),
+                            widget.isGroup
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "People",
+                                        style: TextStyle(
+                                          fontSize:
+                                              getProportionateScreenHeight(15),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: getProportionateScreenWidth(285),
+                                        child: Text(
+                                          widget.participants
+                                              .map((e) => e.user.fullName)
+                                              .join(", "),
+                                          style: TextStyle(
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  13,
+                                                ),
+                                            fontWeight: FontWeight.normal,
+                                            color: kProfileText,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    "Move Chat",
                                     style: TextStyle(
                                       fontSize: getProportionateScreenHeight(
                                         15,
@@ -443,27 +751,27 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  Text(
-                                    "Off",
-                                    style: TextStyle(
-                                      fontSize: getProportionateScreenHeight(
-                                        13,
+                            widget.isGroup
+                                ? SizedBox(
+                                    height: getProportionateScreenHeight(26),
+                                  )
+                                : Container(),
+
+                            widget.isGroup
+                                ? InkWell(
+                                    onTap: () {},
+                                    child: Text(
+                                      "Delete Group Chat",
+                                      style: TextStyle(
+                                        fontSize: getProportionateScreenHeight(
+                                          15,
+                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.red,
                                       ),
-                                      fontWeight: FontWeight.normal,
-                                      color: kProfileText,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: getProportionateScreenHeight(26)),
-                            Text(
-                              "Move Chat",
-                              style: TextStyle(
-                                fontSize: getProportionateScreenHeight(15),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                                  )
+                                : Container(),
                           ],
                         ),
                       ),

@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 
@@ -47,6 +48,7 @@ class ChatScreen extends StatefulWidget {
     required this.encryptionKey,
     this.chatHandle,
     required this.isGroup,
+    required this.participants,
   });
   final String chatId;
   final String name;
@@ -55,6 +57,7 @@ class ChatScreen extends StatefulWidget {
   final String encryptionKey;
   final String? chatHandle;
   final bool isGroup;
+  final List<Participant> participants;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -587,6 +590,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         chatHandle: widget.chatHandle,
                         currentUser: widget.currentUser,
                         isGroup: widget.isGroup,
+                        participants: widget.participants,
                       ),
                     ),
                   );

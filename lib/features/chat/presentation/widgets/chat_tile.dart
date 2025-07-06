@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 
 import '../../../../constants.dart';
@@ -21,6 +22,7 @@ class ChatTile extends StatelessWidget {
     required this.encryptionKey,
     required this.chatHandle,
     required this.isGroup,
+    required this.participants,
   });
 
   final Color dividerColor;
@@ -34,6 +36,7 @@ class ChatTile extends StatelessWidget {
   final String encryptionKey;
   final String chatHandle;
   final bool isGroup;
+  final List<Participant> participants;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +53,7 @@ class ChatTile extends StatelessWidget {
               encryptionKey: encryptionKey,
               isGroup: isGroup,
               chatHandle: chatHandle,
+              participants: participants,
             ),
           ),
         );

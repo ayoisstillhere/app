@@ -405,6 +405,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 .user
                 .username,
             isGroup: conversation.type == "GROUP",
+            participants: conversation.participants,
           );
   }
 

@@ -385,6 +385,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               currentUser: widget.currentUser,
               encryptionKey: jsonDecode(response.body)['encryptionKey'],
               isGroup: true,
+              participants: jsonDecode(response.body)['participants'],
             ),
           ),
         );
