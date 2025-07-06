@@ -96,6 +96,7 @@ class _ReplyCardState extends State<ReplyCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         widget.replyerName,

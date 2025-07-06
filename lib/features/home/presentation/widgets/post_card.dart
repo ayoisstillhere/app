@@ -11,6 +11,7 @@ import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
+import '../pages/write_comment_screen.dart';
 
 class PostCard extends StatefulWidget {
   PostCard({
@@ -34,6 +35,7 @@ class PostCard extends StatefulWidget {
     required this.isLiked,
     required this.isReposted,
     required this.isSaved,
+    this.onCommentAdded,
   });
 
   final Color dividerColor;
@@ -55,6 +57,7 @@ class PostCard extends StatefulWidget {
   bool isLiked;
   bool isReposted;
   bool isSaved;
+  final VoidCallback? onCommentAdded;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -104,11 +107,10 @@ class _PostCardState extends State<PostCard> {
     });
 
     if (wasReposted) {
-      final response = await http.delete(
+      await http.delete(
         Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/repost"),
         headers: {"Authorization": "Bearer $token"},
       );
-      print(response.body);
     } else {
       await http.post(
         Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/repost"),
@@ -408,7 +410,33 @@ class _PostCardState extends State<PostCard> {
                     child: Row(
                       children: [
                         InkWell(
-                          onTap: () {},
+                          onTap: () async {
+                            // Navigate to WriteCommentScreen
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WriteCommentScreen(
+                                  currentUser: widget.currentUser,
+                                  postId: widget.postId,
+                                  authorProfileImage: widget.imageUrl,
+                                  authorName: widget.authorName,
+                                  media: [],
+                                  content: widget.content,
+                                  createdAt:
+                                      widget.postTime, // Pass the current user
+                                ),
+                              ),
+                            );
+
+                            // If comment was posted successfully, you might want to refresh the post
+                            if (result == true) {
+                              // Optionally refresh the post data or increment comment count
+                              // You can call a callback function here to update the parent widget
+                              if (widget.onCommentAdded != null) {
+                                widget.onCommentAdded!();
+                              }
+                            }
+                          },
                           child: SvgPicture.asset(
                             "assets/icons/chats.svg",
                             height: getProportionateScreenHeight(15.55),

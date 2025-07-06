@@ -63,7 +63,7 @@ class CommentModel extends Comment {
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
-      post: PostModel.fromJson(json['post']),
+      post: PostModel.fromJson(json),
       isLiked: json['isLiked'] ?? false,
       isReposted: json['isReposted'] ?? false,
       isSaved: json['isSaved'] ?? false,
