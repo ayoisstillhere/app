@@ -75,6 +75,7 @@ class _NavPageState extends State<NavPage> {
           isVerified: true,
           isFromNav: true,
           userName: user.username,
+          currentUser: user,
         ),
       ];
       setState(() {

@@ -36,6 +36,9 @@ class PostCard extends StatefulWidget {
     required this.isReposted,
     required this.isSaved,
     this.onCommentAdded,
+    // New parameters for reply functionality
+    this.isReply = false,
+    this.replyingToHandle,
   });
 
   final Color dividerColor;
@@ -58,6 +61,9 @@ class PostCard extends StatefulWidget {
   bool isReposted;
   bool isSaved;
   final VoidCallback? onCommentAdded;
+  // New properties for reply functionality
+  final bool isReply;
+  final String? replyingToHandle;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -201,6 +207,7 @@ class _PostCardState extends State<PostCard> {
                         builder: (context) => ProfileScreen(
                           isVerified: true,
                           userName: widget.authorHandle,
+                          currentUser: widget.currentUser,
                         ),
                       ),
                     );
@@ -218,40 +225,131 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 SizedBox(width: getProportionateScreenWidth(10)),
-                Text(
-                  widget.authorName,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: getProportionateScreenHeight(13),
-                  ),
-                ),
-                SizedBox(width: getProportionateScreenWidth(2)),
-                Text(
-                  '@${widget.authorHandle}',
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontWeight: FontWeight.normal,
-                    fontSize: getProportionateScreenHeight(13),
-                    color: kGreyHandleText,
-                  ),
-                ),
-                SizedBox(width: getProportionateScreenWidth(2)),
-                Text(
-                  '.',
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontWeight: FontWeight.normal,
-                    fontSize: getProportionateScreenHeight(13),
-                    color: kGreyHandleText,
-                  ),
-                ),
-                SizedBox(width: getProportionateScreenWidth(2)),
-                Text(
-                  timeago.format(widget.postTime),
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: getProportionateScreenHeight(12),
-                    color: kGreyTimeText,
-                  ),
-                ),
+                // Modified section to handle both regular posts and replies
+                widget.isReply
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                widget.authorName,
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: getProportionateScreenHeight(
+                                        13,
+                                      ),
+                                    ),
+                              ),
+                              SizedBox(width: getProportionateScreenWidth(2)),
+                              Text(
+                                '@${widget.authorHandle}',
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.normal,
+                                      fontSize: getProportionateScreenHeight(
+                                        13,
+                                      ),
+                                      color: kGreyHandleText,
+                                    ),
+                              ),
+                              SizedBox(width: getProportionateScreenWidth(2)),
+                              Text(
+                                '.',
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.normal,
+                                      fontSize: getProportionateScreenHeight(
+                                        13,
+                                      ),
+                                      color: kGreyHandleText,
+                                    ),
+                              ),
+                              SizedBox(width: getProportionateScreenWidth(2)),
+                              Text(
+                                timeago.format(widget.postTime),
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: getProportionateScreenHeight(
+                                        12,
+                                      ),
+                                      color: kGreyTimeText,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(2)),
+                          if (widget.replyingToHandle != null)
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'replying to ',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
+                                        .copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                  TextSpan(
+                                    text: '@${widget.replyingToHandle}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
+                                        .copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          color: kAccentColor,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Text(
+                            widget.authorName,
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: getProportionateScreenHeight(13),
+                                ),
+                          ),
+                          SizedBox(width: getProportionateScreenWidth(2)),
+                          Text(
+                            '@${widget.authorHandle}',
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: getProportionateScreenHeight(13),
+                                  color: kGreyHandleText,
+                                ),
+                          ),
+                          SizedBox(width: getProportionateScreenWidth(2)),
+                          Text(
+                            '.',
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: getProportionateScreenHeight(13),
+                                  color: kGreyHandleText,
+                                ),
+                          ),
+                          SizedBox(width: getProportionateScreenWidth(2)),
+                          Text(
+                            timeago.format(widget.postTime),
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: getProportionateScreenHeight(12),
+                                  color: kGreyTimeText,
+                                ),
+                          ),
+                        ],
+                      ),
                 Spacer(),
                 InkWell(
                   onTap: () {},

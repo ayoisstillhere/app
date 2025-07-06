@@ -12,7 +12,6 @@ import 'package:app/features/home/domain/entities/post_response_entity.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
-import '../widgets/reply_card.dart';
 
 class PostDetailsScreen extends StatefulWidget {
   const PostDetailsScreen({
@@ -194,13 +193,9 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: comments!.comments.length,
                       itemBuilder: (context, index) {
-                        return ReplyCard(
+                        return PostCard(
                           dividerColor: dividerColor,
                           iconColor: iconColor,
-                          replyerName:
-                              comments!.comments[index].post.author.fullName,
-                          replyerHandle:
-                              comments!.comments[index].post.author.username,
                           imageUrl: comments!
                               .comments[index]
                               .post
@@ -214,7 +209,17 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                           bookmarks: comments!.comments[index].post.count.saves,
                           content: comments!.comments[index].post.content,
                           pictures: comments!.comments[index].post.media,
-                          authorHandle: post!.author.username,
+                          authorHandle:
+                              comments!.comments[index].post.author.username,
+                          isReply: comments!.comments[index].post.isReply,
+                          replyingToHandle: post!.author.username,
+                          authorName:
+                              comments!.comments[index].post.author.fullName,
+                          currentUser: widget.currentUser,
+                          postId: comments!.comments[index].post.id,
+                          isLiked: comments!.comments[index].isLiked,
+                          isReposted: comments!.comments[index].isReposted,
+                          isSaved: comments!.comments[index].isSaved,
                         );
                       },
                     ),

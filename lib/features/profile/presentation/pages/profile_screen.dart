@@ -16,7 +16,6 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../home/data/models/post_response_model.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
-import '../../../home/presentation/widgets/reply_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -24,10 +23,12 @@ class ProfileScreen extends StatefulWidget {
     required this.isVerified,
     this.isFromNav = false,
     required this.userName,
+    required this.currentUser,
   });
   final bool isVerified;
   final bool isFromNav;
   final String userName;
+  final UserEntity currentUser;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -753,7 +754,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               final comment = comments!.posts[index];
                               return GestureDetector(
                                 onTap: () {},
-                                child: ReplyCard(
+                                child: PostCard(
                                   dividerColor: dividerColor,
                                   iconColor: iconColor,
                                   authorHandle: comment.author.username,
@@ -764,9 +765,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   reposts: 0,
                                   bookmarks: 0,
                                   content: comment.content,
-                                  pictures: [],
-                                  replyerName: comment.author.fullName,
-                                  replyerHandle: comment.author.username,
+                                  pictures: comment.media,
+                                  authorName: comment.author.fullName,
+                                  currentUser: widget.currentUser,
+                                  postId: comment.id,
+                                  isLiked: comment.isLiked,
+                                  isReposted: comment.isReposted,
+                                  isSaved: comment.isSaved,
+                                  isReply: comment.isReply,
+                                  replyingToHandle: comment.parentPost!.author.username,
                                 ),
                               );
                             },
@@ -1002,8 +1009,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) =>
-                ProfileScreen(isVerified: true, userName: user!.username),
+            builder: (context) => ProfileScreen(
+              isVerified: true,
+              userName: user!.username,
+              currentUser: widget.currentUser,
+            ),
           ),
         );
       }
@@ -1030,8 +1040,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) =>
-                ProfileScreen(isVerified: true, userName: user!.username),
+            builder: (context) => ProfileScreen(
+              isVerified: true,
+              userName: user!.username,
+              currentUser: widget.currentUser,
+            ),
           ),
         );
       }
