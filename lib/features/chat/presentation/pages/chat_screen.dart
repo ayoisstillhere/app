@@ -195,7 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
     final iconColor = isDark ? kWhite : kBlack;
     final dividerColor = isDark ? kGreyInputFillDark : kGreyInputBorder;
-    final backgroundColor = isDark ? kBlack : kWhite;
+    final backgroundColor = isDark ? kBlackBg : kWhite;
     final inputFillColor = isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
