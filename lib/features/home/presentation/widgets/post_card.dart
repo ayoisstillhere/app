@@ -1,6 +1,7 @@
 import 'package:app/features/home/presentation/pages/post_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:app/components/social_text.dart';
@@ -8,6 +9,7 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 
 class PostCard extends StatefulWidget {
@@ -62,37 +64,83 @@ class _PostCardState extends State<PostCard> {
   late PageController _pageController;
   int _currentPage = 0;
 
-  void _onLike() {
+  void _onLike() async {
+    final token = await AuthManager.getToken();
+    final wasLiked = widget.isLiked;
+
     setState(() {
-      if (widget.isLiked) {
+      if (wasLiked) {
         widget.likes--;
       } else {
         widget.likes++;
       }
       widget.isLiked = !widget.isLiked;
     });
+
+    if (wasLiked) {
+      await http.delete(
+        Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/like"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    } else {
+      await http.post(
+        Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/like"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    }
   }
 
-  void _onRepost() {
+  void _onRepost() async {
+    final token = await AuthManager.getToken();
+    final wasReposted = widget.isReposted;
+
     setState(() {
-      if (widget.isReposted) {
+      if (wasReposted) {
         widget.reposts--;
       } else {
         widget.reposts++;
       }
       widget.isReposted = !widget.isReposted;
     });
+
+    if (wasReposted) {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/repost"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+      print(response.body);
+    } else {
+      await http.post(
+        Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/repost"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    }
   }
 
-  void _onSave() {
+  void _onSave() async {
+    final token = await AuthManager.getToken();
+    final wasSaved = widget.isSaved;
+
     setState(() {
-      if (widget.isSaved) {
+      if (wasSaved) {
         widget.bookmarks--;
       } else {
         widget.bookmarks++;
       }
       widget.isSaved = !widget.isSaved;
     });
+
+    if (wasSaved) {
+      await http.delete(
+        Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/save"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    } else {
+      await http.post(
+        Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/save"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+    }
   }
 
   @override
