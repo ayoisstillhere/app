@@ -27,11 +27,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   late final EncryptionService _encryptionService;
   String selectedChip = "All";
   final List<Map<String, dynamic>> filters = [
-    {'label': 'All', 'count': 15},
-    {'label': 'Groups', 'count': 2},
-    {'label': 'Secret', 'count': 2},
-    {'label': 'Archived', 'count': 2},
-    {'label': 'Requests', 'count': 2},
+    {'label': 'All', 'count': 0},
+    {'label': 'Groups', 'count': 0},
+    {'label': 'Secret', 'count': 0},
+    {'label': 'Archived', 'count': 0},
+    {'label': 'Requests', 'count': 0},
   ];
 
   GetMessageResponse? allMessagesResponse;
@@ -121,9 +121,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void _updateFilterCounts() {
     if (allMessagesResponse == null) return;
 
-    final allCount = allMessagesResponse!.conversations.length;
-    final groupCount = groupMessagesResponse?.conversations.length ?? 0;
-    final secretCount = secretMessagesResponse?.conversations.length ?? 0;
+    final allCount = allMessagesResponse!.conversations
+        .where((conversation) => conversation.lastMessage != null)
+        .length;
+    final groupCount =
+        groupMessagesResponse?.conversations
+            .where((conversation) => conversation.lastMessage != null)
+            .length ??
+        0;
+    final secretCount =
+        secretMessagesResponse?.conversations
+            .where((conversation) => conversation.lastMessage != null)
+            .length ??
+        0;
 
     setState(() {
       filters[0]['count'] = allCount;
