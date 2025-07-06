@@ -71,7 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {}
   }
 
-  Future<void> _sendMessage() async {
+  Future<void> _sendMessage(String type) async {
     if (_messageController.text.trim().isNotEmpty) {
       final url = Uri.parse('$baseUrl/api/v1/chat/messages');
       final token = await AuthManager.getToken();
@@ -102,7 +102,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // Add form fields with encrypted content
       request.fields['conversationId'] = widget.chatId;
-      request.fields['type'] = 'TEXT';
+      request.fields['type'] = type;
       request.fields['content'] = encryptedContent; // Send encrypted content
       request.fields['isViewOnce'] = 'false';
       request.fields['deleteAfter24Hours'] = 'false';
@@ -435,7 +435,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   color: iconColor,
                                   fontSize: getProportionateScreenHeight(14),
                                 ),
-                                onSubmitted: (_) => _sendMessage(),
+                                onSubmitted: (_) => _sendMessage('TEXT'),
                               ),
                             ),
                             // Use ValueListenableBuilder to listen to text changes
@@ -448,7 +448,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     // Send button - visible when there's text
                                     if (hasText)
                                       InkWell(
-                                        onTap: () => _sendMessage(),
+                                        onTap: () => _sendMessage('TEXT'),
                                         child: Container(
                                           width: getProportionateScreenWidth(
                                             55,
@@ -480,37 +480,46 @@ class _ChatScreenState extends State<ChatScreen> {
                                       ),
                                     // Attachment icons - visible when there's no text
                                     if (!hasText) ...[
-                                      SvgPicture.asset(
-                                        "assets/icons/chat_paperclip.svg",
-                                        height: getProportionateScreenHeight(
-                                          21.27,
-                                        ),
-                                        width: getProportionateScreenWidth(
-                                          21.27,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: getProportionateScreenWidth(8),
-                                      ),
-                                      SvgPicture.asset(
-                                        "assets/icons/chat_mic.svg",
-                                        height: getProportionateScreenHeight(
-                                          21.27,
-                                        ),
-                                        width: getProportionateScreenWidth(
-                                          21.27,
+                                      InkWell(
+                                        onTap: () {},
+                                        child: SvgPicture.asset(
+                                          "assets/icons/chat_paperclip.svg",
+                                          height: getProportionateScreenHeight(
+                                            21.27,
+                                          ),
+                                          width: getProportionateScreenWidth(
+                                            21.27,
+                                          ),
                                         ),
                                       ),
                                       SizedBox(
                                         width: getProportionateScreenWidth(8),
                                       ),
-                                      SvgPicture.asset(
-                                        "assets/icons/chat_image.svg",
-                                        height: getProportionateScreenHeight(
-                                          21.27,
+                                      InkWell(
+                                        onTap: () {},
+                                        child: SvgPicture.asset(
+                                          "assets/icons/chat_mic.svg",
+                                          height: getProportionateScreenHeight(
+                                            21.27,
+                                          ),
+                                          width: getProportionateScreenWidth(
+                                            21.27,
+                                          ),
                                         ),
-                                        width: getProportionateScreenWidth(
-                                          21.27,
+                                      ),
+                                      SizedBox(
+                                        width: getProportionateScreenWidth(8),
+                                      ),
+                                      InkWell(
+                                        onTap: () {},
+                                        child: SvgPicture.asset(
+                                          "assets/icons/chat_image.svg",
+                                          height: getProportionateScreenHeight(
+                                            21.27,
+                                          ),
+                                          width: getProportionateScreenWidth(
+                                            21.27,
+                                          ),
                                         ),
                                       ),
                                     ],
