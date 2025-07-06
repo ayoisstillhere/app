@@ -65,6 +65,8 @@ List<Map<String, dynamic>> settingsDetails = [
 
 // API Constants
 const String baseUrl = 'https://api.hiraofficial.com';
+// ignore: constant_identifier_names
+enum MessageType { TEXT, AUDIO, VIDEO, IMAGE, FILE }
 
 // Test Constants
 List<Map<String, dynamic>> mockNotifications = [

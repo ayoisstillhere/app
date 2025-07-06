@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,9 +23,6 @@ import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
 import '../cubit/chat_cubit.dart';
 import '../widgets/message_bubble.dart';
-
-// ignore: constant_identifier_names
-enum MessageType { TEXT, AUDIO, VIDEO, IMAGE, FILE }
 
 class SelectedFile {
   final File file;
@@ -333,7 +331,16 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   TextMessageEntity _createDecryptedMessage(TextMessageEntity original) {
-    final decryptedContent = _decryptMessageContent(original.content);
+    String decryptedContent;
+
+    if (original.type == MessageType.TEXT.name) {
+      // Handle text messages as before
+      decryptedContent = _decryptMessageContent(original.content);
+    } else {
+      // For non-text messages, you might want to keep a placeholder
+      // The actual media will be loaded separately
+      decryptedContent = "[${original.type} message]";
+    }
 
     return TextMessageEntity(
       decryptedContent,
@@ -603,12 +610,10 @@ class _ChatScreenState extends State<ChatScreen> {
             List<TextMessageEntity> requiredMessages = [];
             for (TextMessageEntity textMessageEntity in state.messages) {
               if (textMessageEntity.conversationId == widget.chatId) {
-                if (textMessageEntity.type == "TEXT") {
-                  final decryptedMessage = _createDecryptedMessage(
-                    textMessageEntity,
-                  );
-                  requiredMessages.add(decryptedMessage);
-                } else {}
+                final decryptedMessage = _createDecryptedMessage(
+                  textMessageEntity,
+                );
+                requiredMessages.add(decryptedMessage);
               }
             }
 
