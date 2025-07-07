@@ -14,6 +14,7 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../widgets/media_widget.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({
@@ -1011,7 +1012,23 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
           controller: controller,
           children: [
             isMediaLoaded
-                ? Center(child: Text("Media"))
+                ? Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: getProportionateScreenWidth(14),
+                      vertical: getProportionateScreenHeight(14),
+                    ),
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: getProportionateScreenWidth(5),
+                        mainAxisSpacing: getProportionateScreenHeight(5),
+                      ),
+                      itemCount: mediaResponse!.data.length,
+                      itemBuilder: (context, index) {
+                        return MediaWidget(data: mediaResponse!.data[index]);
+                      },
+                    ),
+                  )
                 : Center(child: CircularProgressIndicator()),
             isFilesLoaded
                 ? Center(child: Text("Files"))
