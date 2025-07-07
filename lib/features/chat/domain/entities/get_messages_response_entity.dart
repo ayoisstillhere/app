@@ -2,10 +2,7 @@ class GetMessageResponse {
   final List<Conversation> conversations;
   final Pagination pagination;
 
-  GetMessageResponse({
-    required this.conversations,
-    required this.pagination,
-  });
+  GetMessageResponse({required this.conversations, required this.pagination});
 }
 
 class Conversation {
@@ -86,10 +83,7 @@ class Sender {
   final String username;
   final String profileImage;
 
-  Sender({
-    required this.username,
-    required this.profileImage,
-  });
+  Sender({required this.username, required this.profileImage});
 }
 
 class Participant {
@@ -122,11 +116,13 @@ class User {
   final String username;
   final String profileImage;
   final String fullName;
+  final String? publicKey;
 
   User({
     required this.username,
     required this.profileImage,
     required this.fullName,
+    required this.publicKey,
   });
 }
 

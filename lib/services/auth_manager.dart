@@ -1,6 +1,7 @@
 // lib/services/auth_manager.dart
 import 'dart:convert';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,7 +10,8 @@ import '../constants.dart';
 class AuthManager {
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
-  
+  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+
   // Cache variables for performance
   static String? _cachedToken;
   static String? _cachedRefreshToken;
@@ -71,27 +73,24 @@ class AuthManager {
     }
   }
 
-  // Store refresh token
+  // Store refresh token securely
   static Future<void> setRefreshToken(String refreshToken) async {
     _cachedRefreshToken = refreshToken;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_refreshTokenKey, refreshToken);
+    await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
   }
 
-  // Get refresh token
+  // Get refresh token securely
   static Future<String?> getRefreshToken() async {
     if (_cachedRefreshToken != null) return _cachedRefreshToken;
 
-    final prefs = await SharedPreferences.getInstance();
-    _cachedRefreshToken = prefs.getString(_refreshTokenKey);
+    _cachedRefreshToken = await _secureStorage.read(key: _refreshTokenKey);
     return _cachedRefreshToken;
   }
 
-  // Clear refresh token
+  // Clear refresh token securely
   static Future<void> clearRefreshToken() async {
     _cachedRefreshToken = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_refreshTokenKey);
+    await _secureStorage.delete(key: _refreshTokenKey);
   }
 
   // Refresh token method
@@ -110,7 +109,7 @@ class AuthManager {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         // Update both tokens if provided
         if (data['access_token'] != null) {
           await setToken(data['access_token']);
@@ -118,7 +117,7 @@ class AuthManager {
         if (data['refresh_token'] != null) {
           await setRefreshToken(data['refresh_token']);
         }
-        
+
         return true;
       } else {
         // If refresh fails, clear tokens and return false
@@ -143,7 +142,7 @@ class AuthManager {
   static Future<bool> isTokenExpired() async {
     final token = await getToken();
     if (token == null) return true;
-    
+
     // You can implement JWT token expiration check here
     // For now, this is a placeholder
     return false;
@@ -153,7 +152,7 @@ class AuthManager {
   static Future<String?> getValidToken() async {
     final token = await getToken();
     if (token == null) return null;
-    
+
     // Check if token is expired and try to refresh
     if (await isTokenExpired()) {
       final refreshed = await refreshToken();
@@ -163,7 +162,7 @@ class AuthManager {
         return null;
       }
     }
-    
+
     return token;
   }
 }

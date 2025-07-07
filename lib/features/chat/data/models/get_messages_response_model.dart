@@ -220,6 +220,7 @@ class UserModel extends User {
     required super.username,
     required super.profileImage,
     required super.fullName,
+    required super.publicKey,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -227,6 +228,7 @@ class UserModel extends User {
       username: json['username'],
       profileImage: json['profileImage'],
       fullName: json['fullName'],
+      publicKey: json['publicKey'],
     );
   }
 
@@ -234,6 +236,7 @@ class UserModel extends User {
     'username': username,
     'profileImage': profileImage,
     'fullName': fullName,
+    'publicKey': publicKey,
   };
 }
 
