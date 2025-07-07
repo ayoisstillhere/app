@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:app/services/file_encryptor.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +17,7 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
+import 'package:app/services/file_encryptor.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
@@ -52,6 +52,7 @@ class ChatScreen extends StatefulWidget {
     required this.isGroup,
     required this.participants,
     required this.isConversationMuted,
+    required this.isSecretChat,
   });
   final String chatId;
   final String name;
@@ -62,6 +63,7 @@ class ChatScreen extends StatefulWidget {
   final bool isGroup;
   final List<Participant> participants;
   final bool isConversationMuted;
+  final bool isSecretChat;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -579,12 +581,25 @@ class _ChatScreenState extends State<ChatScreen> {
               width: getProportionateScreenWidth(24),
               child: InkWell(
                 onTap: () {},
-                child: SvgPicture.asset(
-                  "assets/icons/lock.svg",
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  width: getProportionateScreenWidth(24),
-                  height: getProportionateScreenHeight(24),
-                ),
+                child: widget.isSecretChat
+                    ? SvgPicture.asset(
+                        "assets/icons/lock.svg",
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                        width: getProportionateScreenWidth(24),
+                        height: getProportionateScreenHeight(24),
+                      )
+                    : SvgPicture.asset(
+                        "assets/icons/lock_secret.svg",
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                        width: getProportionateScreenWidth(24),
+                        height: getProportionateScreenHeight(24),
+                      ),
               ),
             ),
           ),
@@ -905,6 +920,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                             width: getProportionateScreenWidth(
                                               21.27,
                                             ),
+                                            colorFilter: ColorFilter.mode(
+                                              iconColor,
+                                              BlendMode.srcIn,
+                                            ),
                                           ),
                                         ),
                                         SizedBox(
@@ -937,7 +956,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                                       Colors.white,
                                                       BlendMode.srcIn,
                                                     )
-                                                  : null,
+                                                  : ColorFilter.mode(
+                                                      iconColor,
+                                                      BlendMode.srcIn,
+                                                    ),
                                             ),
                                           ),
                                         ),
@@ -954,6 +976,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                                 ),
                                             width: getProportionateScreenWidth(
                                               21.27,
+                                            ),
+                                            colorFilter: ColorFilter.mode(
+                                              iconColor,
+                                              BlendMode.srcIn,
                                             ),
                                           ),
                                         ),

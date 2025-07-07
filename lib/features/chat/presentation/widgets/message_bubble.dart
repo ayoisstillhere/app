@@ -509,7 +509,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                       onTap: () {
                         // Handle video playback - you'll need to implement this
                         // For example, navigate to a video player screen
-                        print('Play video: ${decryptedFile!.path}');
+                        // print('Play video: ${decryptedFile!.path}');
                       },
                       child: Container(
                         height: getProportionateScreenHeight(200),
@@ -670,7 +670,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 await _audioPlayer.play();
                               }
                             } catch (e) {
-                              print('Audio play error: $e');
+                              // print('Audio play error: $e');
                             }
                           },
                           child: Container(
@@ -843,10 +843,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                     // Use OpenFile to open the file with the default app
                     final result = await OpenFile.open(decryptedFile!.path);
                     if (result.type != ResultType.done) {
-                      print('Error opening file: ${result.message}');
+                      // print('Error opening file: ${result.message}');
                     }
                   } catch (e) {
-                    print('Error opening file: $e');
+                    // print('Error opening file: $e');
                   }
                 },
                 child: Container(

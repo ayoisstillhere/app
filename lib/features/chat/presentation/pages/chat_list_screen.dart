@@ -409,6 +409,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             isGroup: conversation.type == "GROUP",
             participants: conversation.participants,
             isConversationMuted: conversation.isConversationMutedForMe,
+            isSecretChat: conversation.isSecret,
           );
   }
 

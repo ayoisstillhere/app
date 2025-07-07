@@ -163,6 +163,7 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
               isConversationMuted: jsonDecode(
                 response.body,
               )['isConversationMutedForMe'],
+              isSecretChat: jsonDecode(response.body)['isSecret'],
             ),
           ),
         );
