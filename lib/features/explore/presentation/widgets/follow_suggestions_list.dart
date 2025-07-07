@@ -98,7 +98,7 @@ class FollowSuggestion extends StatelessWidget {
               ),
               SizedBox(width: getProportionateScreenWidth(7)),
               Text(
-                NumberFormat.compact().format(followerCount),
+                '${NumberFormat.compact().format(followerCount)} Followers',
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   fontSize: getProportionateScreenHeight(13),
                   fontWeight: FontWeight.w500,
