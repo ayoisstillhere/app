@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:app/components/nav_page.dart';
+import 'package:app/features/chat/data/models/get_media_response_model.dart';
+import 'package:app/features/chat/domain/entities/get_media_response_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -39,6 +43,65 @@ class ChatDetailsScreen extends StatefulWidget {
 class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
+
+  GetMediaResponse? mediaResponse;
+  GetMediaResponse? filesResponse;
+  GetMediaResponse? voiceResponse;
+
+  bool isMediaLoaded = false;
+  bool isFilesLoaded = false;
+  bool isVoiceLoaded = false;
+
+  Future<void> _fetchMedia() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/media?&mediaType=image',
+      ),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      mediaResponse = GetMediaResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isMediaLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _fetchFiles() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/files?&mediaType=file',
+      ),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      filesResponse = GetMediaResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isFilesLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _fetchVoice() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/audio?&mediaType=audio',
+      ),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      voiceResponse = GetMediaResponseModel.fromJson(jsonDecode(response.body));
+      setState(() {
+        isVoiceLoaded = true;
+      });
+    }
+  }
 
   void _onMute() async {
     final token = await AuthManager.getToken();
@@ -113,6 +176,9 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
   void initState() {
     super.initState();
     controller = TabController(length: 3, vsync: this);
+    _fetchMedia();
+    _fetchFiles();
+    _fetchVoice();
   }
 
   @override
@@ -944,9 +1010,15 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
         body: TabBarView(
           controller: controller,
           children: [
-            Center(child: Text("Media")),
-            Center(child: Text("Files")),
-            Center(child: Text("Voice")),
+            isMediaLoaded
+                ? Center(child: Text("Media"))
+                : Center(child: CircularProgressIndicator()),
+            isFilesLoaded
+                ? Center(child: Text("Files"))
+                : Center(child: CircularProgressIndicator()),
+            isVoiceLoaded
+                ? Center(child: Text("Voice"))
+                : Center(child: CircularProgressIndicator()),
           ],
         ),
       ),
