@@ -14,7 +14,9 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../widgets/file_widget.dart';
 import '../widgets/media_widget.dart';
+import '../widgets/voice_widget.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({
@@ -1011,6 +1013,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
         body: TabBarView(
           controller: controller,
           children: [
+            // Media Tab
             isMediaLoaded
                 ? Padding(
                     padding: EdgeInsets.symmetric(
@@ -1030,11 +1033,44 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                     ),
                   )
                 : Center(child: CircularProgressIndicator()),
+
+            // Files Tab
             isFilesLoaded
-                ? Center(child: Text("Files"))
+                ? Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: getProportionateScreenWidth(14),
+                      vertical: getProportionateScreenHeight(14),
+                    ),
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: getProportionateScreenWidth(10),
+                        mainAxisSpacing: getProportionateScreenHeight(10),
+                        childAspectRatio: 0.9, // Adjust for file display
+                      ),
+                      itemCount: filesResponse!.data.length,
+                      itemBuilder: (context, index) {
+                        return FileWidget(data: filesResponse!.data[index]);
+                      },
+                    ),
+                  )
                 : Center(child: CircularProgressIndicator()),
+
+            // Voice Tab
             isVoiceLoaded
-                ? Center(child: Text("Voice"))
+                ? Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: getProportionateScreenWidth(14),
+                      vertical: getProportionateScreenHeight(14),
+                    ),
+                    child: ListView.separated(
+                      itemCount: voiceResponse!.data.length,
+                      separatorBuilder: (context, index) => Divider(),
+                      itemBuilder: (context, index) {
+                        return VoiceWidget(data: voiceResponse!.data[index]);
+                      },
+                    ),
+                  )
                 : Center(child: CircularProgressIndicator()),
           ],
         ),
