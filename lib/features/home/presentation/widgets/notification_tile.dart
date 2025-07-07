@@ -1,8 +1,11 @@
+import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../pages/post_details_screen.dart';
 
 class NotificationTile extends StatelessWidget {
   const NotificationTile({
@@ -14,15 +17,19 @@ class NotificationTile extends StatelessWidget {
     required this.image,
     required this.isClickable,
     this.buttonText,
+    this.postId,
+    required this.currentUser,
   });
 
   final Color iconColor;
   final String username;
   final String action;
-  final String time;
+  final DateTime time;
   final String image;
   final bool isClickable;
   final String? buttonText;
+  final String? postId;
+  final UserEntity currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +73,7 @@ class NotificationTile extends StatelessWidget {
           ),
         ),
         Text(
-          time,
+          timeago.format(time),
           style: TextStyle(
             fontWeight: FontWeight.normal,
             fontSize: getProportionateScreenWidth(12),
@@ -76,7 +83,17 @@ class NotificationTile extends StatelessWidget {
         Spacer(),
         isClickable
             ? InkWell(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PostDetailsScreen(
+                        postId: postId!,
+                        currentUser: currentUser,
+                      ),
+                    ),
+                  );
+                },
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: getProportionateScreenWidth(10),
