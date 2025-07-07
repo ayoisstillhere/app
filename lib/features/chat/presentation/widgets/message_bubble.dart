@@ -1,12 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/file_encryptor.dart';
 import '../../../../size_config.dart';
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends StatefulWidget {
   final TextMessageEntity message;
   final bool isDark;
   final String imageUrl;
@@ -19,6 +23,48 @@ class MessageBubble extends StatelessWidget {
     required this.imageUrl,
     required this.currentUser,
   });
+
+  @override
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<MessageBubble> {
+  File? decryptedFile;
+  bool isDecrypting = false;
+  String? decryptionError;
+
+  Future<void> _decryptFile() async {
+    if (widget.message.type == MessageType.TEXT.name) return;
+
+    setState(() {
+      isDecrypting = true;
+      decryptionError = null;
+    });
+
+    try {
+      dynamic json = jsonDecode(widget.message.encryptionMetadata!);
+      final file = await FileEncryptor.secureDownloadAndDecrypt(
+        widget.message.mediaUrl!,
+        json['filename'],
+        json['key'],
+        json['iv'],
+      );
+
+      if (mounted) {
+        setState(() {
+          decryptedFile = file;
+          isDecrypting = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          decryptionError = 'Failed to decrypt file: ${e.toString()}';
+          isDecrypting = false;
+        });
+      }
+    }
+  }
 
   String _formatTime(DateTime timestamp) {
     final now = DateTime.now();
@@ -34,27 +80,152 @@ class MessageBubble extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Call async method properly
+    _decryptFile();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isMe = message.senderId == currentUser.id;
-    final bubbleColor = isDark
+    final bool isMe = widget.message.senderId == widget.currentUser.id;
+    final bubbleColor = widget.isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
 
-    final textColor = isMe ? kWhite : (isDark ? kWhite : kBlack);
+    final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
-    if (message.type == MessageType.TEXT.name) {
+    if (widget.message.type == MessageType.TEXT.name) {
       return _buildTextMessage(isMe, bubbleColor, textColor);
-    } else if (message.type == MessageType.IMAGE.name) {
+    } else if (widget.message.type == MessageType.IMAGE.name) {
       return _buildImageMessage();
-    } else if (message.type == MessageType.VIDEO.name) {
+    } else if (widget.message.type == MessageType.VIDEO.name) {
       return _buildVideoMessage();
-    } else if (message.type == MessageType.AUDIO.name) {
+    } else if (widget.message.type == MessageType.AUDIO.name) {
       return _buildAudioMessage();
-    } else if (message.type == MessageType.FILE.name) {
+    } else if (widget.message.type == MessageType.FILE.name) {
       return _buildFileMessage();
     } else {
       return Container();
     }
+  }
+
+  Widget _buildLoadingOrError() {
+    final bool isMe = widget.message.senderId == widget.currentUser.id;
+    final bubbleColor = widget.isDark
+        ? kGreyInputFillDark
+        : kGreyInputBorder.withValues(alpha: 0.3);
+    final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(2)),
+      child: Row(
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        children: [
+          if (!isMe) ...[
+            Container(
+              height: getProportionateScreenHeight(24),
+              width: getProportionateScreenWidth(24),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: NetworkImage(widget.imageUrl),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            SizedBox(width: getProportionateScreenWidth(8)),
+          ],
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: getProportionateScreenWidth(280),
+              ),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: getProportionateScreenWidth(16),
+                  vertical: getProportionateScreenHeight(12),
+                ),
+                decoration: isMe
+                    ? BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          getProportionateScreenWidth(10),
+                        ),
+                        gradient: kChatBubbleGradient,
+                      )
+                    : BoxDecoration(
+                        color: bubbleColor,
+                        borderRadius: BorderRadius.circular(
+                          getProportionateScreenWidth(10),
+                        ),
+                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isDecrypting) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: getProportionateScreenWidth(16),
+                            height: getProportionateScreenHeight(16),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                textColor,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: getProportionateScreenWidth(8)),
+                          Text(
+                            'Decrypting...',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: getProportionateScreenHeight(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (decryptionError != null) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error,
+                            color: Colors.red,
+                            size: getProportionateScreenHeight(16),
+                          ),
+                          SizedBox(width: getProportionateScreenWidth(8)),
+                          Expanded(
+                            child: Text(
+                              decryptionError!,
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: getProportionateScreenHeight(12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    SizedBox(height: getProportionateScreenHeight(4)),
+                    Text(
+                      _formatTime(widget.message.createdAt.toDate()),
+                      style: TextStyle(
+                        color: textColor.withValues(alpha: 0.6),
+                        fontSize: getProportionateScreenHeight(10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Padding _buildTextMessage(bool isMe, Color bubbleColor, Color textColor) {
@@ -72,7 +243,7 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl),
+                  image: NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -107,7 +278,7 @@ class MessageBubble extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      message.content,
+                      widget.message.content,
                       style: TextStyle(
                         color: textColor,
                         fontSize: getProportionateScreenHeight(14),
@@ -119,7 +290,7 @@ class MessageBubble extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _formatTime(message.createdAt.toDate()),
+                          _formatTime(widget.message.createdAt.toDate()),
                           style: TextStyle(
                             color: textColor.withValues(alpha: 0.6),
                             fontSize: getProportionateScreenHeight(10),
@@ -137,14 +308,17 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  // Add these methods to your MessageBubble class
+  Widget _buildImageMessage() {
+    // Show loading/error state if file is not ready
+    if (isDecrypting || decryptionError != null || decryptedFile == null) {
+      return _buildLoadingOrError();
+    }
 
-  Padding _buildImageMessage() {
-    final bool isMe = message.senderId == currentUser.id;
-    final bubbleColor = isDark
+    final bool isMe = widget.message.senderId == widget.currentUser.id;
+    final bubbleColor = widget.isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
-    final textColor = isMe ? kWhite : (isDark ? kWhite : kBlack);
+    final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(2)),
@@ -160,7 +334,7 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl),
+                  image: NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -194,26 +368,11 @@ class MessageBubble extends StatelessWidget {
                       borderRadius: BorderRadius.circular(
                         getProportionateScreenWidth(8),
                       ),
-                      child: Image.network(
-                        message.content, // Assuming content contains image URL
+                      child: Image.file(
+                        decryptedFile!,
                         width: double.infinity,
                         height: getProportionateScreenHeight(200),
                         fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return SizedBox(
-                            height: getProportionateScreenHeight(200),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            ),
-                          );
-                        },
                         errorBuilder: (context, error, stackTrace) {
                           return SizedBox(
                             height: getProportionateScreenHeight(200),
@@ -233,7 +392,7 @@ class MessageBubble extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _formatTime(message.createdAt.toDate()),
+                          _formatTime(widget.message.createdAt.toDate()),
                           style: TextStyle(
                             color: textColor.withValues(alpha: 0.6),
                             fontSize: getProportionateScreenHeight(10),
@@ -251,12 +410,17 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Padding _buildVideoMessage() {
-    final bool isMe = message.senderId == currentUser.id;
-    final bubbleColor = isDark
+  Widget _buildVideoMessage() {
+    // Show loading/error state if file is not ready
+    if (isDecrypting || decryptionError != null || decryptedFile == null) {
+      return _buildLoadingOrError();
+    }
+
+    final bool isMe = widget.message.senderId == widget.currentUser.id;
+    final bubbleColor = widget.isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
-    final textColor = isMe ? kWhite : (isDark ? kWhite : kBlack);
+    final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(2)),
@@ -272,7 +436,7 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl),
+                  image: NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -302,47 +466,54 @@ class MessageBubble extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      height: getProportionateScreenHeight(200),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(
-                          getProportionateScreenWidth(8),
+                    GestureDetector(
+                      onTap: () {
+                        // Handle video playback - you'll need to implement this
+                        // For example, navigate to a video player screen
+                        print('Play video: ${decryptedFile!.path}');
+                      },
+                      child: Container(
+                        height: getProportionateScreenHeight(200),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(
+                            getProportionateScreenWidth(8),
+                          ),
                         ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Video thumbnail or placeholder
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(
-                                getProportionateScreenWidth(8),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Video thumbnail - you might want to generate this from the video file
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(
+                                  getProportionateScreenWidth(8),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.videocam,
+                                size: getProportionateScreenHeight(40),
+                                color: Colors.grey[400],
                               ),
                             ),
-                            child: Icon(
-                              Icons.videocam,
-                              size: getProportionateScreenHeight(40),
-                              color: Colors.grey[600],
+                            // Play button overlay
+                            Container(
+                              height: getProportionateScreenHeight(50),
+                              width: getProportionateScreenWidth(50),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.play_arrow,
+                                color: Colors.white,
+                                size: getProportionateScreenHeight(30),
+                              ),
                             ),
-                          ),
-                          // Play button overlay
-                          Container(
-                            height: getProportionateScreenHeight(50),
-                            width: getProportionateScreenWidth(50),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: getProportionateScreenHeight(30),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(4)),
@@ -364,7 +535,7 @@ class MessageBubble extends StatelessWidget {
                         ),
                         SizedBox(width: getProportionateScreenWidth(8)),
                         Text(
-                          _formatTime(message.createdAt.toDate()),
+                          _formatTime(widget.message.createdAt.toDate()),
                           style: TextStyle(
                             color: textColor.withValues(alpha: 0.6),
                             fontSize: getProportionateScreenHeight(10),
@@ -382,12 +553,17 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Padding _buildAudioMessage() {
-    final bool isMe = message.senderId == currentUser.id;
-    final bubbleColor = isDark
+  Widget _buildAudioMessage() {
+    // Show loading/error state if file is not ready
+    if (isDecrypting || decryptionError != null || decryptedFile == null) {
+      return _buildLoadingOrError();
+    }
+
+    final bool isMe = widget.message.senderId == widget.currentUser.id;
+    final bubbleColor = widget.isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
-    final textColor = isMe ? kWhite : (isDark ? kWhite : kBlack);
+    final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(2)),
@@ -403,7 +579,7 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl),
+                  image: NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -438,17 +614,23 @@ class MessageBubble extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          height: getProportionateScreenHeight(40),
-                          width: getProportionateScreenWidth(40),
-                          decoration: BoxDecoration(
-                            color: textColor.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.play_arrow,
-                            color: textColor,
-                            size: getProportionateScreenHeight(20),
+                        GestureDetector(
+                          onTap: () {
+                            // Handle audio playback - you'll need to implement this
+                            print('Play audio: ${decryptedFile!.path}');
+                          },
+                          child: Container(
+                            height: getProportionateScreenHeight(40),
+                            width: getProportionateScreenWidth(40),
+                            decoration: BoxDecoration(
+                              color: textColor.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.play_arrow,
+                              color: textColor,
+                              size: getProportionateScreenHeight(20),
+                            ),
                           ),
                         ),
                         SizedBox(width: getProportionateScreenWidth(12)),
@@ -480,7 +662,7 @@ class MessageBubble extends StatelessWidget {
                               ),
                               SizedBox(height: getProportionateScreenHeight(4)),
                               Text(
-                                '0:00', // Duration placeholder
+                                '0:00', // You could get actual duration from the decrypted file
                                 style: TextStyle(
                                   color: textColor.withValues(alpha: 0.6),
                                   fontSize: getProportionateScreenHeight(10),
@@ -510,7 +692,7 @@ class MessageBubble extends StatelessWidget {
                         ),
                         SizedBox(width: getProportionateScreenWidth(8)),
                         Text(
-                          _formatTime(message.createdAt.toDate()),
+                          _formatTime(widget.message.createdAt.toDate()),
                           style: TextStyle(
                             color: textColor.withValues(alpha: 0.6),
                             fontSize: getProportionateScreenHeight(10),
@@ -528,15 +710,20 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Padding _buildFileMessage() {
-    final bool isMe = message.senderId == currentUser.id;
-    final bubbleColor = isDark
+  Widget _buildFileMessage() {
+    // Show loading/error state if file is not ready
+    if (isDecrypting || decryptionError != null || decryptedFile == null) {
+      return _buildLoadingOrError();
+    }
+
+    final bool isMe = widget.message.senderId == widget.currentUser.id;
+    final bubbleColor = widget.isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
-    final textColor = isMe ? kWhite : (isDark ? kWhite : kBlack);
+    final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
-    // Extract file name from content or use a default
-    final fileName = message.content.split('/').last;
+    // Extract file name from decrypted file path
+    final fileName = decryptedFile!.path.split('/').last;
     final fileExtension = fileName.split('.').last.toUpperCase();
 
     return Padding(
@@ -553,7 +740,7 @@ class MessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(imageUrl),
+                  image: NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -629,10 +816,16 @@ class MessageBubble extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Icon(
-                          Icons.download,
-                          color: textColor.withValues(alpha: 0.6),
-                          size: getProportionateScreenHeight(16),
+                        GestureDetector(
+                          onTap: () {
+                            // Handle file opening - you'll need to implement this
+                            print('Open file: ${decryptedFile!.path}');
+                          },
+                          child: Icon(
+                            Icons.open_in_new,
+                            color: textColor.withValues(alpha: 0.6),
+                            size: getProportionateScreenHeight(16),
+                          ),
                         ),
                       ],
                     ),
@@ -655,7 +848,7 @@ class MessageBubble extends StatelessWidget {
                         ),
                         SizedBox(width: getProportionateScreenWidth(8)),
                         Text(
-                          _formatTime(message.createdAt.toDate()),
+                          _formatTime(widget.message.createdAt.toDate()),
                           style: TextStyle(
                             color: textColor.withValues(alpha: 0.6),
                             fontSize: getProportionateScreenHeight(10),

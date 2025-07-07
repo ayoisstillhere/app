@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
@@ -42,6 +44,6 @@ class TextMessageEntity extends Equatable {
     reactions,
     senderId,
     type,
-    encryptionMetadata
+    encryptionMetadata,
   ];
 }

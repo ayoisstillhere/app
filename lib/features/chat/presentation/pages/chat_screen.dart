@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:app/services/file_encryptor.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -155,26 +156,23 @@ class _ChatScreenState extends State<ChatScreen> {
           fileToSend = await compressImage(File(_selectedFile!.file.path));
         }
 
-        final fileBytes = await fileToSend.readAsBytes();
-        final encryptionResult = _encryptionService
-            .encryptBufferWithConversationKey(fileBytes, widget.encryptionKey);
-
-        // Create a temporary file with encrypted data
-        final tempDir = await getTemporaryDirectory();
-        final tempFile = File(
-          '${tempDir.path}/encrypted_${DateTime.now().millisecondsSinceEpoch}',
-        );
-        await tempFile.writeAsBytes(encryptionResult.encryptedData);
+        final encryptedFile = await FileEncryptor.encryptFile(fileToSend);
 
         // Add encrypted file to request
         request.files.add(
           await http.MultipartFile.fromPath(
             'file',
-            tempFile.path,
+            encryptedFile['encryptedFile'].path,
             filename: _selectedFile!.file.path.split('/').last,
           ),
         );
-        request.fields['encryptionMetadata'] = encryptionResult.metadata;
+
+        encryptedFile.putIfAbsent(
+          'filename',
+          () => fileToSend.path.split('/').last,
+        );
+        encryptedFile.remove('encryptedFile');
+        request.fields['encryptionMetadata'] = jsonEncode(encryptedFile);
       }
 
       final streamedResponse = await request.send();
