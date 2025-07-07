@@ -160,6 +160,9 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
               chatHandle: widget.handle,
               isGroup: false,
               participants: jsonDecode(response.body)['participants'],
+              isConversationMuted: jsonDecode(
+                response.body,
+              )['isConversationMutedForMe'],
             ),
           ),
         );

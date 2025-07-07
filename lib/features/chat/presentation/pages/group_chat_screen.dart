@@ -386,6 +386,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               encryptionKey: jsonDecode(response.body)['encryptionKey'],
               isGroup: true,
               participants: jsonDecode(response.body)['participants'],
+              isConversationMuted: jsonDecode(
+                response.body,
+              )['isConversationMutedForMe'],
             ),
           ),
         );

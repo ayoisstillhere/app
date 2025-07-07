@@ -1,10 +1,13 @@
+import 'package:app/components/nav_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 
@@ -18,6 +21,7 @@ class ChatDetailsScreen extends StatefulWidget {
     required this.currentUser,
     required this.isGroup,
     required this.participants,
+    required this.isConversationMuted,
   });
   final String chatId;
   final String chatName;
@@ -26,6 +30,7 @@ class ChatDetailsScreen extends StatefulWidget {
   final UserEntity currentUser;
   final bool isGroup;
   final List<Participant> participants;
+  final bool isConversationMuted;
 
   @override
   State<ChatDetailsScreen> createState() => _ChatDetailsScreenState();
@@ -34,6 +39,75 @@ class ChatDetailsScreen extends StatefulWidget {
 class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
+
+  void _onMute() async {
+    final token = await AuthManager.getToken();
+    await http.put(
+      Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/mute'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  void _onUnmute() async {
+    final token = await AuthManager.getToken();
+    await http.put(
+      Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/unmute'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  void _onAddParticipants(String userId) async {
+    final token = await AuthManager.getToken();
+    await http.post(
+      Uri.parse(
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/add-participant',
+      ),
+      headers: {'Authorization': 'Bearer $token'},
+      body: {'userId': userId},
+    );
+  }
+
+  void _onLeaveGroup() async {
+    final token = await AuthManager.getToken();
+    await http.put(
+      Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/leave'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const NavPage()),
+    );
+  }
+
+  void _onArchive() async {
+    final token = await AuthManager.getToken();
+    await http.put(
+      Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/archive'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  void _unArchive() async {
+    final token = await AuthManager.getToken();
+    await http.put(
+      Uri.parse(
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/unarchive',
+      ),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  void _onDelete() async {
+    final token = await AuthManager.getToken();
+    await http.put(
+      Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/delete'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const NavPage()),
+    );
+  }
 
   @override
   void initState() {
@@ -330,42 +404,61 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                       },
                                     );
                                   },
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        "assets/icons/group_mute.svg",
-                                        colorFilter: ColorFilter.mode(
-                                          iconColor,
-                                          BlendMode.srcIn,
+                                  child: InkWell(
+                                    onTap: () {
+                                      widget.isConversationMuted
+                                          ? _onUnmute()
+                                          : _onMute();
+                                    },
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SvgPicture.asset(
+                                          "assets/icons/group_mute.svg",
+                                          colorFilter: ColorFilter.mode(
+                                            iconColor,
+                                            BlendMode.srcIn,
+                                          ),
+                                          width: getProportionateScreenWidth(
+                                            18.38,
+                                          ),
+                                          height: getProportionateScreenHeight(
+                                            18.38,
+                                          ),
                                         ),
-                                        width: getProportionateScreenWidth(
-                                          18.38,
+                                        SizedBox(
+                                          height: getProportionateScreenHeight(
+                                            4.6,
+                                          ),
                                         ),
-                                        height: getProportionateScreenHeight(
-                                          18.38,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: getProportionateScreenHeight(
-                                          4.6,
-                                        ),
-                                      ),
-                                      Text(
-                                        "Mute",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(
-                                                11.49,
+                                        widget.isConversationMuted
+                                            ? Text(
+                                                "Unmute",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        11.49,
+                                                      ),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              )
+                                            : Text(
+                                                "Mute",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        11.49,
+                                                      ),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                               ),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 InkWell(
-                                  onTap: () {},
+                                  onTap: _onLeaveGroup,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -453,7 +546,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                   ),
                                 ),
                                 InkWell(
-                                  onTap: () {},
+                                  onTap: () {
+                                    widget.isConversationMuted
+                                        ? _onUnmute()
+                                        : _onMute();
+                                  },
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -475,16 +572,27 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                           4.6,
                                         ),
                                       ),
-                                      Text(
-                                        "Mute",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(
-                                                11.49,
+                                      widget.isConversationMuted
+                                          ? Text(
+                                              "Unmute",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      11.49,
+                                                    ),
+                                                fontWeight: FontWeight.w500,
                                               ),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
+                                            )
+                                          : Text(
+                                              "Mute",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      11.49,
+                                                    ),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
                                     ],
                                   ),
                                 ),
@@ -759,7 +867,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
 
                             widget.isGroup
                                 ? InkWell(
-                                    onTap: () {},
+                                    onTap: _onDelete,
                                     child: Text(
                                       "Delete Group Chat",
                                       style: TextStyle(

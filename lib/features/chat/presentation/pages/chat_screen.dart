@@ -49,6 +49,7 @@ class ChatScreen extends StatefulWidget {
     this.chatHandle,
     required this.isGroup,
     required this.participants,
+    required this.isConversationMuted,
   });
   final String chatId;
   final String name;
@@ -58,6 +59,7 @@ class ChatScreen extends StatefulWidget {
   final String? chatHandle;
   final bool isGroup;
   final List<Participant> participants;
+  final bool isConversationMuted;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -591,6 +593,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         currentUser: widget.currentUser,
                         isGroup: widget.isGroup,
                         participants: widget.participants,
+                        isConversationMuted: widget.isConversationMuted,
                       ),
                     ),
                   );
