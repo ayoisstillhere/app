@@ -1,5 +1,6 @@
 import 'package:app/components/nav_page.dart';
 import 'package:app/services/auth_manager.dart';
+import 'package:app/services/secret_chat_encryption_service.dart';
 import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,8 +99,12 @@ class _SplashScreenState extends State<SplashScreen>
       if (token != null && token.isNotEmpty) {
         // Try to refresh the token to ensure it's valid
         final refreshed = await AuthManager.refreshToken();
-        
+
         if (refreshed) {
+          // Token is valid, now ensure encryption keys exist
+          final encryptionService = SecretChatEncryptionService();
+          await encryptionService.ensureKeyPairExists();
+
           // Token is valid, navigate to main app
           _navigateToHome();
         } else {
@@ -120,16 +125,16 @@ class _SplashScreenState extends State<SplashScreen>
   void _navigateToHome() {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
-    
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const NavPage()),
-    );
+
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (context) => const NavPage()));
   }
 
   void _navigateToOnboarding() {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
-    
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => const OnboardingScreen(
