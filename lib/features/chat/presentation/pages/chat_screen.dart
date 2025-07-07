@@ -148,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final response = await http.post(uri, headers: headers, body: body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => SecretChatScreen(
