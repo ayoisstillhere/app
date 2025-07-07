@@ -101,6 +101,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _createSecretChat() async {
+    if (widget.isGroup) {
+      return;
+    }
     final token = await AuthManager.getToken();
     final uri = Uri.parse('$baseUrl/api/v1/chat/secret-conversations');
 
@@ -654,22 +657,29 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(right: getProportionateScreenWidth(16)),
-            child: SizedBox(
-              height: getProportionateScreenHeight(24),
-              width: getProportionateScreenWidth(24),
-              child: InkWell(
-                onTap: _createSecretChat,
-                child: SvgPicture.asset(
-                  "assets/icons/lock.svg",
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  width: getProportionateScreenWidth(24),
-                  height: getProportionateScreenHeight(24),
+          widget.isGroup
+              ? Container()
+              : Padding(
+                  padding: EdgeInsets.only(
+                    right: getProportionateScreenWidth(16),
+                  ),
+                  child: SizedBox(
+                    height: getProportionateScreenHeight(24),
+                    width: getProportionateScreenWidth(24),
+                    child: InkWell(
+                      onTap: _createSecretChat,
+                      child: SvgPicture.asset(
+                        "assets/icons/lock.svg",
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                        width: getProportionateScreenWidth(24),
+                        height: getProportionateScreenHeight(24),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
           Padding(
             padding: EdgeInsets.only(right: getProportionateScreenWidth(16)),
             child: SizedBox(
