@@ -184,6 +184,7 @@ class ParticipantModel extends Participant {
     required super.isConversationArchivedForMe,
     required super.isConversationRequestForMe,
     required UserModel user,
+    required super.mySecretConversationKey,
   }) : super(user: user);
 
   factory ParticipantModel.fromJson(Map<String, dynamic> json) {
@@ -198,6 +199,7 @@ class ParticipantModel extends Participant {
       isConversationArchivedForMe: json['isConversationArchivedForMe'],
       isConversationRequestForMe: json['isConversationRequestForMe'],
       user: UserModel.fromJson(json['user']),
+      mySecretConversationKey: json['mySecretConversationKey'],
     );
   }
 
@@ -212,6 +214,7 @@ class ParticipantModel extends Participant {
     'isConversationArchivedForMe': isConversationArchivedForMe,
     'isConversationRequestForMe': isConversationRequestForMe,
     'user': (user as UserModel).toJson(),
+    'mySecretConversationKey': mySecretConversationKey,
   };
 }
 

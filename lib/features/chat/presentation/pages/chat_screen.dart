@@ -156,7 +156,6 @@ class _ChatScreenState extends State<ChatScreen> {
               name: widget.name,
               imageUrl: widget.imageUrl,
               currentUser: widget.currentUser,
-              encryptionKey: conversationKey, // Use the generated key directly
               chatHandle: widget.chatHandle,
               isGroup: false,
               participants: (jsonDecode(response.body)['participants'] as List)

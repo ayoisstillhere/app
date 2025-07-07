@@ -97,6 +97,7 @@ class Participant {
   final bool? isConversationArchivedForMe;
   final bool? isConversationRequestForMe;
   final User user;
+  final String? mySecretConversationKey;
 
   Participant({
     required this.id,
@@ -109,6 +110,7 @@ class Participant {
     required this.isConversationArchivedForMe,
     required this.isConversationRequestForMe,
     required this.user,
+    required this.mySecretConversationKey,
   });
 }
 

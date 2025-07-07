@@ -388,7 +388,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
             name: isGroupChat
                 ? conversation.name ?? 'Group Chat'
                 : otherParticipant?.user.fullName ?? 'Unknown User',
-            lastMessage: conversation.lastMessage?.type == "TEXT"
+            lastMessage: conversation.isSecret
+                ? '[Secret Message]'
+                : conversation.lastMessage?.type == "TEXT"
                 ? _decryptMessageContent(
                     conversation.lastMessage!.content,
                     conversation.encryptionKey,

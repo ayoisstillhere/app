@@ -160,7 +160,6 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
                 name: widget.name,
                 imageUrl: widget.image,
                 currentUser: widget.currentUser,
-                encryptionKey: jsonDecode(response.body)['encryptionKey'],
                 chatHandle: widget.handle,
                 isGroup: false,
                 participants: List<Participant>.from(

@@ -36,7 +36,7 @@ class ChatTile extends StatelessWidget {
   final int unreadMessages;
   final String chatId;
   final UserEntity currentUser;
-  final String encryptionKey;
+  final String? encryptionKey;
   final String chatHandle;
   final bool isGroup;
   final List<Participant> participants;
@@ -56,7 +56,6 @@ class ChatTile extends StatelessWidget {
                 name: name,
                 imageUrl: image,
                 currentUser: currentUser,
-                encryptionKey: encryptionKey,
                 isGroup: isGroup,
                 chatHandle: chatHandle,
                 participants: participants,
@@ -73,7 +72,7 @@ class ChatTile extends StatelessWidget {
                 name: name,
                 imageUrl: image,
                 currentUser: currentUser,
-                encryptionKey: encryptionKey,
+                encryptionKey: encryptionKey!,
                 isGroup: isGroup,
                 chatHandle: chatHandle,
                 participants: participants,

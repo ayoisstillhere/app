@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app/components/default_button.dart';
+import 'package:app/services/secret_chat_encryption_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,7 +49,6 @@ class SecretChatScreen extends StatefulWidget {
     required this.name,
     required this.imageUrl,
     required this.currentUser,
-    required this.encryptionKey,
     this.chatHandle,
     required this.isGroup,
     required this.participants,
@@ -58,7 +58,6 @@ class SecretChatScreen extends StatefulWidget {
   final String name;
   final String imageUrl;
   final UserEntity currentUser;
-  final String encryptionKey;
   final String? chatHandle;
   final bool isGroup;
   final List<Participant> participants;
@@ -72,6 +71,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final EncryptionService _encryptionService;
+  late final SecretChatEncryptionService _secretChatEncryptionService;
   final ImagePicker _imagePicker = ImagePicker();
   late FlutterSoundRecorder _audioRecorder;
 
@@ -81,6 +81,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   String? _recordingPath;
   VideoPlayerController? _videoController;
   bool _showSecretChatOverlay = true;
+  String? _conversationKey;
 
   @override
   void initState() {
@@ -88,6 +89,19 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     _initializeServices();
     BlocProvider.of<ChatCubit>(context).getTextMessages();
     _markAllAssRead();
+    _decryptConversationKey();
+  }
+
+  Future<void> _decryptConversationKey() async {
+    final participant = widget.participants.firstWhere(
+      (participant) => participant.userId == widget.currentUser.id,
+      orElse: () => throw Exception("Current user not found in participants"),
+    );
+    final encryptedConversationKey = participant.mySecretConversationKey!;
+
+    // Decrypt the conversation key using the private key
+    _conversationKey = await _secretChatEncryptionService
+        .decryptConversationKey(encryptedConversationKey);
   }
 
   void _initializeServices() {
@@ -96,6 +110,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
     );
     _audioRecorder = FlutterSoundRecorder();
+    _secretChatEncryptionService = SecretChatEncryptionService();
     _initializeAudioRecorder();
   }
 
@@ -144,9 +159,9 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
         // Handle text messages
         if (_messageController.text.trim().isEmpty) return;
 
-        final encryptedContent = _encryptionService.encryptWithConversationKey(
+        final encryptedContent = _secretChatEncryptionService.encryptMessage(
           _messageController.text.trim(),
-          widget.encryptionKey,
+          _conversationKey!,
         );
         request.fields['content'] = encryptedContent;
       } else {
@@ -344,12 +359,12 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
 
   String _decryptMessageContent(String encryptedContent) {
     try {
-      return _encryptionService.decryptWithConversationKey(
+      return _secretChatEncryptionService.decryptMessage(
         encryptedContent,
-        widget.encryptionKey,
+        _conversationKey!,
       );
     } catch (e) {
-      return '[Message could not be decrypted]';
+      return '[Secret]';
     }
   }
 
