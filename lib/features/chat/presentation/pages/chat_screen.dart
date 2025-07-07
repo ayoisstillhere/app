@@ -328,9 +328,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _clearSelectedFile() {
-    setState(() {
-      _selectedFile = null;
-    });
+    if (mounted) {
+      setState(() {
+        _selectedFile = null;
+      });
+    }
 
     if (_videoController != null) {
       _videoController!.dispose();
@@ -980,7 +982,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     _audioRecorder.closeRecorder();
-    _videoController?.dispose();
+
+    // Make sure to release video resources
+    if (_videoController != null) {
+      _videoController!.dispose();
+      _videoController = null;
+    }
+
     super.dispose();
   }
 

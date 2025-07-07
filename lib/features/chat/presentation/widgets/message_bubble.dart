@@ -40,6 +40,7 @@ class _MessageBubbleState extends State<MessageBubble> {
   Duration position = Duration.zero;
 
   Future<void> _decryptFile() async {
+    if (!mounted) return;
     if (widget.message.type == MessageType.TEXT.name) return;
 
     setState(() {
@@ -99,18 +100,28 @@ class _MessageBubbleState extends State<MessageBubble> {
     _decryptFile();
     _audioPlayer = AudioPlayer();
 
-    _audioPlayer.durationStream.listen(
-      (d) => setState(() => duration = d ?? Duration.zero),
-    );
-    _audioPlayer.positionStream.listen((p) => setState(() => position = p));
+    // Using mounted check to prevent updates after widget disposal
+    _audioPlayer.durationStream.listen((d) {
+      if (mounted) setState(() => duration = d ?? Duration.zero);
+    });
+    _audioPlayer.positionStream.listen((p) {
+      if (mounted) setState(() => position = p);
+    });
     _audioPlayer.playerStateStream.listen((state) {
-      setState(() => isPlaying = state.playing);
+      if (mounted) setState(() => isPlaying = state.playing);
     });
   }
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    // Make sure we stop playback before disposing
+    if (_audioPlayer.playing) {
+      _audioPlayer.stop().then((_) {
+        _audioPlayer.dispose();
+      });
+    } else {
+      _audioPlayer.dispose();
+    }
     super.dispose();
   }
 
@@ -650,6 +661,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                               } else {
                                 // Check if we need to load the file first
                                 if (_audioPlayer.audioSource == null) {
+                                  // Make sure the widget is still mounted before proceeding
+                                  if (!mounted) return;
                                   await _audioPlayer.setFilePath(
                                     decryptedFile!.path,
                                   );
