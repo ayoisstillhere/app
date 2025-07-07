@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:open_file/open_file.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/file_encryptor.dart';
@@ -32,6 +34,10 @@ class _MessageBubbleState extends State<MessageBubble> {
   File? decryptedFile;
   bool isDecrypting = false;
   String? decryptionError;
+  late AudioPlayer _audioPlayer;
+  bool isPlaying = false;
+  Duration duration = Duration.zero;
+  Duration position = Duration.zero;
 
   Future<void> _decryptFile() async {
     if (widget.message.type == MessageType.TEXT.name) return;
@@ -79,11 +85,33 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
   }
 
+  String _formatDuration(Duration d) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(d.inMinutes.remainder(60));
+    final seconds = twoDigits(d.inSeconds.remainder(60));
+    return "$minutes:$seconds";
+  }
+
   @override
   void initState() {
     super.initState();
     // Call async method properly
     _decryptFile();
+    _audioPlayer = AudioPlayer();
+
+    _audioPlayer.durationStream.listen(
+      (d) => setState(() => duration = d ?? Duration.zero),
+    );
+    _audioPlayer.positionStream.listen((p) => setState(() => position = p));
+    _audioPlayer.playerStateStream.listen((state) {
+      setState(() => isPlaying = state.playing);
+    });
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -615,9 +643,22 @@ class _MessageBubbleState extends State<MessageBubble> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            // Handle audio playback - you'll need to implement this
-                            print('Play audio: ${decryptedFile!.path}');
+                          onTap: () async {
+                            try {
+                              if (isPlaying) {
+                                await _audioPlayer.pause();
+                              } else {
+                                // Check if we need to load the file first
+                                if (_audioPlayer.audioSource == null) {
+                                  await _audioPlayer.setFilePath(
+                                    decryptedFile!.path,
+                                  );
+                                }
+                                await _audioPlayer.play();
+                              }
+                            } catch (e) {
+                              print('Audio play error: $e');
+                            }
                           },
                           child: Container(
                             height: getProportionateScreenHeight(40),
@@ -627,7 +668,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.play_arrow,
+                              isPlaying ? Icons.pause : Icons.play_arrow,
                               color: textColor,
                               size: getProportionateScreenHeight(20),
                             ),
@@ -638,35 +679,66 @@ class _MessageBubbleState extends State<MessageBubble> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Audio waveform placeholder
+                              // Audio progress bar
                               SizedBox(
                                 height: getProportionateScreenHeight(20),
-                                child: Row(
-                                  children: List.generate(
-                                    20,
-                                    (index) => Container(
-                                      width: getProportionateScreenWidth(2),
-                                      height: getProportionateScreenHeight(
-                                        (index % 4 + 1) * 5,
-                                      ),
-                                      margin: EdgeInsets.only(
-                                        right: getProportionateScreenWidth(1),
-                                      ),
+                                child: Stack(
+                                  alignment: Alignment.centerLeft,
+                                  children: [
+                                    Container(
+                                      height: getProportionateScreenHeight(4),
+                                      width: double.infinity,
                                       decoration: BoxDecoration(
-                                        color: textColor.withValues(alpha: 0.6),
-                                        borderRadius: BorderRadius.circular(1),
+                                        color: textColor.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(2),
                                       ),
                                     ),
-                                  ),
+                                    if (duration != Duration.zero)
+                                      FractionallySizedBox(
+                                        widthFactor:
+                                            position.inMilliseconds /
+                                            (duration.inMilliseconds == 0
+                                                ? 1
+                                                : duration.inMilliseconds),
+                                        child: Container(
+                                          height: getProportionateScreenHeight(
+                                            4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: textColor,
+                                            borderRadius: BorderRadius.circular(
+                                              2,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                               SizedBox(height: getProportionateScreenHeight(4)),
-                              Text(
-                                '0:00', // You could get actual duration from the decrypted file
-                                style: TextStyle(
-                                  color: textColor.withValues(alpha: 0.6),
-                                  fontSize: getProportionateScreenHeight(10),
-                                ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    _formatDuration(position),
+                                    style: TextStyle(
+                                      color: textColor.withValues(alpha: 0.6),
+                                      fontSize: getProportionateScreenHeight(
+                                        10,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _formatDuration(duration),
+                                    style: TextStyle(
+                                      color: textColor.withValues(alpha: 0.6),
+                                      fontSize: getProportionateScreenHeight(
+                                        10,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -752,111 +824,122 @@ class _MessageBubbleState extends State<MessageBubble> {
               constraints: BoxConstraints(
                 maxWidth: getProportionateScreenWidth(280),
               ),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: getProportionateScreenWidth(16),
-                  vertical: getProportionateScreenHeight(12),
-                ),
-                decoration: isMe
-                    ? BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          getProportionateScreenWidth(10),
+              child: GestureDetector(
+                onTap: () async {
+                  try {
+                    // Use OpenFile to open the file with the default app
+                    final result = await OpenFile.open(decryptedFile!.path);
+                    if (result.type != ResultType.done) {
+                      print('Error opening file: ${result.message}');
+                    }
+                  } catch (e) {
+                    print('Error opening file: $e');
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: getProportionateScreenWidth(16),
+                    vertical: getProportionateScreenHeight(12),
+                  ),
+                  decoration: isMe
+                      ? BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            getProportionateScreenWidth(10),
+                          ),
+                          gradient: kChatBubbleGradient,
+                        )
+                      : BoxDecoration(
+                          color: bubbleColor,
+                          borderRadius: BorderRadius.circular(
+                            getProportionateScreenWidth(10),
+                          ),
                         ),
-                        gradient: kChatBubbleGradient,
-                      )
-                    : BoxDecoration(
-                        color: bubbleColor,
-                        borderRadius: BorderRadius.circular(
-                          getProportionateScreenWidth(10),
-                        ),
-                      ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          height: getProportionateScreenHeight(40),
-                          width: getProportionateScreenWidth(40),
-                          decoration: BoxDecoration(
-                            color: textColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(
-                              getProportionateScreenWidth(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            height: getProportionateScreenHeight(40),
+                            width: getProportionateScreenWidth(40),
+                            decoration: BoxDecoration(
+                              color: textColor.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ),
-                          child: Icon(
-                            _getFileIcon(fileExtension),
-                            color: textColor,
-                            size: getProportionateScreenHeight(20),
-                          ),
-                        ),
-                        SizedBox(width: getProportionateScreenWidth(12)),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                fileName,
+                            child: Center(
+                              child: Text(
+                                fileExtension.length > 3
+                                    ? fileExtension.substring(0, 3)
+                                    : fileExtension,
                                 style: TextStyle(
                                   color: textColor,
+                                  fontWeight: FontWeight.bold,
                                   fontSize: getProportionateScreenHeight(12),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(height: getProportionateScreenHeight(2)),
-                              Text(
-                                '$fileExtension file',
-                                style: TextStyle(
-                                  color: textColor.withValues(alpha: 0.6),
-                                  fontSize: getProportionateScreenHeight(10),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            // Handle file opening - you'll need to implement this
-                            print('Open file: ${decryptedFile!.path}');
-                          },
-                          child: Icon(
-                            Icons.open_in_new,
+                          SizedBox(width: getProportionateScreenWidth(12)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  fileName.length > 20
+                                      ? '${fileName.substring(0, 17)}...'
+                                      : fileName,
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: getProportionateScreenHeight(14),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(
+                                  height: getProportionateScreenHeight(2),
+                                ),
+                                Text(
+                                  'Tap to open',
+                                  style: TextStyle(
+                                    color: textColor.withValues(alpha: 0.6),
+                                    fontSize: getProportionateScreenHeight(10),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: getProportionateScreenHeight(4)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getFileIcon(fileExtension),
+                            size: getProportionateScreenHeight(12),
                             color: textColor.withValues(alpha: 0.6),
-                            size: getProportionateScreenHeight(16),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: getProportionateScreenHeight(4)),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.attach_file,
-                          size: getProportionateScreenHeight(12),
-                          color: textColor.withValues(alpha: 0.6),
-                        ),
-                        SizedBox(width: getProportionateScreenWidth(4)),
-                        Text(
-                          'File',
-                          style: TextStyle(
-                            color: textColor.withValues(alpha: 0.8),
-                            fontSize: getProportionateScreenHeight(12),
+                          SizedBox(width: getProportionateScreenWidth(4)),
+                          Text(
+                            'File',
+                            style: TextStyle(
+                              color: textColor.withValues(alpha: 0.8),
+                              fontSize: getProportionateScreenHeight(12),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: getProportionateScreenWidth(8)),
-                        Text(
-                          _formatTime(widget.message.createdAt.toDate()),
-                          style: TextStyle(
-                            color: textColor.withValues(alpha: 0.6),
-                            fontSize: getProportionateScreenHeight(10),
+                          SizedBox(width: getProportionateScreenWidth(8)),
+                          Text(
+                            _formatTime(widget.message.createdAt.toDate()),
+                            style: TextStyle(
+                              color: textColor.withValues(alpha: 0.6),
+                              fontSize: getProportionateScreenHeight(10),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -864,9 +947,8 @@ class _MessageBubbleState extends State<MessageBubble> {
         ],
       ),
     );
-  }
+  } // Helper method to get appropriate file icon
 
-  // Helper method to get appropriate file icon
   IconData _getFileIcon(String fileExtension) {
     switch (fileExtension.toLowerCase()) {
       case 'pdf':

@@ -108,9 +108,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     if (response.statusCode == 200) {
       reposts = PostResponseModel.fromJson(jsonDecode(response.body));
-      setState(() {
-        isRepostsLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          isRepostsLoaded = true;
+        });
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -773,7 +775,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   isReposted: comment.isReposted,
                                   isSaved: comment.isSaved,
                                   isReply: comment.isReply,
-                                  replyingToHandle: comment.parentPost!.author.username,
+                                  replyingToHandle:
+                                      comment.parentPost!.author.username,
                                 ),
                               );
                             },

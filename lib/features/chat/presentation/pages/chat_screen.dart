@@ -11,6 +11,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
@@ -274,6 +275,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
+    PermissionStatus microphoneStatus = await Permission.microphone.request();
+
+    // For Android, also request storage permission if needed
+    PermissionStatus storageStatus = PermissionStatus.granted;
+    if (Platform.isAndroid) {
+      storageStatus = await Permission.storage.request();
+    }
+
+    if (microphoneStatus != PermissionStatus.granted ||
+        storageStatus != PermissionStatus.granted) {
+      return;
+    }
     final tempDir = await getTemporaryDirectory();
     _recordingPath =
         '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
