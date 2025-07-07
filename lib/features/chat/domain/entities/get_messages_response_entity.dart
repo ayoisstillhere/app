@@ -11,7 +11,7 @@ class Conversation {
   final String type;
   final bool isSecret;
   final bool hasDisappearingMessages;
-  final String encryptionKey;
+  final String? encryptionKey;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<Participant> participants;
@@ -92,10 +92,10 @@ class Participant {
   final bool isAdmin;
   final DateTime joinedAt;
   final DateTime lastReadAt;
-  final String conversationId;
-  final bool isConversationMutedForMe;
-  final bool isConversationArchivedForMe;
-  final bool isConversationRequestForMe;
+  final String? conversationId;
+  final bool? isConversationMutedForMe;
+  final bool? isConversationArchivedForMe;
+  final bool? isConversationRequestForMe;
   final User user;
 
   Participant({

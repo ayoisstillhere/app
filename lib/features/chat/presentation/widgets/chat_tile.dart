@@ -1,3 +1,4 @@
+import 'package:app/features/chat/presentation/pages/secret_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -46,23 +47,41 @@ class ChatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              chatId: chatId,
-              name: name,
-              imageUrl: image,
-              currentUser: currentUser,
-              encryptionKey: encryptionKey,
-              isGroup: isGroup,
-              chatHandle: chatHandle,
-              participants: participants,
-              isConversationMuted: isConversationMuted,
-              isSecretChat: isSecretChat,
+        if (isSecretChat) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SecretChatScreen(
+                chatId: chatId,
+                name: name,
+                imageUrl: image,
+                currentUser: currentUser,
+                encryptionKey: encryptionKey,
+                isGroup: isGroup,
+                chatHandle: chatHandle,
+                participants: participants,
+                isConversationMuted: isConversationMuted,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: chatId,
+                name: name,
+                imageUrl: image,
+                currentUser: currentUser,
+                encryptionKey: encryptionKey,
+                isGroup: isGroup,
+                chatHandle: chatHandle,
+                participants: participants,
+                isConversationMuted: isConversationMuted,
+              ),
+            ),
+          );
+        }
       },
       child: Container(
         padding: EdgeInsets.symmetric(

@@ -389,7 +389,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               isConversationMuted: jsonDecode(
                 response.body,
               )['isConversationMutedForMe'],
-              isSecretChat: false,
             ),
           ),
         );

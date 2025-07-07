@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 
@@ -20,23 +19,20 @@ class AuthManager {
   static Future<String?> getToken() async {
     if (_cachedToken != null) return _cachedToken;
 
-    final prefs = await SharedPreferences.getInstance();
-    _cachedToken = prefs.getString(_tokenKey);
+    _cachedToken = await _secureStorage.read(key: _tokenKey);
     return _cachedToken;
   }
 
   // Set token
   static Future<void> setToken(String token) async {
     _cachedToken = token;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await _secureStorage.write(key: _tokenKey, value: token);
   }
 
   // Clear token (for logout)
   static Future<void> clearToken() async {
     _cachedToken = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    await _secureStorage.delete(key: _tokenKey);
   }
 
   // Check if user is logged in

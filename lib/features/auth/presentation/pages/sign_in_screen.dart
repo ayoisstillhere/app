@@ -5,7 +5,6 @@ import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../components/nav_page.dart';
@@ -146,6 +145,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           ],
                         ),
                         SizedBox(height: getProportionateScreenHeight(24)),
+                        // Inside the DefaultButton press callback in sign_in_screen.dart
                         DefaultButton(
                           press: () async {
                             if (_signinFormKey.currentState!.validate()) {
@@ -165,11 +165,10 @@ class _SignInScreenState extends State<SignInScreen> {
                                 final refreshToken =
                                     responseData['refresh_token'];
 
-                                // Store token in SharedPreferences
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                await prefs.setString('auth_token', token);
-                                AuthManager.setRefreshToken(refreshToken);
+                                // Use AuthManager instead of SharedPreferences
+                                await AuthManager.setToken(token);
+                                await AuthManager.setRefreshToken(refreshToken);
+
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
                                     builder: (context) => const NavPage(),

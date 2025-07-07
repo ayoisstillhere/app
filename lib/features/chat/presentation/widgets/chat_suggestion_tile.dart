@@ -2,7 +2,10 @@ import 'dart:convert';
 
 import 'package:app/constants.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/data/models/get_messages_response_model.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
+import 'package:app/features/chat/presentation/pages/secret_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -148,25 +151,53 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
       final response = await http.post(url, headers: headers, body: body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              chatId: jsonDecode(response.body)['id'],
-              name: widget.name,
-              imageUrl: widget.image,
-              currentUser: widget.currentUser,
-              encryptionKey: jsonDecode(response.body)['encryptionKey'],
-              chatHandle: widget.handle,
-              isGroup: false,
-              participants: jsonDecode(response.body)['participants'],
-              isConversationMuted: jsonDecode(
-                response.body,
-              )['isConversationMutedForMe'],
-              isSecretChat: jsonDecode(response.body)['isSecret'],
+        if (jsonDecode(response.body)['isSecret']) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SecretChatScreen(
+                chatId: jsonDecode(response.body)['id'],
+                name: widget.name,
+                imageUrl: widget.image,
+                currentUser: widget.currentUser,
+                encryptionKey: jsonDecode(response.body)['encryptionKey'],
+                chatHandle: widget.handle,
+                isGroup: false,
+                participants: List<Participant>.from(
+                  (jsonDecode(response.body)['participants'] as List)
+                      .map((e) => ParticipantModel.fromJson(e))
+                      .toList(),
+                ),
+                isConversationMuted: jsonDecode(
+                  response.body,
+                )['isConversationMutedForMe'],
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: jsonDecode(response.body)['id'],
+                name: widget.name,
+                imageUrl: widget.image,
+                currentUser: widget.currentUser,
+                encryptionKey: jsonDecode(response.body)['encryptionKey'],
+                chatHandle: widget.handle,
+                isGroup: false,
+                participants: List<Participant>.from(
+                  (jsonDecode(response.body)['participants'] as List)
+                      .map((e) => ParticipantModel.fromJson(e))
+                      .toList(),
+                ),
+                isConversationMuted: jsonDecode(
+                  response.body,
+                )['isConversationMutedForMe'],
+              ),
+            ),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

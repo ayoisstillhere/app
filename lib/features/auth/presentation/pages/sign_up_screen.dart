@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../widgets/custom_check_box.dart';
 import '../widgets/form_header.dart';
@@ -140,13 +141,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               if (response.statusCode == 201) {
                                 final responseData = jsonDecode(response.body);
                                 final token = responseData['access_token'];
+                                final refreshToken =
+                                    responseData['refresh_token'];
 
-                                // Store the token in SharedPreferences
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                await prefs.setString('auth_token', token);
-                                Navigator.push(
-                                  context,
+                                // Use AuthManager instead of SharedPreferences
+                                await AuthManager.setToken(token);
+                                await AuthManager.setRefreshToken(refreshToken);
+
+                                Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         EmailVerificationScreen(
