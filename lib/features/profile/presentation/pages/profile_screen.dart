@@ -136,9 +136,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     if (response.statusCode == 200) {
       comments = PostResponseModel.fromJson(jsonDecode(response.body));
-      setState(() {
-        isCommentsLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          isCommentsLoaded = true;
+        });
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
