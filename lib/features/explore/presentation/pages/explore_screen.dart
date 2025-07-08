@@ -389,7 +389,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ),
                   ),
                 ),
-                SizedBox(height: getProportionateScreenHeight(23)),
+                exploreResponse!.trending[0].media.isEmpty
+                    ? Container()
+                    : SizedBox(height: getProportionateScreenHeight(23)),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -414,7 +416,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ],
                   ),
                 ),
-                SizedBox(height: getProportionateScreenHeight(52)),
+                exploreResponse!.trending[0].media.isEmpty
+                    ? Container()
+                    : SizedBox(height: getProportionateScreenHeight(52)),
                 SizedBox(height: getProportionateScreenHeight(23)),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
