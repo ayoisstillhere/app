@@ -39,6 +39,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   bool isExploreLoaded = false;
   SearchResponseEntity? searchResponse;
   List<String> recentSearches = [];
+  bool _isResultsLoaded = false;
 
   // Load recent searches from SharedPreferences when the screen initializes
   Future<void> _loadRecentSearches() async {
@@ -171,6 +172,9 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 
   Future<void> _getSearchResults(String query) async {
+    setState(() {
+      _isSearchQueried = true;
+    });
     final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse("$baseUrl/api/v1/search?query=$query"),
@@ -182,7 +186,7 @@ class _ExploreScreenState extends State<ExploreScreen>
     if (response.statusCode == 200) {
       searchResponse = SearchResponseModel.fromJson(jsonDecode(response.body));
       setState(() {
-        _isSearchQueried = true;
+        _isResultsLoaded = true;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -582,105 +586,109 @@ class _ExploreScreenState extends State<ExploreScreen>
         ),
         // Wrap TabBarView with Expanded to give it bounded height
         Expanded(
-          child: TabBarView(
-            controller: controller,
-            children: [
-              ListView.builder(
-                itemCount: searchResponse!.top.length,
-                itemBuilder: (context, index) {
-                  var item = searchResponse!.top[index];
-                  return GestureDetector(
-                    onTap: () {},
-                    child: item.type == "post"
-                        ? PostCard(
+          child: _isResultsLoaded
+              ? TabBarView(
+                  controller: controller,
+                  children: [
+                    ListView.builder(
+                      itemCount: searchResponse!.top.length,
+                      itemBuilder: (context, index) {
+                        var item = searchResponse!.top[index];
+                        return GestureDetector(
+                          onTap: () {},
+                          child: item.type == "post"
+                              ? PostCard(
+                                  dividerColor: dividerColor,
+                                  iconColor: iconColor,
+                                  authorName: item.data.fullName!,
+                                  authorHandle: item.data.authorUsername!,
+                                  imageUrl: item.data.profileImage!,
+                                  postTime: item.data.createdAt!,
+                                  likes: item.data.likesCount!,
+                                  comments: item.data.commentsCount!,
+                                  reposts: item.data.repostsCount!,
+                                  bookmarks: item.data.savesCount!,
+                                  content: item.data.content!,
+                                  pictures: item.data.media!,
+                                  currentUser: widget.currentUser,
+                                  postId: item.data.id!,
+                                  isLiked: item.data.isLiked!,
+                                  isReposted: item.data.isReposted!,
+                                  isSaved: item.data.isSaved!,
+                                )
+                              : Container(),
+                        );
+                      },
+                    ),
+                    ListView.builder(
+                      itemCount: searchResponse!.recent.posts.length,
+                      itemBuilder: (context, index) {
+                        final item = searchResponse!.recent.posts[index];
+
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
                             dividerColor: dividerColor,
                             iconColor: iconColor,
-                            authorName: item.data.fullName!,
-                            authorHandle: item.data.authorUsername!,
-                            imageUrl: item.data.profileImage!,
-                            postTime: item.data.createdAt!,
-                            likes: item.data.likesCount!,
-                            comments: item.data.commentsCount!,
-                            reposts: item.data.repostsCount!,
-                            bookmarks: item.data.savesCount!,
-                            content: item.data.content!,
-                            pictures: item.data.media!,
+                            authorName: item.fullName,
+                            authorHandle: item.authorUsername,
+                            imageUrl: item.profileImage,
+                            postTime: item.createdAt,
+                            likes: item.likesCount,
+                            comments: item.commentsCount,
+                            reposts: item.repostsCount,
+                            bookmarks: item.savesCount,
+                            content: item.content,
+                            pictures: item.media,
                             currentUser: widget.currentUser,
-                            postId: item.data.id!,
-                            isLiked: item.data.isLiked!,
-                            isReposted: item.data.isReposted!,
-                            isSaved: item.data.isSaved!,
-                          )
-                        : Container(),
-                  );
-                },
-              ),
-              ListView.builder(
-                itemCount: searchResponse!.recent.posts.length,
-                itemBuilder: (context, index) {
-                  final item = searchResponse!.recent.posts[index];
-
-                  return GestureDetector(
-                    onTap: () {},
-                    child: PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: item.fullName,
-                      authorHandle: item.authorUsername,
-                      imageUrl: item.profileImage,
-                      postTime: item.createdAt,
-                      likes: item.likesCount,
-                      comments: item.commentsCount,
-                      reposts: item.repostsCount,
-                      bookmarks: item.savesCount,
-                      content: item.content,
-                      pictures: item.media,
-                      currentUser: widget.currentUser,
-                      postId: item.id,
-                      isLiked: item.isLiked,
-                      isReposted: item.isReposted,
-                      isSaved: item.isSaved,
+                            postId: item.id,
+                            isLiked: item.isLiked,
+                            isReposted: item.isReposted,
+                            isSaved: item.isSaved,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-              ListView.builder(
-                itemCount: searchResponse!.media.posts.length,
-                itemBuilder: (context, index) {
-                  final item = searchResponse!.media.posts[index];
+                    ListView.builder(
+                      itemCount: searchResponse!.media.posts.length,
+                      itemBuilder: (context, index) {
+                        final item = searchResponse!.media.posts[index];
 
-                  return GestureDetector(
-                    onTap: () {},
-                    child: PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: item.fullName,
-                      authorHandle: item.authorUsername,
-                      imageUrl: item.profileImage,
-                      postTime: item.createdAt,
-                      likes: item.likesCount,
-                      comments: item.commentsCount,
-                      reposts: item.repostsCount,
-                      bookmarks: item.savesCount,
-                      content: item.content,
-                      pictures: item.media,
-                      currentUser: widget.currentUser,
-                      postId: item.id,
-                      isLiked: item.isLiked,
-                      isReposted: item.isReposted,
-                      isSaved: item.isSaved,
+                        return GestureDetector(
+                          onTap: () {},
+                          child: PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            authorName: item.fullName,
+                            authorHandle: item.authorUsername,
+                            imageUrl: item.profileImage,
+                            postTime: item.createdAt,
+                            likes: item.likesCount,
+                            comments: item.commentsCount,
+                            reposts: item.repostsCount,
+                            bookmarks: item.savesCount,
+                            content: item.content,
+                            pictures: item.media,
+                            currentUser: widget.currentUser,
+                            postId: item.id,
+                            isLiked: item.isLiked,
+                            isReposted: item.isReposted,
+                            isSaved: item.isSaved,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-              Column(
-                children: [
-                  SizedBox(height: getProportionateScreenHeight(20)),
-                  FollowSuggestionsList(suggestedAccounts: suggestedAccounts),
-                ],
-              ),
-            ],
-          ),
+                    Column(
+                      children: [
+                        SizedBox(height: getProportionateScreenHeight(20)),
+                        FollowSuggestionsList(
+                          suggestedAccounts: suggestedAccounts,
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : const Center(child: CircularProgressIndicator()),
         ),
       ],
     );
