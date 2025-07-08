@@ -27,18 +27,42 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
-  PostResponseEntity? recommendedPostResponse;
-  PostResponseEntity? followingPostResponse;
+
+  // Recommended posts pagination
+  List<Post> recommendedPosts = [];
   bool isRecommendedLoaded = false;
+  bool isLoadingMoreRecommended = false;
+  bool hasMoreRecommended = true;
+  int recommendedPage = 1;
+  final int recommendedLimit = 10;
+
+  // Following posts pagination
+  List<Post> followingPosts = [];
   bool isFollowingLoaded = false;
-  Post? selectedPost;
+  bool isLoadingMoreFollowing = false;
+  bool hasMoreFollowing = true;
+  int followingPage = 1;
+  final int followingLimit = 10;
+
+  // Scroll controllers
+  late ScrollController recommendedScrollController;
+  late ScrollController followingScrollController;
 
   @override
   void initState() {
     super.initState();
     controller = TabController(length: 2, vsync: this);
+
+    // Initialize scroll controllers
+    recommendedScrollController = ScrollController();
+    followingScrollController = ScrollController();
+
+    // Add scroll listeners
+    recommendedScrollController.addListener(_onRecommendedScroll);
+    followingScrollController.addListener(_onFollowingScroll);
+
     if (mounted) {
-      _getFolowingPosts();
+      _getFollowingPosts();
       _getRecommendedPosts();
     }
   }
@@ -46,21 +70,53 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     controller.dispose();
+    recommendedScrollController.dispose();
+    followingScrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _getFolowingPosts() async {
+  void _onRecommendedScroll() {
+    if (recommendedScrollController.position.pixels ==
+        recommendedScrollController.position.maxScrollExtent) {
+      _loadMoreRecommendedPosts();
+    }
+  }
+
+  void _onFollowingScroll() {
+    if (followingScrollController.position.pixels ==
+        followingScrollController.position.maxScrollExtent) {
+      _loadMoreFollowingPosts();
+    }
+  }
+
+  Future<void> _getFollowingPosts({bool isRefresh = false}) async {
+    if (isRefresh) {
+      followingPage = 1;
+      followingPosts.clear();
+      hasMoreFollowing = true;
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/feed/timeline"),
+      Uri.parse(
+        "$baseUrl/api/v1/posts/feed/timeline?page=$followingPage&limit=$followingLimit",
+      ),
       headers: {"Authorization": "Bearer $token"},
     );
+
     if (response.statusCode == 200) {
-      followingPostResponse = PostResponseModel.fromJson(
+      final postResponse = PostResponseModel.fromJson(
         jsonDecode(response.body),
       );
+
       setState(() {
+        if (isRefresh) {
+          followingPosts = postResponse.posts;
+        } else {
+          followingPosts.addAll(postResponse.posts);
+        }
         isFollowingLoaded = true;
+        hasMoreFollowing = postResponse.posts.length == followingLimit;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -77,18 +133,34 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _getRecommendedPosts() async {
+  Future<void> _getRecommendedPosts({bool isRefresh = false}) async {
+    if (isRefresh) {
+      recommendedPage = 1;
+      recommendedPosts.clear();
+      hasMoreRecommended = true;
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/feed/recommended"),
+      Uri.parse(
+        "$baseUrl/api/v1/posts/feed/recommended?page=$recommendedPage&limit=$recommendedLimit",
+      ),
       headers: {"Authorization": "Bearer $token"},
     );
+
     if (response.statusCode == 200) {
-      recommendedPostResponse = PostResponseModel.fromJson(
+      final postResponse = PostResponseModel.fromJson(
         jsonDecode(response.body),
       );
+
       setState(() {
+        if (isRefresh) {
+          recommendedPosts = postResponse.posts;
+        } else {
+          recommendedPosts.addAll(postResponse.posts);
+        }
         isRecommendedLoaded = true;
+        hasMoreRecommended = postResponse.posts.length == recommendedLimit;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -102,6 +174,76 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _loadMoreRecommendedPosts() async {
+    if (isLoadingMoreRecommended || !hasMoreRecommended) return;
+
+    setState(() {
+      isLoadingMoreRecommended = true;
+    });
+
+    recommendedPage++;
+
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        "$baseUrl/api/v1/posts/feed/recommended?page=$recommendedPage&limit=$recommendedLimit",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      final postResponse = PostResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+
+      setState(() {
+        recommendedPosts.addAll(postResponse.posts);
+        hasMoreRecommended = postResponse.posts.length == recommendedLimit;
+        isLoadingMoreRecommended = false;
+      });
+    } else {
+      setState(() {
+        isLoadingMoreRecommended = false;
+        recommendedPage--; // Revert page increment on error
+      });
+    }
+  }
+
+  Future<void> _loadMoreFollowingPosts() async {
+    if (isLoadingMoreFollowing || !hasMoreFollowing) return;
+
+    setState(() {
+      isLoadingMoreFollowing = true;
+    });
+
+    followingPage++;
+
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse(
+        "$baseUrl/api/v1/posts/feed/timeline?page=$followingPage&limit=$followingLimit",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      final postResponse = PostResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+
+      setState(() {
+        followingPosts.addAll(postResponse.posts);
+        hasMoreFollowing = postResponse.posts.length == followingLimit;
+        isLoadingMoreFollowing = false;
+      });
+    } else {
+      setState(() {
+        isLoadingMoreFollowing = false;
+        followingPage--; // Revert page increment on error
+      });
     }
   }
 
@@ -138,6 +280,60 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _buildPostsList({
+    required List<Post> posts,
+    required bool isLoaded,
+    required bool isLoadingMore,
+    required ScrollController scrollController,
+    required Color dividerColor,
+    required Color iconColor,
+    required VoidCallback onRefresh,
+  }) {
+    if (!isLoaded) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        onRefresh();
+      },
+      child: ListView.builder(
+        controller: scrollController,
+        itemCount: posts.length + (isLoadingMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == posts.length) {
+            return Container(
+              padding: EdgeInsets.all(16),
+              alignment: Alignment.center,
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          final post = posts[index];
+          return PostCard(
+            dividerColor: dividerColor,
+            iconColor: iconColor,
+            authorName: post.author.fullName,
+            authorHandle: post.author.username,
+            imageUrl: post.author.profileImage,
+            postTime: post.createdAt,
+            likes: post.count.likes,
+            comments: post.count.comments,
+            reposts: post.count.reposts,
+            bookmarks: post.count.saves,
+            content: post.content,
+            pictures: post.media,
+            currentUser: widget.currentUser,
+            postId: post.id,
+            isLiked: post.isLiked,
+            isReposted: post.isReposted,
+            isSaved: post.isSaved,
+          );
+        },
+      ),
+    );
+  }
+
   Scaffold _buildHomeView(
     BuildContext context,
     Color dividerColor,
@@ -148,60 +344,24 @@ class _HomeScreenState extends State<HomeScreen>
       body: TabBarView(
         controller: controller,
         children: [
-          isRecommendedLoaded
-              ? ListView.builder(
-                  itemCount: recommendedPostResponse!.posts.length,
-                  itemBuilder: (context, index) {
-                    final post = recommendedPostResponse!.posts[index];
-                    return PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: post.author.fullName,
-                      authorHandle: post.author.username,
-                      imageUrl: post.author.profileImage,
-                      postTime: post.createdAt,
-                      likes: post.count.likes,
-                      comments: post.count.comments,
-                      reposts: post.count.reposts,
-                      bookmarks: post.count.saves,
-                      content: post.content,
-                      pictures: post.media,
-                      currentUser: widget.currentUser,
-                      postId: post.id,
-                      isLiked: post.isLiked,
-                      isReposted: post.isReposted,
-                      isSaved: post.isSaved,
-                    );
-                  },
-                )
-              : Center(child: CircularProgressIndicator()),
-          isFollowingLoaded
-              ? ListView.builder(
-                  itemCount: followingPostResponse!.posts.length,
-                  itemBuilder: (context, index) {
-                    final post = followingPostResponse!.posts[index];
-                    return PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: post.author.fullName,
-                      authorHandle: post.author.username,
-                      imageUrl: post.author.profileImage,
-                      postTime: post.createdAt,
-                      likes: post.count.likes,
-                      comments: post.count.comments,
-                      reposts: post.count.reposts,
-                      bookmarks: post.count.saves,
-                      content: post.content,
-                      pictures: post.media,
-                      currentUser: widget.currentUser,
-                      postId: post.id,
-                      isLiked: post.isLiked,
-                      isReposted: post.isReposted,
-                      isSaved: post.isSaved,
-                    );
-                  },
-                )
-              : Center(child: CircularProgressIndicator()),
+          _buildPostsList(
+            posts: recommendedPosts,
+            isLoaded: isRecommendedLoaded,
+            isLoadingMore: isLoadingMoreRecommended,
+            scrollController: recommendedScrollController,
+            dividerColor: dividerColor,
+            iconColor: iconColor,
+            onRefresh: () => _getRecommendedPosts(isRefresh: true),
+          ),
+          _buildPostsList(
+            posts: followingPosts,
+            isLoaded: isFollowingLoaded,
+            isLoadingMore: isLoadingMoreFollowing,
+            scrollController: followingScrollController,
+            dividerColor: dividerColor,
+            iconColor: iconColor,
+            onRefresh: () => _getFollowingPosts(isRefresh: true),
+          ),
         ],
       ),
     );
@@ -248,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen>
               Tab(
                 child: SizedBox(
                   width: getProportionateScreenWidth(143),
-                  child: Center(child: Text("Recomended")),
+                  child: Center(child: Text("Recommended")),
                 ),
               ),
               Tab(
