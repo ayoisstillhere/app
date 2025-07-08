@@ -77,14 +77,16 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     if (response.statusCode == 200) {
       posts = PostResponseModel.fromJson(jsonDecode(response.body));
-      setState(() {
-        mediaPosts = PostResponseEntity(
-          posts!.posts.where((element) => element.media.isNotEmpty).toList(),
-          posts!.pagination,
-          posts!.user,
-        );
-        isPostsLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          mediaPosts = PostResponseEntity(
+            posts!.posts.where((element) => element.media.isNotEmpty).toList(),
+            posts!.pagination,
+            posts!.user,
+          );
+          isPostsLoaded = true;
+        });
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -163,9 +165,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     if (response.statusCode == 200) {
       savedPosts = PostResponseModel.fromJson(jsonDecode(response.body));
-      setState(() {
-        isSavedPostsLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          isSavedPostsLoaded = true;
+        });
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -189,9 +193,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     if (response.statusCode == 200) {
       likedPosts = PostResponseModel.fromJson(jsonDecode(response.body));
-      setState(() {
-        isLikedPostsLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          isLikedPostsLoaded = true;
+        });
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
