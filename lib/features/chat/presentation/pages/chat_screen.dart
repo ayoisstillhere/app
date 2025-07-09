@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app/features/chat/data/models/get_messages_response_model.dart';
+import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +14,12 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 import 'package:video_player/video_player.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
-import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart'
+    hide User;
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 import 'package:app/services/file_encryptor.dart';
@@ -476,6 +479,52 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Future<void> _initiateCall() async {
+    final token = await AuthManager.getToken();
+    String callToken;
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/calls'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode({'type': 'AUDIO', 'conversationId': widget.chatId}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      callToken = jsonDecode(response.body)['token'];
+      StreamVideo.reset();
+      StreamVideo(
+        getStreamKey,
+        user: User(
+          info: UserInfo(
+            name: widget.currentUser.fullName,
+            id: widget.currentUser.id,
+          ),
+        ),
+        userToken: callToken,
+      );
+      String roomId = jsonDecode(response.body)['call']['roomId'];
+
+      try {
+        var call = StreamVideo.instance.makeCall(
+          callType: StreamCallType.defaultType(),
+          id: roomId,
+        );
+
+        await call.getOrCreate();
+
+        // Created ahead
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => CallScreen(call: call)),
+        );
+      } catch (e) {
+        debugPrint('Error joining or creating call: $e');
+        debugPrint(e.toString());
+      }
+    }
+  }
+
   Widget _buildSelectedFilePreview() {
     if (_selectedFile == null) return SizedBox.shrink();
 
@@ -631,7 +680,9 @@ class _ChatScreenState extends State<ChatScreen> {
               height: getProportionateScreenHeight(24),
               width: getProportionateScreenWidth(24),
               child: InkWell(
-                onTap: () {},
+                onTap: () {
+                  _initiateCall();
+                },
                 child: SvgPicture.asset(
                   "assets/icons/chat_phone.svg",
                   colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
