@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:app/components/nav_page.dart';
 import 'package:app/features/chat/data/models/get_media_response_model.dart';
-import 'package:app/features/chat/domain/entities/get_media_response_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
