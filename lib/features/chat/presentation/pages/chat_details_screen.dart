@@ -47,65 +47,422 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
 
-  GetMediaResponse? mediaResponse;
-  GetMediaResponse? filesResponse;
-  GetMediaResponse? voiceResponse;
-
+  // Media pagination
+  List<dynamic> mediaItems = [];
   bool isMediaLoaded = false;
+  bool isMediaLoadingMore = false;
+  bool hasMoreMedia = true;
+  int mediaPage = 1;
+  final int mediaLimit = 20;
+
+  // Files pagination
+  List<dynamic> filesItems = [];
   bool isFilesLoaded = false;
+  bool isFilesLoadingMore = false;
+  bool hasMoreFiles = true;
+  int filesPage = 1;
+  final int filesLimit = 15;
+
+  // Voice pagination
+  List<dynamic> voiceItems = [];
   bool isVoiceLoaded = false;
+  bool isVoiceLoadingMore = false;
+  bool hasMoreVoice = true;
+  int voicePage = 1;
+  final int voiceLimit = 10;
 
-  Future<void> _fetchMedia() async {
+  // Scroll controllers for pagination
+  final ScrollController _mediaScrollController = ScrollController();
+  final ScrollController _filesScrollController = ScrollController();
+  final ScrollController _voiceScrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TabController(length: 3, vsync: this);
+
+    // Initialize scroll listeners
+    _setupScrollListeners();
+
+    // Initial data load
+    _fetchMedia();
+    _fetchFiles();
+    _fetchVoice();
+  }
+
+  void _setupScrollListeners() {
+    _mediaScrollController.addListener(() {
+      if (_mediaScrollController.position.pixels ==
+          _mediaScrollController.position.maxScrollExtent) {
+        if (!isMediaLoadingMore && hasMoreMedia) {
+          _loadMoreMedia();
+        }
+      }
+    });
+
+    _filesScrollController.addListener(() {
+      if (_filesScrollController.position.pixels ==
+          _filesScrollController.position.maxScrollExtent) {
+        if (!isFilesLoadingMore && hasMoreFiles) {
+          _loadMoreFiles();
+        }
+      }
+    });
+
+    _voiceScrollController.addListener(() {
+      if (_voiceScrollController.position.pixels ==
+          _voiceScrollController.position.maxScrollExtent) {
+        if (!isVoiceLoadingMore && hasMoreVoice) {
+          _loadMoreVoice();
+        }
+      }
+    });
+  }
+
+  Future<void> _fetchMedia({bool loadMore = false}) async {
+    if (loadMore) {
+      setState(() => isMediaLoadingMore = true);
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
-        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/media?&mediaType=image',
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/media?mediaType=image&page=$mediaPage&limit=$mediaLimit',
       ),
       headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      mediaResponse = GetMediaResponseModel.fromJson(jsonDecode(response.body));
+      final mediaResponse = GetMediaResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+
       setState(() {
-        isMediaLoaded = true;
+        if (loadMore) {
+          mediaItems.addAll(mediaResponse.data);
+          isMediaLoadingMore = false;
+        } else {
+          mediaItems = mediaResponse.data;
+          isMediaLoaded = true;
+        }
+
+        // Check if there are more items
+        hasMoreMedia = mediaResponse.data.length == mediaLimit;
+
+        if (loadMore) {
+          mediaPage++;
+        }
+      });
+    } else {
+      setState(() {
+        if (loadMore) {
+          isMediaLoadingMore = false;
+        } else {
+          isMediaLoaded = true;
+        }
       });
     }
   }
 
-  Future<void> _fetchFiles() async {
+  Future<void> _fetchFiles({bool loadMore = false}) async {
+    if (loadMore) {
+      setState(() => isFilesLoadingMore = true);
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
-        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/files?&mediaType=file',
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/files?mediaType=file&page=$filesPage&limit=$filesLimit',
       ),
       headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      filesResponse = GetMediaResponseModel.fromJson(jsonDecode(response.body));
+      final filesResponse = GetMediaResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+
       setState(() {
-        isFilesLoaded = true;
+        if (loadMore) {
+          filesItems.addAll(filesResponse.data);
+          isFilesLoadingMore = false;
+        } else {
+          filesItems = filesResponse.data;
+          isFilesLoaded = true;
+        }
+
+        hasMoreFiles = filesResponse.data.length == filesLimit;
+
+        if (loadMore) {
+          filesPage++;
+        }
+      });
+    } else {
+      setState(() {
+        if (loadMore) {
+          isFilesLoadingMore = false;
+        } else {
+          isFilesLoaded = true;
+        }
       });
     }
   }
 
-  Future<void> _fetchVoice() async {
+  Future<void> _fetchVoice({bool loadMore = false}) async {
+    if (loadMore) {
+      setState(() => isVoiceLoadingMore = true);
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
-        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/audio?&mediaType=audio',
+        '$baseUrl/api/v1/chat/conversations/${widget.chatId}/audio?mediaType=audio&page=$voicePage&limit=$voiceLimit',
       ),
       headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      voiceResponse = GetMediaResponseModel.fromJson(jsonDecode(response.body));
+      final voiceResponse = GetMediaResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+
       setState(() {
-        isVoiceLoaded = true;
+        if (loadMore) {
+          voiceItems.addAll(voiceResponse.data);
+          isVoiceLoadingMore = false;
+        } else {
+          voiceItems = voiceResponse.data;
+          isVoiceLoaded = true;
+        }
+
+        hasMoreVoice = voiceResponse.data.length == voiceLimit;
+
+        if (loadMore) {
+          voicePage++;
+        }
+      });
+    } else {
+      setState(() {
+        if (loadMore) {
+          isVoiceLoadingMore = false;
+        } else {
+          isVoiceLoaded = true;
+        }
       });
     }
   }
 
+  void _loadMoreMedia() {
+    if (hasMoreMedia && !isMediaLoadingMore) {
+      mediaPage++;
+      _fetchMedia(loadMore: true);
+    }
+  }
+
+  void _loadMoreFiles() {
+    if (hasMoreFiles && !isFilesLoadingMore) {
+      filesPage++;
+      _fetchFiles(loadMore: true);
+    }
+  }
+
+  void _loadMoreVoice() {
+    if (hasMoreVoice && !isVoiceLoadingMore) {
+      voicePage++;
+      _fetchVoice(loadMore: true);
+    }
+  }
+
+  // Add refresh functionality
+  Future<void> _refreshMedia() async {
+    setState(() {
+      mediaPage = 1;
+      hasMoreMedia = true;
+      mediaItems.clear();
+      isMediaLoaded = false;
+    });
+    await _fetchMedia();
+  }
+
+  Future<void> _refreshFiles() async {
+    setState(() {
+      filesPage = 1;
+      hasMoreFiles = true;
+      filesItems.clear();
+      isFilesLoaded = false;
+    });
+    await _fetchFiles();
+  }
+
+  Future<void> _refreshVoice() async {
+    setState(() {
+      voicePage = 1;
+      hasMoreVoice = true;
+      voiceItems.clear();
+      isVoiceLoaded = false;
+    });
+    await _fetchVoice();
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      alignment: Alignment.center,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation<Color>(kLightPurple),
+      ),
+    );
+  }
+
+  Widget _buildMediaTab() {
+    if (!isMediaLoaded) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (mediaItems.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.photo_library_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No media found',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshMedia,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: getProportionateScreenWidth(14),
+          vertical: getProportionateScreenHeight(14),
+        ),
+        child: GridView.builder(
+          controller: _mediaScrollController,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: getProportionateScreenWidth(5),
+            mainAxisSpacing: getProportionateScreenHeight(5),
+          ),
+          itemCount: mediaItems.length + (isMediaLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == mediaItems.length) {
+              return _buildLoadingIndicator();
+            }
+            return MediaWidget(data: mediaItems[index]);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilesTab() {
+    if (!isFilesLoaded) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (filesItems.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.folder_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No files found',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshFiles,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: getProportionateScreenWidth(14),
+          vertical: getProportionateScreenHeight(14),
+        ),
+        child: GridView.builder(
+          controller: _filesScrollController,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: getProportionateScreenWidth(10),
+            mainAxisSpacing: getProportionateScreenHeight(10),
+            childAspectRatio: 0.9,
+          ),
+          itemCount: filesItems.length + (isFilesLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == filesItems.length) {
+              return _buildLoadingIndicator();
+            }
+            return FileWidget(data: filesItems[index]);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceTab() {
+    if (!isVoiceLoaded) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (voiceItems.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.mic_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No voice messages found',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshVoice,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: getProportionateScreenWidth(14),
+          vertical: getProportionateScreenHeight(14),
+        ),
+        child: ListView.separated(
+          controller: _voiceScrollController,
+          itemCount: voiceItems.length + (isVoiceLoadingMore ? 1 : 0),
+          separatorBuilder: (context, index) => Divider(),
+          itemBuilder: (context, index) {
+            if (index == voiceItems.length) {
+              return _buildLoadingIndicator();
+            }
+            return VoiceWidget(data: voiceItems[index]);
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    _mediaScrollController.dispose();
+    _filesScrollController.dispose();
+    _voiceScrollController.dispose();
+    super.dispose();
+  }
+
+  // ... [Rest of your existing methods remain the same]
   void _onMute() async {
     final token = await AuthManager.getToken();
     await http.put(
@@ -173,21 +530,6 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
       context,
       MaterialPageRoute(builder: (context) => const NavPage()),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    controller = TabController(length: 3, vsync: this);
-    _fetchMedia();
-    _fetchFiles();
-    _fetchVoice();
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -272,6 +614,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
+            // ... [Your existing header sliver code remains the same]
             SliverToBoxAdapter(
               child: Center(
                 child: Column(
@@ -1012,67 +1355,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
         },
         body: TabBarView(
           controller: controller,
-          children: [
-            // Media Tab
-            isMediaLoaded
-                ? Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: getProportionateScreenWidth(14),
-                      vertical: getProportionateScreenHeight(14),
-                    ),
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: getProportionateScreenWidth(5),
-                        mainAxisSpacing: getProportionateScreenHeight(5),
-                      ),
-                      itemCount: mediaResponse!.data.length,
-                      itemBuilder: (context, index) {
-                        return MediaWidget(data: mediaResponse!.data[index]);
-                      },
-                    ),
-                  )
-                : Center(child: CircularProgressIndicator()),
-
-            // Files Tab
-            isFilesLoaded
-                ? Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: getProportionateScreenWidth(14),
-                      vertical: getProportionateScreenHeight(14),
-                    ),
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: getProportionateScreenWidth(10),
-                        mainAxisSpacing: getProportionateScreenHeight(10),
-                        childAspectRatio: 0.9, // Adjust for file display
-                      ),
-                      itemCount: filesResponse!.data.length,
-                      itemBuilder: (context, index) {
-                        return FileWidget(data: filesResponse!.data[index]);
-                      },
-                    ),
-                  )
-                : Center(child: CircularProgressIndicator()),
-
-            // Voice Tab
-            isVoiceLoaded
-                ? Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: getProportionateScreenWidth(14),
-                      vertical: getProportionateScreenHeight(14),
-                    ),
-                    child: ListView.separated(
-                      itemCount: voiceResponse!.data.length,
-                      separatorBuilder: (context, index) => Divider(),
-                      itemBuilder: (context, index) {
-                        return VoiceWidget(data: voiceResponse!.data[index]);
-                      },
-                    ),
-                  )
-                : Center(child: CircularProgressIndicator()),
-          ],
+          children: [_buildMediaTab(), _buildFilesTab(), _buildVoiceTab()],
         ),
       ),
     );
