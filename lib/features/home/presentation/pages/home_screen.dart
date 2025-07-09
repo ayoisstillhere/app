@@ -388,7 +388,11 @@ class _HomeScreenState extends State<HomeScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.currentUser.profileImage),
+                  image: NetworkImage(
+                    widget.currentUser.profileImage.isEmpty
+                        ? defaultAvatar
+                        : widget.currentUser.profileImage,
+                  ),
                   fit: BoxFit.cover,
                 ),
               ),

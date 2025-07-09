@@ -218,7 +218,9 @@ class _PostCardState extends State<PostCard> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
-                        image: NetworkImage(widget.imageUrl),
+                        image: widget.imageUrl.isEmpty
+                            ? NetworkImage(defaultAvatar)
+                            : NetworkImage(widget.imageUrl),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -399,7 +401,9 @@ class _PostCardState extends State<PostCard> {
                           getProportionateScreenWidth(10),
                         ),
                         image: DecorationImage(
-                          image: NetworkImage(widget.pictures[0]),
+                          image: widget.pictures[0].isEmpty
+                              ? NetworkImage(defaultAvatar)
+                              : NetworkImage(widget.pictures[0]),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -431,7 +435,9 @@ class _PostCardState extends State<PostCard> {
                                   getProportionateScreenWidth(10),
                                 ),
                                 image: DecorationImage(
-                                  image: NetworkImage(widget.pictures[index]),
+                                  image: widget.pictures[index].isEmpty
+                                      ? NetworkImage(defaultAvatar)
+                                      : NetworkImage(widget.pictures[index]),
                                   fit: BoxFit.cover,
                                 ),
                               ),

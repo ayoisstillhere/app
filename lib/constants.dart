@@ -63,8 +63,12 @@ List<Map<String, dynamic>> settingsDetails = [
   },
 ];
 
+const String defaultAvatar =
+    "https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg";
+
 // API Constants
 const String baseUrl = 'https://api.hiraofficial.com';
+
 // ignore: constant_identifier_names
 enum MessageType { TEXT, AUDIO, VIDEO, IMAGE, FILE }
 
@@ -85,4 +89,5 @@ String formatDuration(DateTime from, DateTime to) {
 
 // API keys
 const String getStreamKey = "q25hn6c2zjg3";
-const String getStreamSecret = "dsj4r4dcddeeakzqgnrdj8sdnsuqjz3c5m594ub9qugeekq7wbr8tr965qb7fbsp";
+const String getStreamSecret =
+    "dsj4r4dcddeeakzqgnrdj8sdnsuqjz3c5m594ub9qugeekq7wbr8tr965qb7fbsp";

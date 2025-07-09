@@ -262,7 +262,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(user.profileImage),
+                  image: user.profileImage.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(user.profileImage),
                   fit: BoxFit.cover,
                 ),
               ),

@@ -104,7 +104,9 @@ class ChatTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(image),
+                      image: image.isEmpty
+                          ? NetworkImage(defaultAvatar)
+                          : NetworkImage(image),
                       fit: BoxFit.cover,
                     ),
                   ),

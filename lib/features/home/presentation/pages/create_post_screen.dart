@@ -288,7 +288,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 image: DecorationImage(
-                                  image: NetworkImage(widget.profileImage),
+                                  image: widget.profileImage.isEmpty
+                                      ? NetworkImage(defaultAvatar)
+                                      : NetworkImage(widget.profileImage),
                                   fit: BoxFit.cover,
                                 ),
                               ),

@@ -170,7 +170,9 @@ class _MessageBubbleState extends State<MessageBubble> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -282,7 +284,9 @@ class _MessageBubbleState extends State<MessageBubble> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -373,7 +377,9 @@ class _MessageBubbleState extends State<MessageBubble> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -475,7 +481,9 @@ class _MessageBubbleState extends State<MessageBubble> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -618,7 +626,9 @@ class _MessageBubbleState extends State<MessageBubble> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -825,7 +835,9 @@ class _MessageBubbleState extends State<MessageBubble> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),

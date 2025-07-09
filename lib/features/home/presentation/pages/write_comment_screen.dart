@@ -215,7 +215,9 @@ class _WriteCommentScreenState extends State<WriteCommentScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(widget.authorProfileImage),
+                      image: widget.authorProfileImage.isEmpty
+                          ? NetworkImage(defaultAvatar)
+                          : NetworkImage(widget.authorProfileImage),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -282,7 +284,9 @@ class _WriteCommentScreenState extends State<WriteCommentScreen> {
                               getProportionateScreenWidth(12),
                             ),
                             image: DecorationImage(
-                              image: NetworkImage(widget.media.first),
+                              image: widget.media.first.isEmpty
+                                  ? NetworkImage(defaultAvatar)
+                                  : NetworkImage(widget.media.first),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -307,7 +311,9 @@ class _WriteCommentScreenState extends State<WriteCommentScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
-                        image: NetworkImage(widget.currentUser.profileImage),
+                        image: widget.currentUser.profileImage.isEmpty
+                            ? NetworkImage(defaultAvatar)
+                            : NetworkImage(widget.currentUser.profileImage),
                         fit: BoxFit.cover,
                       ),
                     ),

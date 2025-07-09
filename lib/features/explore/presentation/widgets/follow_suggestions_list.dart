@@ -1,13 +1,21 @@
-import 'package:app/features/home/domain/entities/explore_response_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/home/domain/entities/explore_response_entity.dart';
+
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
 
 class FollowSuggestionsList extends StatelessWidget {
-  const FollowSuggestionsList({super.key, required this.suggestedAccounts});
+  const FollowSuggestionsList({
+    super.key,
+    required this.suggestedAccounts,
+    required this.currentUser,
+  });
   final List<SuggestedAccount> suggestedAccounts;
+  final UserEntity currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +35,7 @@ class FollowSuggestionsList extends StatelessWidget {
             followerCount: suggestedAccounts[index].followersCount,
             handle: suggestedAccounts[index].username,
             bio: suggestedAccounts[index].bio,
+            currentUser: currentUser,
           );
         },
       ),
@@ -42,6 +51,7 @@ class FollowSuggestion extends StatelessWidget {
     required this.handle,
     required this.bio,
     super.key,
+    required this.currentUser,
   });
 
   final String image;
@@ -49,6 +59,7 @@ class FollowSuggestion extends StatelessWidget {
   final int followerCount;
   final String handle;
   final String bio;
+  final UserEntity currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +72,18 @@ class FollowSuggestion extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               InkWell(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfileScreen(
+                        isVerified: true,
+                        userName: handle,
+                        currentUser: currentUser,
+                      ),
+                    ),
+                  );
+                },
                 child: Container(
                   height: getProportionateScreenHeight(25),
                   width: getProportionateScreenWidth(25),
@@ -70,7 +92,9 @@ class FollowSuggestion extends StatelessWidget {
                     image: image.isEmpty
                         ? null
                         : DecorationImage(
-                            image: NetworkImage(image),
+                            image: image.isEmpty
+                                ? NetworkImage(defaultAvatar)
+                                : NetworkImage(image),
                             fit: BoxFit.cover,
                           ),
                   ),

@@ -531,6 +531,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                 SizedBox(height: getProportionateScreenHeight(8)),
                 FollowSuggestionsList(
                   suggestedAccounts: exploreResponse!.suggestedAccounts,
+                  currentUser: widget.currentUser,
                 ),
                 Padding(
                   padding: EdgeInsets.symmetric(
@@ -563,7 +564,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                               getProportionateScreenWidth(10),
                             ),
                             image: DecorationImage(
-                              image: NetworkImage(image),
+                              image: image.isEmpty
+                                  ? NetworkImage(defaultAvatar)
+                                  : NetworkImage(image),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -898,7 +901,10 @@ class _ExploreScreenState extends State<ExploreScreen>
         return Column(
           children: [
             SizedBox(height: getProportionateScreenHeight(20)),
-            FollowSuggestionsList(suggestedAccounts: suggestedAccounts),
+            FollowSuggestionsList(
+              suggestedAccounts: suggestedAccounts,
+              currentUser: widget.currentUser,
+            ),
           ],
         );
       },

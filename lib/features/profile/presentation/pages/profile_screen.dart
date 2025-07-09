@@ -421,7 +421,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
-                image: NetworkImage(user!.profileImage),
+                image: user!.profileImage.isEmpty
+                    ? NetworkImage(defaultAvatar)
+                    : NetworkImage(user!.profileImage),
                 fit: BoxFit.cover,
               ),
               border: Border.all(width: 1, color: kPrimPurple),

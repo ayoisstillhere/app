@@ -71,7 +71,9 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.image),
+                  image: widget.image.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.image),
                   fit: BoxFit.cover,
                 ),
               ),

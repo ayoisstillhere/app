@@ -533,7 +533,9 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(widget.imageUrl),
+                  image: widget.imageUrl.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(widget.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),

@@ -672,7 +672,9 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
-                          image: NetworkImage(widget.chatImage),
+                          image: widget.chatImage.isEmpty
+                              ? NetworkImage(defaultAvatar)
+                              : NetworkImage(widget.chatImage),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -800,9 +802,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
 
                                 InkWell(
                                   onTap: () {
-                                    isMuted
-                                        ? _onUnmute()
-                                        : _onMute();
+                                    isMuted ? _onUnmute() : _onMute();
                                   },
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,

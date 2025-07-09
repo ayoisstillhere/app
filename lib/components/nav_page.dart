@@ -194,7 +194,9 @@ class _NavPageState extends State<NavPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: NetworkImage(currentUser!.profileImage),
+                    image: currentUser!.profileImage.isEmpty
+                        ? NetworkImage(defaultAvatar)
+                        : NetworkImage(currentUser!.profileImage),
                     fit: BoxFit.cover,
                   ),
                 ),
