@@ -13,6 +13,11 @@ import 'package:app/size_config.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import '../../../chat/data/models/get_messages_response_model.dart'
+    hide UserModel;
+import '../../../chat/domain/entities/get_messages_response_entity.dart';
+import '../../../chat/presentation/pages/chat_screen.dart';
+import '../../../chat/presentation/pages/secret_chat_screen.dart';
 import '../../../home/data/models/post_response_model.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
 
@@ -92,6 +97,109 @@ class _ProfileScreenState extends State<ProfileScreen>
       _tabScrollControllers[i]?.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _createChat(
+    List selectedUsers,
+    String name,
+    String image,
+    String handle,
+  ) async {
+    final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
+    final token = await AuthManager.getToken();
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      "participantUserIds": selectedUsers,
+      "type": "DIRECT",
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (jsonDecode(response.body)['isSecret']) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SecretChatScreen(
+                chatId: jsonDecode(response.body)['id'],
+                name: name,
+                imageUrl: image,
+                currentUser: widget.currentUser,
+                chatHandle: handle,
+                isGroup: false,
+                participants: List<Participant>.from(
+                  (jsonDecode(response.body)['participants'] as List)
+                      .map((e) => ParticipantModel.fromJson(e))
+                      .toList(),
+                ),
+                isConversationMuted: jsonDecode(
+                  response.body,
+                )['isConversationMutedForMe'],
+                isConversationBlockedForMe: jsonDecode(
+                  response.body,
+                )['isConversationBlockedForMe'],
+              ),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: jsonDecode(response.body)['id'],
+                name: name,
+                imageUrl: image,
+                currentUser: widget.currentUser,
+                encryptionKey: jsonDecode(response.body)['encryptionKey'],
+                chatHandle: handle,
+                isGroup: false,
+                participants: List<Participant>.from(
+                  (jsonDecode(response.body)['participants'] as List)
+                      .map((e) => ParticipantModel.fromJson(e))
+                      .toList(),
+                ),
+                isConversationMuted: jsonDecode(
+                  response.body,
+                )['isConversationMutedForMe'],
+                isConversationBlockedForMe: jsonDecode(
+                  response.body,
+                )['isConversationBlockedForMe'],
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            jsonDecode(
+              "$e",
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   void _onTabChanged() {
@@ -584,7 +692,14 @@ class _ProfileScreenState extends State<ProfileScreen>
           if (canMessage) ...[
             Spacer(),
             InkWell(
-              onTap: () {},
+              onTap: () {
+                _createChat(
+                  [user!.id, widget.currentUser.id],
+                  user!.fullName,
+                  user!.profileImage,
+                  user!.username,
+                );
+              },
               child: SvgPicture.asset(
                 "assets/icons/mail.svg",
                 height: getProportionateScreenHeight(24),
