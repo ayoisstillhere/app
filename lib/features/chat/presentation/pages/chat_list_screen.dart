@@ -564,6 +564,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             participants: conversation.participants,
             isConversationMuted: conversation.isConversationMutedForMe,
             isSecretChat: conversation.isSecret,
+            isConversationBlockedForMe: conversation.isConversationBlockedForMe,
           );
   }
 

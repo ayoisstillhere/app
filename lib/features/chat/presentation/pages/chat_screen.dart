@@ -58,6 +58,7 @@ class ChatScreen extends StatefulWidget {
     required this.isGroup,
     required this.participants,
     required this.isConversationMuted,
+    required this.isConversationBlockedForMe,
   });
   final String chatId;
   final String name;
@@ -68,6 +69,7 @@ class ChatScreen extends StatefulWidget {
   final bool isGroup;
   final List<Participant> participants;
   final bool isConversationMuted;
+  final bool isConversationBlockedForMe;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -171,6 +173,9 @@ class _ChatScreenState extends State<ChatScreen> {
               isConversationMuted: jsonDecode(
                 response.body,
               )['isConversationMutedForMe'],
+              isConversationBlockedForMe: jsonDecode(
+                response.body,
+              )['isConversationBlockedForMe'],
             ),
           ),
         );
@@ -750,6 +755,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         isGroup: widget.isGroup,
                         participants: widget.participants,
                         isConversationMuted: widget.isConversationMuted,
+                        isConversationBlockedForMe:
+                            widget.isConversationBlockedForMe,
                       ),
                     ),
                   );

@@ -170,6 +170,9 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
                 isConversationMuted: jsonDecode(
                   response.body,
                 )['isConversationMutedForMe'],
+                isConversationBlockedForMe: jsonDecode(
+                  response.body,
+                )['isConversationBlockedForMe'],
               ),
             ),
           );
@@ -193,6 +196,9 @@ class _ChatSuggestionTileState extends State<ChatSuggestionTile> {
                 isConversationMuted: jsonDecode(
                   response.body,
                 )['isConversationMutedForMe'],
+                isConversationBlockedForMe: jsonDecode(
+                  response.body,
+                )['isConversationBlockedForMe'],
               ),
             ),
           );

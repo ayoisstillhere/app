@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:app/components/nav_page.dart';
-import 'package:app/features/chat/data/models/get_media_response_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:app/components/nav_page.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/data/models/get_media_response_model.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 
 import '../../../../constants.dart';
@@ -28,6 +28,7 @@ class ChatDetailsScreen extends StatefulWidget {
     required this.isGroup,
     required this.participants,
     required this.isConversationMuted,
+    required this.isConversationBlockedForMe,
   });
   final String chatId;
   final String chatName;
@@ -37,6 +38,7 @@ class ChatDetailsScreen extends StatefulWidget {
   final bool isGroup;
   final List<Participant> participants;
   final bool isConversationMuted;
+  final bool isConversationBlockedForMe;
 
   @override
   State<ChatDetailsScreen> createState() => _ChatDetailsScreenState();
@@ -519,6 +521,39 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     );
   }
 
+  void _onBlock() async {
+    final token = await AuthManager.getToken();
+    final userId = widget.participants
+        .firstWhere(
+          (participant) => participant.userId != widget.currentUser.id,
+        )
+        .userId;
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/user/block/$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const NavPage()),
+      );
+    }
+  }
+
+  void _onUnblock() async {
+    final token = await AuthManager.getToken();
+    final userId = widget.participants
+        .firstWhere(
+          (participant) => participant.userId != widget.currentUser.id,
+        )
+        .userId;
+    await http.delete(
+      Uri.parse('$baseUrl/api/v1/user/block/$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
   void _onDelete() async {
     final token = await AuthManager.getToken();
     await http.put(
@@ -753,119 +788,53 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
 
                                 InkWell(
                                   onTap: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                            "Block User",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  getProportionateScreenHeight(
-                                                    18,
-                                                  ),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          content: Text(
-                                            "Are you sure you want to Block Ayodele?",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  getProportionateScreenHeight(
-                                                    16,
-                                                  ),
-                                              fontWeight: FontWeight.normal,
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      getProportionateScreenHeight(
-                                                        16,
-                                                      ),
-                                                  fontWeight: FontWeight.normal,
-                                                  color: kAccentColor,
-                                                ),
-                                              ),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                "Block",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      getProportionateScreenHeight(
-                                                        16,
-                                                      ),
-                                                  fontWeight: FontWeight.normal,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
+                                    widget.isConversationMuted
+                                        ? _onUnmute()
+                                        : _onMute();
                                   },
-                                  child: InkWell(
-                                    onTap: () {
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SvgPicture.asset(
+                                        "assets/icons/group_mute.svg",
+                                        colorFilter: ColorFilter.mode(
+                                          iconColor,
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: getProportionateScreenWidth(
+                                          18.38,
+                                        ),
+                                        height: getProportionateScreenHeight(
+                                          18.38,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: getProportionateScreenHeight(
+                                          4.6,
+                                        ),
+                                      ),
                                       widget.isConversationMuted
-                                          ? _onUnmute()
-                                          : _onMute();
-                                    },
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        SvgPicture.asset(
-                                          "assets/icons/group_mute.svg",
-                                          colorFilter: ColorFilter.mode(
-                                            iconColor,
-                                            BlendMode.srcIn,
-                                          ),
-                                          width: getProportionateScreenWidth(
-                                            18.38,
-                                          ),
-                                          height: getProportionateScreenHeight(
-                                            18.38,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: getProportionateScreenHeight(
-                                            4.6,
-                                          ),
-                                        ),
-                                        widget.isConversationMuted
-                                            ? Text(
-                                                "Unmute",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      getProportionateScreenHeight(
-                                                        11.49,
-                                                      ),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              )
-                                            : Text(
-                                                "Mute",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      getProportionateScreenHeight(
-                                                        11.49,
-                                                      ),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                          ? Text(
+                                              "Unmute",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      11.49,
+                                                    ),
+                                                fontWeight: FontWeight.w500,
                                               ),
-                                      ],
-                                    ),
+                                            )
+                                          : Text(
+                                              "Mute",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      11.49,
+                                                    ),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                    ],
                                   ),
                                 ),
                                 InkWell(
@@ -1008,104 +977,198 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                   ),
                                 ),
 
-                                InkWell(
-                                  onTap: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                            "Block User",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  getProportionateScreenHeight(
-                                                    18,
+                                widget.isConversationBlockedForMe
+                                    ? InkWell(
+                                        onTap: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: Text(
+                                                  "Unblock User",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        getProportionateScreenHeight(
+                                                          18,
+                                                        ),
+                                                    fontWeight: FontWeight.w500,
                                                   ),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          content: Text(
-                                            "Are you sure you want to Block Ayodele?",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  getProportionateScreenHeight(
-                                                    16,
-                                                  ),
-                                              fontWeight: FontWeight.normal,
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      getProportionateScreenHeight(
-                                                        16,
-                                                      ),
-                                                  fontWeight: FontWeight.normal,
-                                                  color: kAccentColor,
                                                 ),
+                                                content: Text(
+                                                  "Are you sure you want to Unblock ${widget.chatHandle}?",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        getProportionateScreenHeight(
+                                                          16,
+                                                        ),
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: const Text("Cancel"),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      _onUnblock();
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: const Text(
+                                                      "Unblock",
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SvgPicture.asset(
+                                              "assets/icons/chat_details_block.svg",
+                                              colorFilter: ColorFilter.mode(
+                                                iconColor,
+                                                BlendMode.srcIn,
                                               ),
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    18.38,
+                                                  ),
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    18.38,
+                                                  ),
                                             ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                "Block",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      getProportionateScreenHeight(
-                                                        16,
-                                                      ),
-                                                  fontWeight: FontWeight.normal,
-                                                  color: Colors.red,
-                                                ),
+                                            SizedBox(
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    4.6,
+                                                  ),
+                                            ),
+                                            Text(
+                                              "Unblock",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      11.49,
+                                                    ),
+                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                           ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        "assets/icons/chat_block.svg",
-                                        colorFilter: ColorFilter.mode(
-                                          iconColor,
-                                          BlendMode.srcIn,
                                         ),
-                                        width: getProportionateScreenWidth(
-                                          18.38,
-                                        ),
-                                        height: getProportionateScreenHeight(
-                                          18.38,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: getProportionateScreenHeight(
-                                          4.6,
-                                        ),
-                                      ),
-                                      Text(
-                                        "Block",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(
-                                                11.49,
+                                      )
+                                    : InkWell(
+                                        onTap: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: Text(
+                                                  "Block User",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        getProportionateScreenHeight(
+                                                          18,
+                                                        ),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                content: Text(
+                                                  "Are you sure you want to Block ${widget.chatHandle}?",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        getProportionateScreenHeight(
+                                                          16,
+                                                        ),
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(
+                                                      "Cancel",
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            getProportionateScreenHeight(
+                                                              16,
+                                                            ),
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                        color: kAccentColor,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      _onBlock();
+                                                    },
+                                                    child: Text(
+                                                      "Block",
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            getProportionateScreenHeight(
+                                                              16,
+                                                            ),
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SvgPicture.asset(
+                                              "assets/icons/chat_block.svg",
+                                              colorFilter: ColorFilter.mode(
+                                                iconColor,
+                                                BlendMode.srcIn,
                                               ),
-                                          fontWeight: FontWeight.w500,
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    18.38,
+                                                  ),
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    18.38,
+                                                  ),
+                                            ),
+                                            SizedBox(
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    4.6,
+                                                  ),
+                                            ),
+                                            Text(
+                                              "Block",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      11.49,
+                                                    ),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
                                 InkWell(
                                   onTap: () {},
                                   child: Column(

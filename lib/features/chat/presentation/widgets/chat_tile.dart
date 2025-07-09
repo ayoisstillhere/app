@@ -26,6 +26,7 @@ class ChatTile extends StatelessWidget {
     required this.participants,
     required this.isConversationMuted,
     required this.isSecretChat,
+    required this.isConversationBlockedForMe,
   });
 
   final Color dividerColor;
@@ -42,6 +43,7 @@ class ChatTile extends StatelessWidget {
   final List<Participant> participants;
   final bool isConversationMuted;
   final bool isSecretChat;
+  final bool isConversationBlockedForMe;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +62,7 @@ class ChatTile extends StatelessWidget {
                 chatHandle: chatHandle,
                 participants: participants,
                 isConversationMuted: isConversationMuted,
+                isConversationBlockedForMe: isConversationBlockedForMe,
               ),
             ),
           );
@@ -77,6 +80,7 @@ class ChatTile extends StatelessWidget {
                 chatHandle: chatHandle,
                 participants: participants,
                 isConversationMuted: isConversationMuted,
+                isConversationBlockedForMe: isConversationBlockedForMe,
               ),
             ),
           );

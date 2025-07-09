@@ -19,6 +19,7 @@ class Conversation {
   final bool isConversationMutedForMe;
   final bool isConversationArchivedForMe;
   final bool isConversationRequestForMe;
+  final bool isConversationBlockedForMe;
   final Message? lastMessage;
   final int unreadCount;
 
@@ -38,6 +39,7 @@ class Conversation {
     required this.isConversationRequestForMe,
     required this.lastMessage,
     required this.unreadCount,
+    required this.isConversationBlockedForMe,
   });
 }
 

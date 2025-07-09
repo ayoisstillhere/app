@@ -40,6 +40,7 @@ class ConversationModel extends Conversation {
     required super.isConversationRequestForMe,
     required MessageModel? lastMessage,
     required super.unreadCount,
+    required super.isConversationBlockedForMe,
   }) : super(
          participants: participants,
          messages: messages,
@@ -69,6 +70,7 @@ class ConversationModel extends Conversation {
           ? MessageModel.fromJson(json['lastMessage'])
           : null,
       unreadCount: json['unreadCount'],
+      isConversationBlockedForMe: json['isConversationBlockedForMe'],
     );
   }
 
@@ -92,6 +94,7 @@ class ConversationModel extends Conversation {
         ? (lastMessage as MessageModel).toJson()
         : null,
     'unreadCount': unreadCount,
+    'isConversationBlockedForMe': isConversationBlockedForMe,
   };
 }
 

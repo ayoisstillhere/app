@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:app/components/default_button.dart';
-import 'package:app/services/secret_chat_encryption_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,11 +13,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:app/components/default_button.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 import 'package:app/services/file_encryptor.dart';
+import 'package:app/services/secret_chat_encryption_service.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
@@ -53,6 +53,7 @@ class SecretChatScreen extends StatefulWidget {
     required this.isGroup,
     required this.participants,
     required this.isConversationMuted,
+    required this.isConversationBlockedForMe,
   });
   final String chatId;
   final String name;
@@ -62,6 +63,7 @@ class SecretChatScreen extends StatefulWidget {
   final bool isGroup;
   final List<Participant> participants;
   final bool isConversationMuted;
+  final bool isConversationBlockedForMe;
 
   @override
   State<SecretChatScreen> createState() => _SecretChatScreenState();
@@ -623,6 +625,8 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                         isGroup: widget.isGroup,
                         participants: widget.participants,
                         isConversationMuted: widget.isConversationMuted,
+                        isConversationBlockedForMe:
+                            widget.isConversationBlockedForMe,
                       ),
                     ),
                   );
