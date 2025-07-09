@@ -63,28 +63,28 @@ class FollowSuggestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: getProportionateScreenHeight(26)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfileScreen(
-                        isVerified: true,
-                        userName: handle,
-                        currentUser: currentUser,
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfileScreen(
+              isVerified: true,
+              userName: handle,
+              currentUser: currentUser,
+            ),
+          ),
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.only(bottom: getProportionateScreenHeight(26)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
                   height: getProportionateScreenHeight(25),
                   width: getProportionateScreenWidth(25),
                   decoration: BoxDecoration(
@@ -99,67 +99,67 @@ class FollowSuggestion extends StatelessWidget {
                           ),
                   ),
                 ),
-              ),
-              SizedBox(width: getProportionateScreenWidth(10)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      fontSize: getProportionateScreenHeight(13),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '@$handle',
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      fontSize: getProportionateScreenHeight(13),
-                      color: kGreyHandleText,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: getProportionateScreenWidth(7)),
-              Text(
-                '${NumberFormat.compact().format(followerCount)} Followers',
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  fontSize: getProportionateScreenHeight(13),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Spacer(),
-              InkWell(
-                onTap: () {},
-                child: Container(
-                  height: getProportionateScreenHeight(37),
-                  width: getProportionateScreenWidth(90),
-                  decoration: BoxDecoration(
-                    color: kAccentColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Follow",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: kBlack,
+                SizedBox(width: getProportionateScreenWidth(10)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.isEmpty ? "User" : name,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        fontSize: getProportionateScreenHeight(13),
                         fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '@$handle',
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        fontSize: getProportionateScreenHeight(13),
+                        color: kGreyHandleText,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: getProportionateScreenWidth(7)),
+                Text(
+                  '${NumberFormat.compact().format(followerCount)} Followers',
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    fontSize: getProportionateScreenHeight(13),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Spacer(),
+                InkWell(
+                  onTap: () {},
+                  child: Container(
+                    height: getProportionateScreenHeight(37),
+                    width: getProportionateScreenWidth(90),
+                    decoration: BoxDecoration(
+                      color: kAccentColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Follow",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: kBlack,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: getProportionateScreenHeight(7)),
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: getProportionateScreenWidth(35),
+              ],
             ),
-            child: Text(bio),
-          ),
-        ],
+            SizedBox(height: getProportionateScreenHeight(7)),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: getProportionateScreenWidth(35),
+              ),
+              child: Text(bio),
+            ),
+          ],
+        ),
       ),
     );
   }
