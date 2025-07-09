@@ -77,6 +77,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
   final ScrollController _filesScrollController = ScrollController();
   final ScrollController _voiceScrollController = ScrollController();
 
+  bool isMuted = false;
   @override
   void initState() {
     super.initState();
@@ -89,6 +90,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     _fetchMedia();
     _fetchFiles();
     _fetchVoice();
+    if (mounted) {
+      setState(() {
+        isMuted = widget.isConversationMuted;
+      });
+    }
   }
 
   void _setupScrollListeners() {
@@ -470,6 +476,9 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
       Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/mute'),
       headers: {'Authorization': 'Bearer $token'},
     );
+    setState(() {
+      isMuted = true;
+    });
   }
 
   void _onUnmute() async {
@@ -478,6 +487,9 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
       Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}/unmute'),
       headers: {'Authorization': 'Bearer $token'},
     );
+    setState(() {
+      isMuted = false;
+    });
   }
 
   void _onAddParticipants(String userId) async {
@@ -788,7 +800,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
 
                                 InkWell(
                                   onTap: () {
-                                    widget.isConversationMuted
+                                    isMuted
                                         ? _onUnmute()
                                         : _onMute();
                                   },
@@ -813,7 +825,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                           4.6,
                                         ),
                                       ),
-                                      widget.isConversationMuted
+                                      isMuted
                                           ? Text(
                                               "Unmute",
                                               style: TextStyle(
@@ -927,9 +939,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                 ),
                                 InkWell(
                                   onTap: () {
-                                    widget.isConversationMuted
-                                        ? _onUnmute()
-                                        : _onMute();
+                                    isMuted ? _onUnmute() : _onMute();
                                   },
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -952,7 +962,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                           4.6,
                                         ),
                                       ),
-                                      widget.isConversationMuted
+                                      isMuted
                                           ? Text(
                                               "Unmute",
                                               style: TextStyle(
