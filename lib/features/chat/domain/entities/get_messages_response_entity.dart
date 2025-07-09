@@ -118,8 +118,8 @@ class Participant {
 
 class User {
   final String username;
-  final String profileImage;
-  final String fullName;
+  final String? profileImage;
+  final String? fullName;
   final String? publicKey;
 
   User({
