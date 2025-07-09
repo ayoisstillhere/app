@@ -57,12 +57,17 @@ class NotificationTile extends StatelessWidget {
           ),
         ),
         SizedBox(width: getProportionateScreenWidth(2)),
-        Text(
-          action,
-          style: TextStyle(
-            fontWeight: FontWeight.normal,
-            fontSize: getProportionateScreenWidth(13),
-            color: kGreyHandleText,
+        SizedBox(
+          width: getProportionateScreenWidth(130),
+          child: Text(
+            action,
+            style: TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: getProportionateScreenWidth(13),
+              color: kGreyHandleText,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         SizedBox(width: getProportionateScreenWidth(6)),

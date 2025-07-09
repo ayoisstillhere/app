@@ -66,6 +66,7 @@ class AuthManager {
       // Always clear tokens locally
       await clearToken();
       await clearRefreshToken();
+      await clearSecretKeys();
     }
   }
 
@@ -87,6 +88,10 @@ class AuthManager {
   static Future<void> clearRefreshToken() async {
     _cachedRefreshToken = null;
     await _secureStorage.delete(key: _refreshTokenKey);
+  }
+
+  static Future<void> clearSecretKeys() async {
+    await _secureStorage.delete(key: 'private_key');
   }
 
   // Refresh token method
