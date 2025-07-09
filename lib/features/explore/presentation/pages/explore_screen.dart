@@ -41,6 +41,19 @@ class _ExploreScreenState extends State<ExploreScreen>
   List<String> recentSearches = [];
   bool _isResultsLoaded = false;
 
+  // Pagination variables
+  bool _isLoadingMore = false;
+  bool _hasMoreResults = true;
+  int _currentPage = 1;
+  final int _pageSize = 20; // Adjust based on your API
+  String _currentQuery = '';
+
+  // ScrollControllers for each tab
+  late ScrollController _topScrollController;
+  late ScrollController _recentScrollController;
+  late ScrollController _mediaScrollController;
+  late ScrollController _peopleScrollController;
+
   // Load recent searches from SharedPreferences when the screen initializes
   Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
@@ -67,6 +80,22 @@ class _ExploreScreenState extends State<ExploreScreen>
     widget.onExploreButtonPressed = resetExplore;
     _loadRecentSearches();
     _getExploreContent();
+
+    // Initialize scroll controllers
+    _topScrollController = ScrollController();
+    _recentScrollController = ScrollController();
+    _mediaScrollController = ScrollController();
+    _peopleScrollController = ScrollController();
+
+    // Add scroll listeners for pagination
+    _topScrollController.addListener(() => _onScroll(_topScrollController));
+    _recentScrollController.addListener(
+      () => _onScroll(_recentScrollController),
+    );
+    _mediaScrollController.addListener(() => _onScroll(_mediaScrollController));
+    _peopleScrollController.addListener(
+      () => _onScroll(_peopleScrollController),
+    );
   }
 
   @override
@@ -74,7 +103,18 @@ class _ExploreScreenState extends State<ExploreScreen>
     _searchController.dispose();
     _searchFocusNode.dispose();
     controller.dispose();
+    _topScrollController.dispose();
+    _recentScrollController.dispose();
+    _mediaScrollController.dispose();
+    _peopleScrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll(ScrollController scrollController) {
+    if (scrollController.position.pixels ==
+        scrollController.position.maxScrollExtent) {
+      _loadMoreResults();
+    }
   }
 
   void _onSearchFocusChange() {
@@ -91,8 +131,18 @@ class _ExploreScreenState extends State<ExploreScreen>
       setState(() {
         _isSearchFocused = false;
         _isSearchQueried = false;
+        _resetPaginationState();
       });
     }
+  }
+
+  void _resetPaginationState() {
+    _currentPage = 1;
+    _hasMoreResults = true;
+    _isLoadingMore = false;
+    _currentQuery = '';
+    searchResponse = null;
+    _isResultsLoaded = false;
   }
 
   void _cancelSearch() {
@@ -101,6 +151,7 @@ class _ExploreScreenState extends State<ExploreScreen>
     setState(() {
       _isSearchFocused = false;
       _isSearchQueried = false;
+      _resetPaginationState();
     });
   }
 
@@ -117,6 +168,10 @@ class _ExploreScreenState extends State<ExploreScreen>
         });
         _saveRecentSearches();
       }
+
+      // Reset pagination state for new search
+      _resetPaginationState();
+      _currentQuery = query;
       _getSearchResults(query);
     }
   }
@@ -171,24 +226,118 @@ class _ExploreScreenState extends State<ExploreScreen>
     }
   }
 
-  Future<void> _getSearchResults(String query) async {
-    setState(() {
-      _isSearchQueried = true;
-    });
+  Future<void> _getSearchResults(
+    String query, {
+    bool isLoadMore = false,
+  }) async {
+    if (_isLoadingMore || (!_hasMoreResults && isLoadMore)) return;
+
+    if (isLoadMore) {
+      setState(() {
+        _isLoadingMore = true;
+      });
+    } else {
+      setState(() {
+        _isSearchQueried = true;
+        _currentPage = 1;
+      });
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/search?query=$query"),
+      Uri.parse(
+        "$baseUrl/api/v1/search?query=$query&page=$_currentPage&limit=$_pageSize",
+      ),
       headers: {"Authorization": "Bearer $token"},
     );
 
     if (!mounted) return;
 
     if (response.statusCode == 200) {
-      searchResponse = SearchResponseModel.fromJson(jsonDecode(response.body));
+      final newSearchResponse = SearchResponseModel.fromJson(
+        jsonDecode(response.body),
+      );
+
       setState(() {
+        if (isLoadMore && searchResponse != null) {
+          // Append new results to existing ones
+          searchResponse = SearchResponseEntity(
+            top: [...searchResponse!.top, ...newSearchResponse.top],
+            recent: Media(
+              posts: [
+                ...searchResponse!.recent.posts,
+                ...newSearchResponse.recent.posts,
+              ],
+              pagination: Pagination(
+                page: searchResponse!.recent.pagination.page,
+                limit: searchResponse!.recent.pagination.limit,
+                hasMore: searchResponse!.recent.pagination.hasMore,
+              ),
+            ),
+            media: Media(
+              posts: [
+                ...searchResponse!.media.posts,
+                ...newSearchResponse.media.posts,
+              ],
+              pagination: Pagination(
+                page: searchResponse!.media.pagination.page,
+                limit: searchResponse!.media.pagination.limit,
+                hasMore: searchResponse!.media.pagination.hasMore,
+              ),
+            ),
+            people: People(
+              users: [
+                ...searchResponse!.people.users,
+                ...newSearchResponse.people.users,
+              ],
+              pagination: Pagination(
+                page: searchResponse!.people.pagination.page,
+                limit: searchResponse!.people.pagination.limit,
+                hasMore: searchResponse!.people.pagination.hasMore,
+              ),
+            ),
+            everything: Everything(
+              users: [
+                ...searchResponse!.everything.users,
+                ...newSearchResponse.everything.users,
+              ],
+              posts: [
+                ...searchResponse!.everything.posts,
+                ...newSearchResponse.everything.posts,
+              ],
+              keywords: [
+                ...searchResponse!.everything.keywords,
+                ...newSearchResponse.everything.keywords,
+              ],
+              pagination: Pagination(
+                page: searchResponse!.everything.pagination.page,
+                limit: searchResponse!.everything.pagination.limit,
+                hasMore: searchResponse!.everything.pagination.hasMore,
+              ),
+            ),
+          );
+        } else {
+          // First load or new search
+          searchResponse = newSearchResponse;
+        }
+
         _isResultsLoaded = true;
+        _isLoadingMore = false;
+        _currentPage++;
+
+        // Check if there are more results (adjust this logic based on your API response)
+        // This assumes your API returns fewer items than requested when there are no more results
+        _hasMoreResults =
+            newSearchResponse.top.length == _pageSize ||
+            newSearchResponse.recent.posts.length == _pageSize ||
+            newSearchResponse.media.posts.length == _pageSize ||
+            newSearchResponse.people.users.length == _pageSize;
       });
     } else {
+      setState(() {
+        _isLoadingMore = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
@@ -200,6 +349,12 @@ class _ExploreScreenState extends State<ExploreScreen>
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _loadMoreResults() async {
+    if (_currentQuery.isNotEmpty && !_isLoadingMore && _hasMoreResults) {
+      await _getSearchResults(_currentQuery, isLoadMore: true);
     }
   }
 
@@ -495,16 +650,18 @@ class _ExploreScreenState extends State<ExploreScreen>
         ? kGreyInputFillDark
         : kGreyInputBorder;
     List<SuggestedAccount> suggestedAccounts = [];
-    for (var user in searchResponse!.people.users) {
-      suggestedAccounts.add(
-        SuggestedAccount(
-          user.username,
-          user.fullName,
-          user.bio,
-          user.profileImage,
-          user.followersCount,
-        ),
-      );
+    if (searchResponse != null) {
+      for (var user in searchResponse!.people.users) {
+        suggestedAccounts.add(
+          SuggestedAccount(
+            user.username,
+            user.fullName,
+            user.bio,
+            user.profileImage,
+            user.followersCount,
+          ),
+        );
+      }
     }
 
     return Column(
@@ -594,107 +751,169 @@ class _ExploreScreenState extends State<ExploreScreen>
               ? TabBarView(
                   controller: controller,
                   children: [
-                    ListView.builder(
-                      itemCount: searchResponse!.top.length,
-                      itemBuilder: (context, index) {
-                        var item = searchResponse!.top[index];
-                        return GestureDetector(
-                          onTap: () {},
-                          child: item.type == "post"
-                              ? PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorName: item.data.fullName!,
-                                  authorHandle: item.data.authorUsername!,
-                                  imageUrl: item.data.profileImage!,
-                                  postTime: item.data.createdAt!,
-                                  likes: item.data.likesCount!,
-                                  comments: item.data.commentsCount!,
-                                  reposts: item.data.repostsCount!,
-                                  bookmarks: item.data.savesCount!,
-                                  content: item.data.content!,
-                                  pictures: item.data.media!,
-                                  currentUser: widget.currentUser,
-                                  postId: item.data.id!,
-                                  isLiked: item.data.isLiked!,
-                                  isReposted: item.data.isReposted!,
-                                  isSaved: item.data.isSaved!,
-                                )
-                              : Container(),
-                        );
-                      },
-                    ),
-                    ListView.builder(
-                      itemCount: searchResponse!.recent.posts.length,
-                      itemBuilder: (context, index) {
-                        final item = searchResponse!.recent.posts[index];
-
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: item.fullName,
-                            authorHandle: item.authorUsername,
-                            imageUrl: item.profileImage,
-                            postTime: item.createdAt,
-                            likes: item.likesCount,
-                            comments: item.commentsCount,
-                            reposts: item.repostsCount,
-                            bookmarks: item.savesCount,
-                            content: item.content,
-                            pictures: item.media,
-                            currentUser: widget.currentUser,
-                            postId: item.id,
-                            isLiked: item.isLiked,
-                            isReposted: item.isReposted,
-                            isSaved: item.isSaved,
-                          ),
-                        );
-                      },
-                    ),
-                    ListView.builder(
-                      itemCount: searchResponse!.media.posts.length,
-                      itemBuilder: (context, index) {
-                        final item = searchResponse!.media.posts[index];
-
-                        return GestureDetector(
-                          onTap: () {},
-                          child: PostCard(
-                            dividerColor: dividerColor,
-                            iconColor: iconColor,
-                            authorName: item.fullName,
-                            authorHandle: item.authorUsername,
-                            imageUrl: item.profileImage,
-                            postTime: item.createdAt,
-                            likes: item.likesCount,
-                            comments: item.commentsCount,
-                            reposts: item.repostsCount,
-                            bookmarks: item.savesCount,
-                            content: item.content,
-                            pictures: item.media,
-                            currentUser: widget.currentUser,
-                            postId: item.id,
-                            isLiked: item.isLiked,
-                            isReposted: item.isReposted,
-                            isSaved: item.isSaved,
-                          ),
-                        );
-                      },
-                    ),
-                    Column(
-                      children: [
-                        SizedBox(height: getProportionateScreenHeight(20)),
-                        FollowSuggestionsList(
-                          suggestedAccounts: suggestedAccounts,
-                        ),
-                      ],
-                    ),
+                    _buildTopTabView(dividerColor, iconColor),
+                    _buildRecentTabView(dividerColor, iconColor),
+                    _buildMediaTabView(dividerColor, iconColor),
+                    _buildPeopleTabView(),
                   ],
                 )
               : const Center(child: CircularProgressIndicator()),
         ),
       ],
+    );
+  }
+
+  Widget _buildTopTabView(Color dividerColor, Color iconColor) {
+    return ListView.builder(
+      controller: _topScrollController,
+      itemCount: searchResponse!.top.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == searchResponse!.top.length) {
+          return _buildLoadingIndicator();
+        }
+
+        var item = searchResponse!.top[index];
+        return GestureDetector(
+          onTap: () {},
+          child: item.type == "post"
+              ? PostCard(
+                  dividerColor: dividerColor,
+                  iconColor: iconColor,
+                  authorName: item.data.fullName!,
+                  authorHandle: item.data.authorUsername!,
+                  imageUrl: item.data.profileImage!,
+                  postTime: item.data.createdAt!,
+                  likes: item.data.likesCount!,
+                  comments: item.data.commentsCount!,
+                  reposts: item.data.repostsCount!,
+                  bookmarks: item.data.savesCount!,
+                  content: item.data.content!,
+                  pictures: item.data.media!,
+                  currentUser: widget.currentUser,
+                  postId: item.data.id!,
+                  isLiked: item.data.isLiked!,
+                  isReposted: item.data.isReposted!,
+                  isSaved: item.data.isSaved!,
+                )
+              : Container(),
+        );
+      },
+    );
+  }
+
+  Widget _buildRecentTabView(Color dividerColor, Color iconColor) {
+    return ListView.builder(
+      controller: _recentScrollController,
+      itemCount: searchResponse!.recent.posts.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == searchResponse!.recent.posts.length) {
+          return _buildLoadingIndicator();
+        }
+
+        final item = searchResponse!.recent.posts[index];
+        return GestureDetector(
+          onTap: () {},
+          child: PostCard(
+            dividerColor: dividerColor,
+            iconColor: iconColor,
+            authorName: item.fullName,
+            authorHandle: item.authorUsername,
+            imageUrl: item.profileImage,
+            postTime: item.createdAt,
+            likes: item.likesCount,
+            comments: item.commentsCount,
+            reposts: item.repostsCount,
+            bookmarks: item.savesCount,
+            content: item.content,
+            pictures: item.media,
+            currentUser: widget.currentUser,
+            postId: item.id,
+            isLiked: item.isLiked,
+            isReposted: item.isReposted,
+            isSaved: item.isSaved,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMediaTabView(Color dividerColor, Color iconColor) {
+    return ListView.builder(
+      controller: _mediaScrollController,
+      itemCount: searchResponse!.media.posts.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == searchResponse!.media.posts.length) {
+          return _buildLoadingIndicator();
+        }
+
+        final item = searchResponse!.media.posts[index];
+        return GestureDetector(
+          onTap: () {},
+          child: PostCard(
+            dividerColor: dividerColor,
+            iconColor: iconColor,
+            authorName: item.fullName,
+            authorHandle: item.authorUsername,
+            imageUrl: item.profileImage,
+            postTime: item.createdAt,
+            likes: item.likesCount,
+            comments: item.commentsCount,
+            reposts: item.repostsCount,
+            bookmarks: item.savesCount,
+            content: item.content,
+            pictures: item.media,
+            currentUser: widget.currentUser,
+            postId: item.id,
+            isLiked: item.isLiked,
+            isReposted: item.isReposted,
+            isSaved: item.isSaved,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPeopleTabView() {
+    List<SuggestedAccount> suggestedAccounts = [];
+    for (var user in searchResponse!.people.users) {
+      suggestedAccounts.add(
+        SuggestedAccount(
+          user.username,
+          user.fullName,
+          user.bio,
+          user.profileImage,
+          user.followersCount,
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: _peopleScrollController,
+      itemCount: 1 + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == 1) {
+          return _buildLoadingIndicator();
+        }
+
+        return Column(
+          children: [
+            SizedBox(height: getProportionateScreenHeight(20)),
+            FollowSuggestionsList(suggestedAccounts: suggestedAccounts),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Container(
+      padding: EdgeInsets.all(getProportionateScreenWidth(16)),
+      child: Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(kLightPurple),
+        ),
+      ),
     );
   }
 
