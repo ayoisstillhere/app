@@ -173,7 +173,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const VerificationSuccessfulScreen(),
+                                VerificationSuccessfulScreen(),
                           ),
                         );
                       } else {

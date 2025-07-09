@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:app/constants.dart';
+import 'package:app/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
@@ -137,13 +138,24 @@ class _SignInScreenState extends State<SignInScreen> {
                                   .copyWith(fontWeight: FontWeight.bold),
                             ),
                             Spacer(),
-                            Text(
-                              "Forgot Password",
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    color: kLightPurple,
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ForgotPasswordScreen(),
                                   ),
+                                );
+                              },
+                              child: Text(
+                                "Forgot Password",
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: kLightPurple,
+                                    ),
+                              ),
                             ),
                           ],
                         ),
@@ -160,7 +172,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                   'emailOrUsername': _emailController.text
                                       .trim(),
                                   'password': _passwordController.text.trim(),
-                                  "deviceId": await _secureStorage.read(key: "fcm_token"),
+                                  "deviceId": await _secureStorage.read(
+                                    key: "fcm_token",
+                                  ),
                                 }),
                               );
                               if (response.statusCode == 200) {

@@ -1,12 +1,15 @@
-import 'package:app/features/auth/presentation/pages/select_username_screen.dart';
+import 'package:app/features/auth/presentation/pages/sign_in_screen.dart';
 import 'package:flutter/material.dart';
+
+import 'package:app/features/auth/presentation/pages/select_username_screen.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../size_config.dart';
 import '../widgets/form_header.dart';
 
 class VerificationSuccessfulScreen extends StatelessWidget {
-  const VerificationSuccessfulScreen({super.key});
+  VerificationSuccessfulScreen({super.key, this.isChange = false});
+  bool? isChange;
 
   @override
   Widget build(BuildContext context) {
@@ -52,12 +55,21 @@ class VerificationSuccessfulScreen extends StatelessWidget {
                 DefaultButton(
                   text: "Verify",
                   press: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SelectUsernameScreen(),
-                      ),
-                    );
+                    if (isChange!) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SignInScreen(),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SelectUsernameScreen(),
+                        ),
+                      );
+                    }
                   },
                 ),
               ],
