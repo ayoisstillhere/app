@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../services/auth_manager.dart';
 import '../../../auth/domain/entities/user_entity.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
 import '../widgets/post_Card.dart';
 
 // ignore: must_be_immutable
@@ -382,18 +383,32 @@ class _HomeScreenState extends State<HomeScreen>
         child: AppBar(
           leading: Padding(
             padding: EdgeInsets.only(left: getProportionateScreenWidth(16)),
-            child: Container(
-              height: getProportionateScreenHeight(34),
-              width: getProportionateScreenWidth(34),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: NetworkImage(
-                    widget.currentUser.profileImage.isEmpty
-                        ? defaultAvatar
-                        : widget.currentUser.profileImage,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileScreen(
+                      currentUser: widget.currentUser,
+                      isVerified: true,
+                      userName: widget.currentUser.username,
+                    ),
                   ),
-                  fit: BoxFit.cover,
+                );
+              },
+              child: Container(
+                height: getProportionateScreenHeight(34),
+                width: getProportionateScreenWidth(34),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: NetworkImage(
+                      widget.currentUser.profileImage.isEmpty
+                          ? defaultAvatar
+                          : widget.currentUser.profileImage,
+                    ),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
