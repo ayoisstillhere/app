@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:app/components/social_text.dart';
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
-import 'package:app/features/home/domain/entities/post_response_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:app/size_config.dart';
 
@@ -40,24 +39,47 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool canMessage = false;
 
   UserEntity? user;
-  PostResponseEntity? posts;
-  PostResponseEntity? reposts;
-  PostResponseEntity? comments;
-  PostResponseEntity? savedPosts;
-  PostResponseEntity? likedPosts;
-  PostResponseEntity? mediaPosts;
 
-  bool isPostsLoaded = false;
-  bool isRepostsLoaded = false;
-  bool isCommentsLoaded = false;
-  bool isSavedPostsLoaded = false;
-  bool isLikedPostsLoaded = false;
+  // Pagination data structures
+  final Map<int, List<dynamic>> _tabPosts = {};
+  final Map<int, bool> _tabHasMore = {};
+  final Map<int, bool> _tabIsLoading = {};
+  final Map<int, bool> _tabIsInitialLoading = {};
+  final Map<int, int> _tabCurrentPage = {};
+  final Map<int, ScrollController> _tabScrollControllers = {};
+
+  // Tab endpoints
+  final List<String> _tabEndpoints = [
+    'posts',
+    'reposts',
+    'posts', // Media tab uses posts endpoint but filters for media
+    'comments',
+    'saves',
+    'likes',
+  ];
+
   bool isUserLoaded = false;
 
   @override
   void initState() {
     super.initState();
     controller = TabController(length: 6, vsync: this);
+
+    // Initialize pagination data for each tab
+    for (int i = 0; i < 6; i++) {
+      _tabPosts[i] = [];
+      _tabHasMore[i] = true;
+      _tabIsLoading[i] = false;
+      _tabIsInitialLoading[i] = true;
+      _tabCurrentPage[i] = 1;
+      _tabScrollControllers[i] = ScrollController();
+
+      // Add scroll listener for pagination
+      _tabScrollControllers[i]!.addListener(() => _onScroll(i));
+    }
+
+    controller.addListener(_onTabChanged);
+
     if (mounted) {
       _fetchUser();
     }
@@ -66,151 +88,103 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void dispose() {
     controller.dispose();
+    for (int i = 0; i < 6; i++) {
+      _tabScrollControllers[i]?.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _getPosts() async {
-    final token = await AuthManager.getToken();
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/posts"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      posts = PostResponseModel.fromJson(jsonDecode(response.body));
-      if (mounted) {
-        setState(() {
-          mediaPosts = PostResponseEntity(
-            posts!.posts.where((element) => element.media.isNotEmpty).toList(),
-            posts!.pagination,
-            posts!.user,
-          );
-          isPostsLoaded = true;
-        });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
+  void _onTabChanged() {
+    final currentIndex = controller.index;
+    if (_tabPosts[currentIndex]!.isEmpty && _tabHasMore[currentIndex]!) {
+      _loadTabData(currentIndex);
     }
   }
 
-  Future<void> _getReposts() async {
-    final token = await AuthManager.getToken();
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/reposts"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      reposts = PostResponseModel.fromJson(jsonDecode(response.body));
-      if (mounted) {
-        setState(() {
-          isRepostsLoaded = true;
-        });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
+  void _onScroll(int tabIndex) {
+    if (_tabScrollControllers[tabIndex]!.position.pixels ==
+        _tabScrollControllers[tabIndex]!.position.maxScrollExtent) {
+      _loadTabData(tabIndex);
     }
   }
 
-  Future<void> _getComments() async {
-    final token = await AuthManager.getToken();
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/comments"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      comments = PostResponseModel.fromJson(jsonDecode(response.body));
+  Future<void> _loadTabData(int tabIndex) async {
+    if (_tabIsLoading[tabIndex]! || !_tabHasMore[tabIndex]!) return;
+
+    setState(() {
+      _tabIsLoading[tabIndex] = true;
+    });
+
+    try {
+      final token = await AuthManager.getToken();
+      final endpoint = _tabEndpoints[tabIndex];
+      final page = _tabCurrentPage[tabIndex]!;
+
+      final response = await http.get(
+        Uri.parse(
+          "$baseUrl/api/v1/posts/user/${user!.id}/$endpoint?page=$page&limit=10",
+        ),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = PostResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        List<dynamic> newPosts = responseData.posts;
+
+        // For media tab, filter posts with media
+        if (tabIndex == 2) {
+          newPosts = newPosts.where((post) => post.media.isNotEmpty).toList();
+        }
+
+        if (mounted) {
+          setState(() {
+            _tabPosts[tabIndex]!.addAll(newPosts);
+            _tabCurrentPage[tabIndex] = page + 1;
+            _tabHasMore[tabIndex] = responseData.pagination.hasMore;
+            _tabIsLoading[tabIndex] = false;
+            _tabIsInitialLoading[tabIndex] = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _tabIsLoading[tabIndex] = false;
+            _tabIsInitialLoading[tabIndex] = false;
+          });
+          _showErrorSnackBar(response.body);
+        }
+      }
+    } catch (e) {
       if (mounted) {
         setState(() {
-          isCommentsLoaded = true;
+          _tabIsLoading[tabIndex] = false;
+          _tabIsInitialLoading[tabIndex] = false;
         });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Error loading data: $e'),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
-  Future<void> _getSavedPosts() async {
-    final token = await AuthManager.getToken();
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/saves"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      savedPosts = PostResponseModel.fromJson(jsonDecode(response.body));
-      if (mounted) {
-        setState(() {
-          isSavedPostsLoaded = true;
-        });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-            style: TextStyle(color: Colors.white),
-          ),
+  void _showErrorSnackBar(String responseBody) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(
+          jsonDecode(
+            responseBody,
+          )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+          style: TextStyle(color: Colors.white),
         ),
-      );
-    }
-  }
-
-  Future<void> _getLikedPosts() async {
-    final token = await AuthManager.getToken();
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/user/${user!.id}/likes"),
-      headers: {"Authorization": "Bearer $token"},
+      ),
     );
-    if (response.statusCode == 200) {
-      likedPosts = PostResponseModel.fromJson(jsonDecode(response.body));
-      if (mounted) {
-        setState(() {
-          isLikedPostsLoaded = true;
-        });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
   }
 
   Future<void> _fetchUser() async {
@@ -219,38 +193,112 @@ class _ProfileScreenState extends State<ProfileScreen>
       Uri.parse("$baseUrl/api/v1/user/profile/${widget.userName}"),
       headers: {"Authorization": "Bearer $token"},
     );
+
     if (response.statusCode == 200) {
       if (mounted) {
         setState(() {
           user = UserModel.fromJson(jsonDecode(response.body));
-        });
-        _getPosts();
-        _getReposts();
-        _getComments();
-        _getSavedPosts();
-        _getLikedPosts();
-        setState(() {
           isUserLoaded = true;
           if (!user!.isOwnProfile && (user!.isFollowing || user!.followsYou)) {
-            setState(() {
-              canMessage = true;
-            });
+            canMessage = true;
           }
         });
+
+        // Load initial tab data
+        _loadTabData(0); // Load posts tab initially
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            jsonDecode(
-              response.body,
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
-            style: TextStyle(color: Colors.white),
-          ),
+      _showErrorSnackBar(response.body);
+    }
+  }
+
+  Widget _buildTabContent(int tabIndex) {
+    if (_tabIsInitialLoading[tabIndex]!) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (_tabPosts[tabIndex]!.isEmpty && !_tabHasMore[tabIndex]!) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No posts yet',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ),
       );
     }
+
+    return ListView.builder(
+      controller: _tabScrollControllers[tabIndex],
+      itemCount: _tabPosts[tabIndex]!.length + (_tabHasMore[tabIndex]! ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == _tabPosts[tabIndex]!.length) {
+          // Loading indicator at the bottom
+          return _tabIsLoading[tabIndex]!
+              ? Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : SizedBox.shrink();
+        }
+
+        final post = _tabPosts[tabIndex]![index];
+        return GestureDetector(
+          onTap: () {},
+          child: PostCard(
+            dividerColor:
+                MediaQuery.of(context).platformBrightness == Brightness.dark
+                ? kGreyInputFillDark
+                : kGreyInputBorder,
+            iconColor:
+                MediaQuery.of(context).platformBrightness == Brightness.dark
+                ? kWhite
+                : kBlack,
+            authorName: post.author.fullName,
+            authorHandle: post.author.username,
+            imageUrl: post.author.profileImage,
+            postTime: post.createdAt,
+            likes: post.count.likes,
+            comments: tabIndex == 3 ? 0 : post.count.comments, // Comments tab
+            reposts: tabIndex == 3 ? 0 : post.count.reposts, // Comments tab
+            bookmarks: tabIndex == 3 ? 0 : post.count.saves, // Comments tab
+            content: post.content,
+            pictures: post.media,
+            currentUser: user!,
+            postId: post.id,
+            isLiked: post.isLiked,
+            isReposted: post.isReposted,
+            isSaved: post.isSaved,
+            isReply: tabIndex == 3 ? post.isReply : false,
+            replyingToHandle: tabIndex == 3 && post.isReply
+                ? post.parentPost?.author.username
+                : null,
+          ),
+        );
+      },
+    );
+  }
+
+  // Method to refresh a specific tab
+  Future<void> _refreshTab(int tabIndex) async {
+    setState(() {
+      _tabPosts[tabIndex] = [];
+      _tabHasMore[tabIndex] = true;
+      _tabIsLoading[tabIndex] = false;
+      _tabIsInitialLoading[tabIndex] = true;
+      _tabCurrentPage[tabIndex] = 1;
+    });
+
+    await _loadTabData(tabIndex);
   }
 
   @override
@@ -275,331 +323,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           _buildHeader(iconColor),
                           SizedBox(height: getProportionateScreenHeight(8)),
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenWidth(24),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  height: getProportionateScreenHeight(68),
-                                  width: getProportionateScreenWidth(68),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    image: DecorationImage(
-                                      image: NetworkImage(user!.profileImage),
-                                      fit: BoxFit.cover,
-                                    ),
-                                    border: Border.all(
-                                      width: 1,
-                                      color: kPrimPurple,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: getProportionateScreenWidth(6)),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          user!.fullName,
-                                          style: TextStyle(
-                                            fontSize:
-                                                getProportionateScreenHeight(
-                                                  16,
-                                                ),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        if (widget.isVerified)
-                                          SvgPicture.asset(
-                                            "assets/icons/verified.svg",
-                                            height:
-                                                getProportionateScreenHeight(
-                                                  19.14,
-                                                ),
-                                            width: getProportionateScreenWidth(
-                                              19.14,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    Text(
-                                      "@${user!.username}",
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          13,
-                                        ),
-                                        color: kProfileText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Spacer(),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      NumberFormat.compact().format(
-                                        user!.followerCount,
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          16,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      "Followers",
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          12,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                        color: kProfileText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                  width: getProportionateScreenWidth(10),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      NumberFormat.compact().format(
-                                        user!.followingCount,
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          16,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      "Following",
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          12,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                        color: kProfileText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+                          _buildProfileInfo(),
                           SizedBox(height: getProportionateScreenHeight(18)),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: getProportionateScreenWidth(30),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    SvgPicture.asset(
-                                      "assets/icons/map-pin.svg",
-                                      height: getProportionateScreenHeight(18),
-                                      width: getProportionateScreenWidth(18),
-                                    ),
-                                    SizedBox(
-                                      width: getProportionateScreenWidth(10),
-                                    ),
-                                    Text(
-                                      user!.location,
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          12,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                        color: kProfileText,
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: getProportionateScreenWidth(35),
-                                    ),
-                                    SvgPicture.asset(
-                                      "assets/icons/calendar.svg",
-                                      height: getProportionateScreenHeight(18),
-                                      width: getProportionateScreenWidth(18),
-                                    ),
-                                    SizedBox(
-                                      width: getProportionateScreenWidth(10),
-                                    ),
-                                    Text(
-                                      'Since ${DateFormat('MMMM yyyy').format(user!.dateJoined)}',
-                                      style: TextStyle(
-                                        fontSize: getProportionateScreenHeight(
-                                          12,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                        color: kProfileText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                  height: getProportionateScreenHeight(9),
-                                ),
-                                SocialText(
-                                  text: user!.bio,
-                                  baseStyle: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge!
-                                      .copyWith(
-                                        fontSize: getProportionateScreenHeight(
-                                          12,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          _buildUserDetails(),
                           SizedBox(height: getProportionateScreenHeight(18)),
-                          Padding(
-                            padding: canMessage
-                                ? EdgeInsets.symmetric(
-                                    horizontal: getProportionateScreenWidth(20),
-                                  )
-                                : EdgeInsets.symmetric(
-                                    horizontal: getProportionateScreenWidth(30),
-                                  ),
-                            child: Row(
-                              children: [
-                                if (user!.isOwnProfile)
-                                  InkWell(
-                                    onTap: () {},
-                                    child: Container(
-                                      height: getProportionateScreenHeight(27),
-                                      width: canMessage
-                                          ? getProportionateScreenWidth(158.5)
-                                          : getProportionateScreenWidth(163.5),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          width: 1,
-                                          color: kProfileText,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          getProportionateScreenWidth(10),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text("Edit Profile"),
-                                      ),
-                                    ),
-                                  ),
-                                if (!user!.isOwnProfile &&
-                                    !user!.isFollowing &&
-                                    !user!.followsYou)
-                                  InkWell(
-                                    onTap: () async {
-                                      await _followUser();
-                                    },
-                                    child: Container(
-                                      height: getProportionateScreenHeight(27),
-                                      width: canMessage
-                                          ? getProportionateScreenWidth(158.5)
-                                          : getProportionateScreenWidth(163.5),
-                                      decoration: BoxDecoration(
-                                        color: kAccentColor,
-                                        borderRadius: BorderRadius.circular(
-                                          getProportionateScreenWidth(10),
-                                        ),
-                                      ),
-                                      child: Center(child: Text("Follow")),
-                                    ),
-                                  ),
-                                if (!user!.isOwnProfile && user!.isFollowing)
-                                  InkWell(
-                                    onTap: () async {
-                                      await _unfollowUser();
-                                    },
-                                    child: Container(
-                                      height: getProportionateScreenHeight(27),
-                                      width: canMessage
-                                          ? getProportionateScreenWidth(158.5)
-                                          : getProportionateScreenWidth(163.5),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          width: 1,
-                                          color: kProfileText,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          getProportionateScreenWidth(10),
-                                        ),
-                                      ),
-                                      child: Center(child: Text("Unfollow")),
-                                    ),
-                                  ),
-                                if (!user!.isOwnProfile &&
-                                    user!.followsYou &&
-                                    !user!.isFollowing)
-                                  InkWell(
-                                    onTap: () async {
-                                      await _followUser();
-                                    },
-                                    child: Container(
-                                      height: getProportionateScreenHeight(27),
-                                      width: canMessage
-                                          ? getProportionateScreenWidth(158.5)
-                                          : getProportionateScreenWidth(163.5),
-                                      decoration: BoxDecoration(
-                                        color: kAccentColor,
-                                        borderRadius: BorderRadius.circular(
-                                          getProportionateScreenWidth(10),
-                                        ),
-                                      ),
-                                      child: Center(child: Text("Follow Back")),
-                                    ),
-                                  ),
-                                Spacer(),
-                                InkWell(
-                                  onTap: () {},
-                                  child: Container(
-                                    height: getProportionateScreenHeight(27),
-                                    width: canMessage
-                                        ? getProportionateScreenWidth(158.5)
-                                        : getProportionateScreenWidth(163.5),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        width: 1,
-                                        color: kProfileText,
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                        getProportionateScreenWidth(10),
-                                      ),
-                                    ),
-                                    child: Center(child: Text("Share Profile")),
-                                  ),
-                                ),
-                                if (!user!.isOwnProfile &&
-                                    (user!.isFollowing || user!.followsYou))
-                                  Spacer(),
-                                if (canMessage)
-                                  InkWell(
-                                    onTap: () {},
-                                    child: SvgPicture.asset(
-                                      "assets/icons/mail.svg",
-                                      height: getProportionateScreenHeight(24),
-                                      width: getProportionateScreenWidth(24),
-                                      colorFilter: ColorFilter.mode(
-                                        kProfileText,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
+                          _buildActionButtons(),
                           SizedBox(height: getProportionateScreenHeight(18)),
                         ],
                       ),
@@ -665,196 +393,230 @@ class _ProfileScreenState extends State<ProfileScreen>
                 },
                 body: TabBarView(
                   controller: controller,
-                  children: [
-                    isPostsLoaded
-                        ? ListView.builder(
-                            itemCount: posts!.posts.length,
-                            itemBuilder: (context, index) {
-                              final post = posts!.posts[index];
-                              return GestureDetector(
-                                onTap: () {},
-                                child: PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorName: post.author.fullName,
-                                  authorHandle: post.author.username,
-                                  imageUrl: post.author.profileImage,
-                                  postTime: post.createdAt,
-                                  likes: post.count.likes,
-                                  comments: post.count.comments,
-                                  reposts: post.count.reposts,
-                                  bookmarks: post.count.saves,
-                                  content: post.content,
-                                  pictures: post.media,
-                                  currentUser: user!,
-                                  postId: post.id,
-                                  isLiked: post.isLiked,
-                                  isReposted: post.isReposted,
-                                  isSaved: post.isSaved,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(child: CircularProgressIndicator()),
-                    isRepostsLoaded
-                        ? ListView.builder(
-                            itemCount: reposts!.posts.length,
-                            itemBuilder: (context, index) {
-                              final repost = reposts!.posts[index];
-
-                              return GestureDetector(
-                                onTap: () {},
-                                child: PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorName: repost.author.fullName,
-                                  authorHandle: repost.author.username,
-                                  imageUrl: repost.author.profileImage,
-                                  postTime: repost.createdAt,
-                                  likes: repost.count.likes,
-                                  comments: repost.count.comments,
-                                  reposts: repost.count.reposts,
-                                  bookmarks: repost.count.saves,
-                                  content: repost.content,
-                                  pictures: repost.media,
-                                  currentUser: user!,
-                                  postId: repost.id,
-                                  isLiked: repost.isLiked,
-                                  isReposted: repost.isReposted,
-                                  isSaved: repost.isSaved,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(child: CircularProgressIndicator()),
-                    isPostsLoaded
-                        ? ListView.builder(
-                            itemCount: mediaPosts!.posts.length,
-                            itemBuilder: (context, index) {
-                              final media = mediaPosts!.posts[index];
-                              return GestureDetector(
-                                onTap: () {},
-                                child: PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorName: media.author.fullName,
-                                  authorHandle: media.author.username,
-                                  imageUrl: media.author.profileImage,
-                                  postTime: media.createdAt,
-                                  likes: media.count.likes,
-                                  comments: media.count.comments,
-                                  reposts: media.count.reposts,
-                                  bookmarks: media.count.saves,
-                                  content: media.content,
-                                  pictures: media.media,
-                                  currentUser: user!,
-                                  postId: media.id,
-                                  isLiked: media.isLiked,
-                                  isReposted: media.isReposted,
-                                  isSaved: media.isSaved,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(child: CircularProgressIndicator()),
-                    isCommentsLoaded
-                        ? ListView.builder(
-                            itemCount: comments!.posts.length,
-                            itemBuilder: (context, index) {
-                              final comment = comments!.posts[index];
-                              return GestureDetector(
-                                onTap: () {},
-                                child: PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorHandle: comment.author.username,
-                                  imageUrl: comment.author.profileImage,
-                                  postTime: comment.createdAt,
-                                  likes: comment.count.likes,
-                                  comments: 0,
-                                  reposts: 0,
-                                  bookmarks: 0,
-                                  content: comment.content,
-                                  pictures: comment.media,
-                                  authorName: comment.author.fullName,
-                                  currentUser: widget.currentUser,
-                                  postId: comment.id,
-                                  isLiked: comment.isLiked,
-                                  isReposted: comment.isReposted,
-                                  isSaved: comment.isSaved,
-                                  isReply: comment.isReply,
-                                  replyingToHandle:
-                                      comment.parentPost!.author.username,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(child: CircularProgressIndicator()),
-                    isSavedPostsLoaded
-                        ? ListView.builder(
-                            itemCount: savedPosts!.posts.length,
-                            itemBuilder: (context, index) {
-                              final savedPost = savedPosts!.posts[index];
-                              return GestureDetector(
-                                onTap: () {},
-                                child: PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorName: savedPost.author.fullName,
-                                  authorHandle: savedPost.author.username,
-                                  imageUrl: savedPost.author.profileImage,
-                                  postTime: savedPost.createdAt,
-                                  likes: savedPost.count.likes,
-                                  comments: savedPost.count.comments,
-                                  reposts: savedPost.count.reposts,
-                                  bookmarks: savedPost.count.saves,
-                                  content: savedPost.content,
-                                  pictures: savedPost.media,
-                                  currentUser: user!,
-                                  postId: savedPost.id,
-                                  isLiked: savedPost.isLiked,
-                                  isReposted: savedPost.isReposted,
-                                  isSaved: savedPost.isSaved,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(child: CircularProgressIndicator()),
-                    isLikedPostsLoaded
-                        ? ListView.builder(
-                            itemCount: likedPosts!.posts.length,
-                            itemBuilder: (context, index) {
-                              final likedPost = likedPosts!.posts[index];
-                              return GestureDetector(
-                                onTap: () {},
-                                child: PostCard(
-                                  dividerColor: dividerColor,
-                                  iconColor: iconColor,
-                                  authorName: likedPost.author.fullName,
-                                  authorHandle: likedPost.author.username,
-                                  imageUrl: likedPost.author.profileImage,
-                                  postTime: likedPost.createdAt,
-                                  likes: likedPost.count.likes,
-                                  comments: likedPost.count.comments,
-                                  reposts: likedPost.count.reposts,
-                                  bookmarks: likedPost.count.saves,
-                                  content: likedPost.content,
-                                  pictures: likedPost.media,
-                                  currentUser: user!,
-                                  postId: likedPost.id,
-                                  isLiked: likedPost.isLiked,
-                                  isReposted: likedPost.isReposted,
-                                  isSaved: likedPost.isSaved,
-                                ),
-                              );
-                            },
-                          )
-                        : Center(child: CircularProgressIndicator()),
-                  ],
+                  children: List.generate(
+                    6,
+                    (index) => RefreshIndicator(
+                      onRefresh: () => _refreshTab(index),
+                      child: _buildTabContent(index),
+                    ),
+                  ),
                 ),
               ),
             )
           : Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  // Extract profile info widget to reduce build method complexity
+  Widget _buildProfileInfo() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: getProportionateScreenWidth(24),
+      ),
+      child: Row(
+        children: [
+          Container(
+            height: getProportionateScreenHeight(68),
+            width: getProportionateScreenWidth(68),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: NetworkImage(user!.profileImage),
+                fit: BoxFit.cover,
+              ),
+              border: Border.all(width: 1, color: kPrimPurple),
+            ),
+          ),
+          SizedBox(width: getProportionateScreenWidth(6)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    user!.fullName,
+                    style: TextStyle(
+                      fontSize: getProportionateScreenHeight(16),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (widget.isVerified)
+                    SvgPicture.asset(
+                      "assets/icons/verified.svg",
+                      height: getProportionateScreenHeight(19.14),
+                      width: getProportionateScreenWidth(19.14),
+                    ),
+                ],
+              ),
+              Text(
+                "@${user!.username}",
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(13),
+                  color: kProfileText,
+                ),
+              ),
+            ],
+          ),
+          Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                NumberFormat.compact().format(user!.followerCount),
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(16),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                "Followers",
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(12),
+                  fontWeight: FontWeight.w500,
+                  color: kProfileText,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: getProportionateScreenWidth(10)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                NumberFormat.compact().format(user!.followingCount),
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(16),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                "Following",
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(12),
+                  fontWeight: FontWeight.w500,
+                  color: kProfileText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserDetails() {
+    return Padding(
+      padding: EdgeInsets.only(left: getProportionateScreenWidth(30)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SvgPicture.asset(
+                "assets/icons/map-pin.svg",
+                height: getProportionateScreenHeight(18),
+                width: getProportionateScreenWidth(18),
+              ),
+              SizedBox(width: getProportionateScreenWidth(10)),
+              Text(
+                user!.location,
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(12),
+                  fontWeight: FontWeight.w500,
+                  color: kProfileText,
+                ),
+              ),
+              SizedBox(width: getProportionateScreenWidth(35)),
+              SvgPicture.asset(
+                "assets/icons/calendar.svg",
+                height: getProportionateScreenHeight(18),
+                width: getProportionateScreenWidth(18),
+              ),
+              SizedBox(width: getProportionateScreenWidth(10)),
+              Text(
+                'Since ${DateFormat('MMMM yyyy').format(user!.dateJoined)}',
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(12),
+                  fontWeight: FontWeight.w500,
+                  color: kProfileText,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: getProportionateScreenHeight(9)),
+          SocialText(
+            text: user!.bio,
+            baseStyle: Theme.of(context).textTheme.bodyLarge!.copyWith(
+              fontSize: getProportionateScreenHeight(12),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Padding(
+      padding: canMessage
+          ? EdgeInsets.symmetric(horizontal: getProportionateScreenWidth(20))
+          : EdgeInsets.symmetric(horizontal: getProportionateScreenWidth(30)),
+      child: Row(
+        children: [
+          // Edit Profile / Follow buttons
+          if (user!.isOwnProfile)
+            _buildActionButton("Edit Profile", null, () {}),
+          if (!user!.isOwnProfile && !user!.isFollowing && !user!.followsYou)
+            _buildActionButton("Follow", kAccentColor, _followUser),
+          if (!user!.isOwnProfile && user!.isFollowing)
+            _buildActionButton("Unfollow", null, _unfollowUser),
+          if (!user!.isOwnProfile && user!.followsYou && !user!.isFollowing)
+            _buildActionButton("Follow Back", kAccentColor, _followUser),
+
+          Spacer(),
+
+          // Share Profile button
+          _buildActionButton("Share Profile", null, () {}),
+
+          // Message button
+          if (canMessage) ...[
+            Spacer(),
+            InkWell(
+              onTap: () {},
+              child: SvgPicture.asset(
+                "assets/icons/mail.svg",
+                height: getProportionateScreenHeight(24),
+                width: getProportionateScreenWidth(24),
+                colorFilter: ColorFilter.mode(kProfileText, BlendMode.srcIn),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    String text,
+    Color? backgroundColor,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: getProportionateScreenHeight(27),
+        width: canMessage
+            ? getProportionateScreenWidth(158.5)
+            : getProportionateScreenWidth(163.5),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: backgroundColor == null
+              ? Border.all(width: 1, color: kProfileText)
+              : null,
+          borderRadius: BorderRadius.circular(getProportionateScreenWidth(10)),
+        ),
+        child: Center(child: Text(text)),
+      ),
     );
   }
 
@@ -880,9 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           if (!widget.isFromNav)
             InkWell(
-              onTap: () {
-                Navigator.pop(context);
-              },
+              onTap: () => Navigator.pop(context),
               child: SvgPicture.asset(
                 "assets/icons/back_button.svg",
                 colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
@@ -1001,12 +761,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ],
     );
-    if (selected == 'Unfollow' && mounted) {}
+    if (selected == 'Unfollow' && mounted) {
+      await _unfollowUser();
+    }
   }
 
   Future<void> _followUser() async {
     final token = await AuthManager.getToken();
-
     final response = await http.post(
       Uri.parse("$baseUrl/api/v1/user/follow"),
       headers: {
@@ -1037,7 +798,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _unfollowUser() async {
     final token = await AuthManager.getToken();
-
     final response = await http.delete(
       Uri.parse("$baseUrl/api/v1/user/unfollow"),
       headers: {
@@ -1090,7 +850,5 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
-  }
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
 }
