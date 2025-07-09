@@ -28,14 +28,35 @@ class PostDetailsScreen extends StatefulWidget {
 
 class _PostDetailsScreenState extends State<PostDetailsScreen> {
   Post? post;
-  CommentsResponseEntity? comments;
+  List<Comment> comments = []; // Changed to List to accumulate comments
   bool isPostLoaded = false;
+  bool isLoadingComments = false;
+  bool hasMoreComments = true;
+  int currentPage = 1;
   String dropDownValue = "Most Liked";
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _getPost();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      if (!isLoadingComments && hasMoreComments) {
+        _loadMoreComments();
+      }
+    }
   }
 
   Future<void> _getPost() async {
@@ -46,7 +67,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
     );
     if (response.statusCode == 200) {
       post = PostModel.fromJson(jsonDecode(response.body)["post"]);
-      await _getComments();
+      await _getComments(); // Load first page of comments
       setState(() {
         isPostLoaded = true;
       });
@@ -65,15 +86,54 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
     }
   }
 
-  Future<void> _getComments() async {
+  Future<void> _getComments({bool isRefresh = false}) async {
+    if (isRefresh) {
+      setState(() {
+        comments.clear();
+        currentPage = 1;
+        hasMoreComments = true;
+        isLoadingComments = true;
+      });
+    } else {
+      setState(() {
+        isLoadingComments = true;
+      });
+    }
+
     final token = await AuthManager.getToken();
     final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/comments"),
+      Uri.parse(
+        "$baseUrl/api/v1/posts/${widget.postId}/comments?page=$currentPage&limit=10",
+      ),
       headers: {"Authorization": "Bearer $token"},
     );
+
     if (response.statusCode == 200) {
-      comments = CommentsResponseModel.fromJson(jsonDecode(response.body));
+      final responseData = jsonDecode(response.body);
+      final commentsResponse = CommentsResponseModel.fromJson(responseData);
+
+      setState(() {
+        if (isRefresh) {
+          comments = commentsResponse.comments;
+        } else {
+          comments.addAll(commentsResponse.comments);
+        }
+
+        // Check if there are more comments to load
+        // Adjust this logic based on your API response structure
+        hasMoreComments =
+            commentsResponse.comments.length == 10; // Assuming 10 is the limit
+        // Or if your API returns pagination info:
+        // hasMoreComments = responseData['hasNextPage'] ?? false;
+        // Or check total count vs current loaded count:
+        // hasMoreComments = comments.length < (responseData['totalCount'] ?? 0);
+
+        isLoadingComments = false;
+      });
     } else {
+      setState(() {
+        isLoadingComments = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
@@ -85,6 +145,27 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _loadMoreComments() async {
+    if (!hasMoreComments || isLoadingComments) return;
+
+    currentPage++;
+    await _getComments();
+  }
+
+  Future<void> _refreshComments() async {
+    await _getComments(isRefresh: true);
+  }
+
+  void _onSortChanged(String? newValue) {
+    if (newValue != null && newValue != dropDownValue) {
+      setState(() {
+        dropDownValue = newValue;
+      });
+      // Reset pagination and reload comments with new sorting
+      _refreshComments();
     }
   }
 
@@ -133,97 +214,106 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
         ),
       ),
       body: isPostLoaded
-          ? Padding(
-              padding: EdgeInsets.only(top: getProportionateScreenHeight(8)),
+          ? RefreshIndicator(
+              onRefresh: _refreshComments,
               child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PostCard(
-                      dividerColor: dividerColor,
-                      iconColor: iconColor,
-                      authorName: post!.author.fullName,
-                      authorHandle: post!.author.username,
-                      imageUrl: post!.author.profileImage,
-                      postTime: post!.createdAt,
-                      likes: post!.count.likes,
-                      comments: post!.count.comments,
-                      reposts: post!.count.reposts,
-                      bookmarks: post!.count.saves,
-                      content: post!.content,
-                      pictures: post!.media,
-                      currentUser: widget.currentUser,
-                      postId: post!.id,
-                      notClickable: true,
-                      isLiked: post!.isLiked,
-                      isReposted: post!.isReposted,
-                      isSaved: post!.isSaved,
-                    ),
-                    SizedBox(height: getProportionateScreenHeight(11.09)),
-                    Container(
-                      padding: EdgeInsets.only(
-                        left: getProportionateScreenWidth(21),
+                controller: _scrollController,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: getProportionateScreenHeight(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      PostCard(
+                        dividerColor: dividerColor,
+                        iconColor: iconColor,
+                        authorName: post!.author.fullName,
+                        authorHandle: post!.author.username,
+                        imageUrl: post!.author.profileImage,
+                        postTime: post!.createdAt,
+                        likes: post!.count.likes,
+                        comments: post!.count.comments,
+                        reposts: post!.count.reposts,
+                        bookmarks: post!.count.saves,
+                        content: post!.content,
+                        pictures: post!.media,
+                        currentUser: widget.currentUser,
+                        postId: post!.id,
+                        notClickable: true,
+                        isLiked: post!.isLiked,
+                        isReposted: post!.isReposted,
+                        isSaved: post!.isSaved,
                       ),
-                      child: DropdownButton<String>(
-                        value: dropDownValue,
-                        icon: null,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            dropDownValue = newValue!;
-                          });
-                        },
-                        underline: Container(),
-                        items: <String>['Most Liked', 'Most Recent'].map((
-                          String value,
-                        ) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(
-                              value,
-                              style: TextStyle(
-                                fontSize: getProportionateScreenHeight(14),
+                      SizedBox(height: getProportionateScreenHeight(11.09)),
+                      Container(
+                        padding: EdgeInsets.only(
+                          left: getProportionateScreenWidth(21),
+                        ),
+                        child: DropdownButton<String>(
+                          value: dropDownValue,
+                          icon: null,
+                          onChanged: _onSortChanged,
+                          underline: Container(),
+                          items: <String>['Most Liked', 'Most Recent'].map((
+                            String value,
+                          ) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: TextStyle(
+                                  fontSize: getProportionateScreenHeight(14),
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: comments!.comments.length,
-                      itemBuilder: (context, index) {
-                        return PostCard(
-                          dividerColor: dividerColor,
-                          iconColor: iconColor,
-                          imageUrl: comments!
-                              .comments[index]
-                              .post
-                              .author
-                              .profileImage,
-                          postTime: comments!.comments[index].post.createdAt,
-                          likes: comments!.comments[index].post.count.likes,
-                          comments:
-                              comments!.comments[index].post.count.comments,
-                          reposts: comments!.comments[index].post.count.reposts,
-                          bookmarks: comments!.comments[index].post.count.saves,
-                          content: comments!.comments[index].post.content,
-                          pictures: comments!.comments[index].post.media,
-                          authorHandle:
-                              comments!.comments[index].post.author.username,
-                          isReply: comments!.comments[index].post.isReply,
-                          replyingToHandle: post!.author.username,
-                          authorName:
-                              comments!.comments[index].post.author.fullName,
-                          currentUser: widget.currentUser,
-                          postId: comments!.comments[index].post.id,
-                          isLiked: comments!.comments[index].isLiked,
-                          isReposted: comments!.comments[index].isReposted,
-                          isSaved: comments!.comments[index].isSaved,
-                        );
-                      },
-                    ),
-                  ],
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: comments.length + (hasMoreComments ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == comments.length) {
+                            // Show loading indicator at the end
+                            return Padding(
+                              padding: EdgeInsets.all(
+                                getProportionateScreenHeight(16),
+                              ),
+                              child: Center(
+                                child: isLoadingComments
+                                    ? CircularProgressIndicator()
+                                    : SizedBox.shrink(),
+                              ),
+                            );
+                          }
+
+                          return PostCard(
+                            dividerColor: dividerColor,
+                            iconColor: iconColor,
+                            imageUrl: comments[index].post.author.profileImage,
+                            postTime: comments[index].post.createdAt,
+                            likes: comments[index].post.count.likes,
+                            comments: comments[index].post.count.comments,
+                            reposts: comments[index].post.count.reposts,
+                            bookmarks: comments[index].post.count.saves,
+                            content: comments[index].post.content,
+                            pictures: comments[index].post.media,
+                            authorHandle: comments[index].post.author.username,
+                            isReply: comments[index].post.isReply,
+                            replyingToHandle: post!.author.username,
+                            authorName: comments[index].post.author.fullName,
+                            currentUser: widget.currentUser,
+                            postId: comments[index].post.id,
+                            isLiked: comments[index].isLiked,
+                            isReposted: comments[index].isReposted,
+                            isSaved: comments[index].isSaved,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
