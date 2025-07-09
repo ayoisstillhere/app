@@ -487,16 +487,16 @@ class _PostCardState extends State<PostCard> {
                                 onTap: _onLike,
                                 child: SvgPicture.asset(
                                   "assets/icons/heart_red.svg",
-                                  height: getProportionateScreenHeight(15.55),
-                                  width: getProportionateScreenWidth(15.55),
+                                  height: getProportionateScreenHeight(20),
+                                  width: getProportionateScreenWidth(20),
                                 ),
                               )
                             : InkWell(
                                 onTap: _onLike,
                                 child: SvgPicture.asset(
                                   "assets/icons/heart.svg",
-                                  height: getProportionateScreenHeight(15.55),
-                                  width: getProportionateScreenWidth(15.55),
+                                  height: getProportionateScreenHeight(20),
+                                  width: getProportionateScreenWidth(20),
                                   colorFilter: ColorFilter.mode(
                                     widget.iconColor,
                                     BlendMode.srcIn,
@@ -543,8 +543,8 @@ class _PostCardState extends State<PostCard> {
                           },
                           child: SvgPicture.asset(
                             "assets/icons/chats.svg",
-                            height: getProportionateScreenHeight(15.55),
-                            width: getProportionateScreenWidth(15.55),
+                            height: getProportionateScreenHeight(20),
+                            width: getProportionateScreenWidth(20),
                             colorFilter: ColorFilter.mode(
                               widget.iconColor,
                               BlendMode.srcIn,
@@ -566,16 +566,16 @@ class _PostCardState extends State<PostCard> {
                                 onTap: _onRepost,
                                 child: SvgPicture.asset(
                                   "assets/icons/repeat_green.svg",
-                                  height: getProportionateScreenHeight(15.55),
-                                  width: getProportionateScreenWidth(15.55),
+                                  height: getProportionateScreenHeight(20),
+                                  width: getProportionateScreenWidth(20),
                                 ),
                               )
                             : InkWell(
                                 onTap: _onRepost,
                                 child: SvgPicture.asset(
                                   "assets/icons/repost.svg",
-                                  height: getProportionateScreenHeight(15.55),
-                                  width: getProportionateScreenWidth(15.55),
+                                  height: getProportionateScreenHeight(20),
+                                  width: getProportionateScreenWidth(20),
                                   colorFilter: ColorFilter.mode(
                                     widget.iconColor,
                                     BlendMode.srcIn,
@@ -597,7 +597,7 @@ class _PostCardState extends State<PostCard> {
                                 onTap: _onSave,
                                 child: Icon(
                                   Icons.bookmark,
-                                  size: getProportionateScreenHeight(15.55),
+                                  size: getProportionateScreenHeight(20),
                                   color: kLightPurple,
                                 ),
                               )
@@ -605,8 +605,8 @@ class _PostCardState extends State<PostCard> {
                                 onTap: _onSave,
                                 child: SvgPicture.asset(
                                   "assets/icons/bookmark.svg",
-                                  height: getProportionateScreenHeight(15.55),
-                                  width: getProportionateScreenWidth(15.55),
+                                  height: getProportionateScreenHeight(20),
+                                  width: getProportionateScreenWidth(20),
                                   colorFilter: ColorFilter.mode(
                                     widget.iconColor,
                                     BlendMode.srcIn,
