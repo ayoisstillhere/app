@@ -82,3 +82,7 @@ String formatDuration(DateTime from, DateTime to) {
 
   return parts.join(' ');
 }
+
+// API keys
+const String getStreamKey = "q25hn6c2zjg3";
+const String getStreamSecret = "dsj4r4dcddeeakzqgnrdj8sdnsuqjz3c5m594ub9qugeekq7wbr8tr965qb7fbsp";

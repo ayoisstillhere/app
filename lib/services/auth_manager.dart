@@ -100,7 +100,10 @@ class AuthManager {
       final response = await http.post(
         Uri.parse("$baseUrl/api/v1/auth/refresh"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"refreshToken": refreshToken}),
+        body: jsonEncode({
+          "refreshToken": refreshToken,
+          "deviceId": await _secureStorage.read(key: "fcm_token"),
+        }),
       );
 
       if (response.statusCode == 200) {

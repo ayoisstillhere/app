@@ -4,11 +4,13 @@ import 'package:app/constants.dart';
 import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../components/default_button.dart';
 import '../../../../components/nav_page.dart';
 import '../../../../services/auth_manager.dart';
+// import '../../../../services/notification_service.dart';
 import '../../../../size_config.dart';
 import '../widgets/custom_check_box.dart';
 import '../widgets/form_header.dart';
@@ -24,6 +26,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _signinFormKey = GlobalKey<FormState>();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
+  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   @override
   void initState() {
@@ -157,6 +160,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                   'emailOrUsername': _emailController.text
                                       .trim(),
                                   'password': _passwordController.text.trim(),
+                                  "deviceId": await _secureStorage.read(key: "fcm_token"),
                                 }),
                               );
                               if (response.statusCode == 200) {

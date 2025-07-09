@@ -31,11 +31,13 @@ dependencies:
   cloud_firestore: ^5.6.11
   crypto: ^3.0.6
   cupertino_icons: ^1.0.8
+  device_info_plus: ^11.5.0
   encrypt: ^5.0.3
   equatable: ^2.0.7
   fast_rsa: ^3.8.4
   file_picker: ^10.2.0
   firebase_core: ^3.15.1
+  firebase_messaging: ^15.2.9
   flutter:
     sdk: flutter
   flutter_bloc: ^8.0.1
