@@ -97,6 +97,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Use ModalRoute to check if this screen is currently active
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      _loadInitialConversations();
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
