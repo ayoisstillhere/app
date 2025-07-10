@@ -26,6 +26,46 @@ class ProfileImageSelectScreen extends StatefulWidget {
 class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
   File? _selectedProfileImage;
   File? _selectedBannerImage;
+  bool isLoading = false; // Add loading state
+
+  Future<void> _uploadImagesAndContinue() async {
+    setState(() {
+      isLoading = true; // Set loading to true
+    });
+
+    try {
+      if (_selectedProfileImage != null) {
+        final compressedFile = await compressImage(_selectedProfileImage!);
+
+        await uploadImage(compressedFile, '/api/v1/user/upload-profile-image');
+      }
+
+      if (_selectedBannerImage != null) {
+        final compressedFile = await compressImage(_selectedBannerImage!);
+        await uploadImage(compressedFile, '/api/v1/user/upload-banner-image');
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => NavPage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Failed to upload image(s). Please try again',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false; // Set loading to false
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,9 +110,11 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                         Column(
                           children: [
                             InkWell(
-                              onTap: () {
-                                _pickProfileImageFromGallery();
-                              },
+                              onTap: isLoading
+                                  ? null
+                                  : () {
+                                      _pickProfileImageFromGallery();
+                                    }, // Disable when loading
                               child: Container(
                                 width: getProportionateScreenWidth(84),
                                 height: getProportionateScreenHeight(84),
@@ -107,9 +149,11 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                                           fit: BoxFit.cover,
                                         ),
                                       ),
-                                child: SvgPicture.asset(
-                                  'assets/icons/picture_icon.svg',
-                                ),
+                                child: _selectedProfileImage == null
+                                    ? SvgPicture.asset(
+                                        'assets/icons/picture_icon.svg',
+                                      )
+                                    : null,
                               ),
                             ),
                             SizedBox(height: getProportionateScreenHeight(11)),
@@ -123,9 +167,11 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                         Column(
                           children: [
                             InkWell(
-                              onTap: () {
-                                _pickBannerImageFromGallery();
-                              },
+                              onTap: isLoading
+                                  ? null
+                                  : () {
+                                      _pickBannerImageFromGallery();
+                                    }, // Disable when loading
                               child: Container(
                                 width: getProportionateScreenWidth(84),
                                 height: getProportionateScreenHeight(84),
@@ -160,9 +206,11 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                                           fit: BoxFit.cover,
                                         ),
                                       ),
-                                child: SvgPicture.asset(
-                                  'assets/icons/picture_icon.svg',
-                                ),
+                                child: _selectedBannerImage == null
+                                    ? SvgPicture.asset(
+                                        'assets/icons/picture_icon.svg',
+                                      )
+                                    : null,
                               ),
                             ),
                             SizedBox(height: getProportionateScreenHeight(11)),
@@ -176,62 +224,34 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                     ),
                   ),
                   SizedBox(height: getProportionateScreenHeight(43.5)),
-                  DefaultButton(
-                    text: 'Continue',
-                    press: () async {
-                      try {
-                        if (_selectedProfileImage != null) {
-                          final compressedFile = await compressImage(
-                            _selectedProfileImage!,
-                          );
-
-                          await uploadImage(
-                            compressedFile,
-                            '/api/v1/user/upload-profile-image',
-                          );
-                        }
-
-                        if (_selectedBannerImage != null) {
-                          final compressedFile = await compressImage(
-                            _selectedBannerImage!,
-                          );
-                          await uploadImage(
-                            compressedFile,
-                            '/api/v1/user/upload-banner-image',
-                          );
-                        }
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => NavPage()),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Colors.red,
-                            content: Text(
-                              'Failed to upload image(s). Please try again',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                  isLoading
+                      ? Center(
+                          child: SizedBox(
+                            height: getProportionateScreenHeight(45),
+                            width: getProportionateScreenWidth(45),
+                            child: const CircularProgressIndicator(),
                           ),
-                        );
-                      }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => NavPage()),
-                      );
-                    },
-                  ),
+                        )
+                      : DefaultButton(
+                          text: 'Continue',
+                          press: _uploadImagesAndContinue,
+                        ),
                   SizedBox(height: getProportionateScreenHeight(16)),
-                  SkipButon(
-                    text: 'Skip',
-                    press: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => NavPage()),
-                      );
-                    },
-                  ),
+                  isLoading
+                      ? SizedBox(
+                          height: getProportionateScreenHeight(45),
+                        ) // Maintain spacing
+                      : SkipButon(
+                          text: 'Skip',
+                          press: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NavPage(),
+                              ),
+                            );
+                          },
+                        ),
                 ],
               ),
             ),

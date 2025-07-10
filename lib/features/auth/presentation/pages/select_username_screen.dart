@@ -21,6 +21,7 @@ class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
   final usernameFormKey = GlobalKey<FormState>();
   TextEditingController usernameController = TextEditingController();
   TextEditingController nameController = TextEditingController();
+  bool isLoading = false; // Add loading state
 
   @override
   void initState() {
@@ -34,6 +35,66 @@ class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
     usernameController.dispose();
     nameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _updateProfile() async {
+    if (!usernameFormKey.currentState!.validate()) return;
+
+    setState(() {
+      isLoading = true; // Set loading to true
+    });
+
+    try {
+      usernameFormKey.currentState!.save();
+      final token = await AuthManager.getToken();
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/v1/user/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'username': usernameController.text.trim(),
+          'fullName': nameController.text.trim(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ProfileImageSelectScreen(),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors (network issues, etc.)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'An error occurred. Please try again.',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false; // Set loading to false
+      });
+    }
   }
 
   @override
@@ -91,6 +152,7 @@ class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
                         SizedBox(height: getProportionateScreenHeight(6)),
                         TextFormField(
                           controller: usernameController,
+                          enabled: !isLoading, // Disable when loading
                           style: Theme.of(context).textTheme.bodyMedium!
                               .copyWith(fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
@@ -115,6 +177,7 @@ class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
                         SizedBox(height: getProportionateScreenHeight(6)),
                         TextFormField(
                           controller: nameController,
+                          enabled: !isLoading, // Disable when loading
                           style: Theme.of(context).textTheme.bodyMedium!
                               .copyWith(fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
@@ -133,48 +196,18 @@ class _SelectUsernameScreenState extends State<SelectUsernameScreen> {
                           },
                         ),
                         SizedBox(height: getProportionateScreenHeight(54)),
-                        DefaultButton(
-                          press: () async {
-                            if (usernameFormKey.currentState!.validate()) {
-                              usernameFormKey.currentState!.save();
-                              final token = await AuthManager.getToken();
-                              final response = await http.put(
-                                Uri.parse('$baseUrl/api/v1/user/profile'),
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': 'Bearer $token',
-                                },
-                                body: jsonEncode({
-                                  'username': usernameController.text.trim(),
-                                  'fullName': nameController.text.trim(),
-                                }),
-                              );
-
-                              if (response.statusCode == 200) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ProfileImageSelectScreen(),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text(
-                                      jsonDecode(response.body)['message']
-                                          .toString()
-                                          .replaceAll(RegExp(r'\[|\]'), ''),
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          text: 'Continue',
-                        ),
+                        isLoading
+                            ? Center(
+                                child: SizedBox(
+                                  height: getProportionateScreenHeight(45),
+                                  width: getProportionateScreenWidth(45),
+                                  child: const CircularProgressIndicator(),
+                                ),
+                              )
+                            : DefaultButton(
+                                press: _updateProfile, // Disable when loading
+                                text: 'Continue', // Hide text when loading
+                              ),
                       ],
                     ),
                   ),

@@ -20,6 +20,8 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _forgotPasswordFormKey = GlobalKey<FormState>();
   TextEditingController emailController = TextEditingController();
+  bool _isLoading = false; // Added loading state
+
   @override
   Widget build(BuildContext context) {
     final labelColor =
@@ -75,6 +77,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         SizedBox(height: getProportionateScreenHeight(6)),
                         TextFormField(
                           controller: emailController,
+
                           style: Theme.of(context).textTheme.bodyMedium!
                               .copyWith(fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
@@ -83,41 +86,78 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           validator: validateEmail,
                         ),
                         SizedBox(height: getProportionateScreenHeight(16)),
-                        DefaultButton(
-                          press: () async {
-                            if (_forgotPasswordFormKey.currentState!
-                                .validate()) {
-                              _forgotPasswordFormKey.currentState!.save();
-                              final response = await http.post(
-                                Uri.parse(
-                                  '$baseUrl/api/v1/auth/forgot-password',
+                        _isLoading
+                            ? Center(
+                                child: SizedBox(
+                                  height: getProportionateScreenHeight(45),
+                                  width: getProportionateScreenWidth(45),
+                                  child: const CircularProgressIndicator(),
                                 ),
-                                headers: {'Content-Type': 'application/json'},
-                                body: jsonEncode({
-                                  'email': emailController.text.trim(),
-                                }),
-                              );
-                              if (response.statusCode == 200) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "Password reset link sent to your email.",
-                                    ),
-                                  ),
-                                );
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ResetPasswordScreen(
-                                      email: emailController.text.trim(),
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          text: 'Continue with email',
-                        ),
+                              )
+                            : DefaultButton(
+                                press: () async {
+                                  if (_forgotPasswordFormKey.currentState!
+                                      .validate()) {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+
+                                    _forgotPasswordFormKey.currentState!.save();
+
+                                    try {
+                                      final response = await http.post(
+                                        Uri.parse(
+                                          '$baseUrl/api/v1/auth/forgot-password',
+                                        ),
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        body: jsonEncode({
+                                          'email': emailController.text.trim(),
+                                        }),
+                                      );
+
+                                      if (response.statusCode == 200) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "Password reset link sent to your email.",
+                                            ),
+                                          ),
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ResetPasswordScreen(
+                                                  email: emailController.text
+                                                      .trim(),
+                                                ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "An error occurred. Please try again.",
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    } finally {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
+                                  }
+                                },
+                                text: 'Continue with email',
+                              ),
                         SizedBox(height: getProportionateScreenHeight(32)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

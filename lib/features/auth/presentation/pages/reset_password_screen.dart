@@ -22,12 +22,69 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _tokenController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
+  bool isLoading = false; // Add loading state
 
   @override
   void dispose() {
     _tokenController.dispose();
     _newPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      isLoading = true; // Set loading to true
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          "email": widget.email,
+          "token": _tokenController.text,
+          "newPassword": _newPasswordController.text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VerificationSuccessfulScreen(isChange: true),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors (network issues, etc.)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'An error occurred. Please try again.',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false; // Set loading to false
+      });
+    }
   }
 
   @override
@@ -83,6 +140,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     SizedBox(height: getProportionateScreenHeight(6)),
                     TextFormField(
                       controller: _tokenController,
+                      enabled: !isLoading, // Disable when loading
                       decoration: InputDecoration(
                         hintText: 'Enter the token sent to your mail',
                         border: OutlineInputBorder(
@@ -110,6 +168,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     SizedBox(height: getProportionateScreenHeight(6)),
                     TextFormField(
                       controller: _newPasswordController,
+                      enabled: !isLoading, // Disable when loading
                       obscureText: true,
                       decoration: InputDecoration(
                         hintText: 'Enter new password',
@@ -128,45 +187,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       },
                     ),
                     SizedBox(height: getProportionateScreenHeight(32)),
-                    DefaultButton(
-                      text: "Verify",
-                      press: () async {
-                        if (_formKey.currentState!.validate()) {
-                          final response = await http.post(
-                            Uri.parse('$baseUrl/api/v1/auth/reset-password'),
-                            headers: {'Content-Type': 'application/json'},
-                            body: json.encode({
-                              "email": widget.email,
-                              "token": _tokenController.text,
-                              "newPassword": _newPasswordController.text,
-                            }),
-                          );
-                          if (response.statusCode == 200) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    VerificationSuccessfulScreen(
-                                      isChange: true,
-                                    ),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text(
-                                  jsonDecode(response.body)['message']
-                                      .toString()
-                                      .replaceAll(RegExp(r'\[|\]'), ''),
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    ),
+                    isLoading
+                        ? Center(
+                            child: SizedBox(
+                              height: getProportionateScreenHeight(45),
+                              width: getProportionateScreenWidth(45),
+                              child: const CircularProgressIndicator(),
+                            ),
+                          )
+                        : DefaultButton(text: "Verify", press: _resetPassword),
                   ],
                 ),
               ),

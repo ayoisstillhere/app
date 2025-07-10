@@ -35,6 +35,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   TextEditingController _controller5 = TextEditingController();
   TextEditingController _controller6 = TextEditingController();
 
+  bool _isLoading = false; // Added loading state
+
   @override
   void initState() {
     super.initState();
@@ -151,46 +153,75 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ],
                   ),
                   SizedBox(height: getProportionateScreenHeight(155)),
-                  DefaultButton(
-                    text: "Verify",
-                    press: () async {
-                      final response = await http.post(
-                        Uri.parse('$baseUrl/api/v1/auth/verify-email'),
-                        headers: {'Content-Type': 'application/json'},
-                        body: json.encode({
-                          'email': widget.email,
-                          'otp':
-                              _controller1.text +
-                              _controller2.text +
-                              _controller3.text +
-                              _controller4.text +
-                              _controller5.text +
-                              _controller6.text,
-                        }),
-                      );
-                      if (response.statusCode == 200) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                VerificationSuccessfulScreen(),
+                  _isLoading
+                      ? Center(
+                          child: SizedBox(
+                            height: getProportionateScreenHeight(45),
+                            width: getProportionateScreenWidth(45),
+                            child: const CircularProgressIndicator(),
                           ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Colors.red,
-                            content: Text(
-                              jsonDecode(response.body)['message']
-                                  .toString()
-                                  .replaceAll(RegExp(r'\[|\]'), ''),
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                        )
+                      : DefaultButton(
+                          text: "Verify",
+                          press: () async {
+                            setState(() {
+                              _isLoading = true;
+                            });
+
+                            try {
+                              final response = await http.post(
+                                Uri.parse('$baseUrl/api/v1/auth/verify-email'),
+                                headers: {'Content-Type': 'application/json'},
+                                body: json.encode({
+                                  'email': widget.email,
+                                  'otp':
+                                      _controller1.text +
+                                      _controller2.text +
+                                      _controller3.text +
+                                      _controller4.text +
+                                      _controller5.text +
+                                      _controller6.text,
+                                }),
+                              );
+
+                              if (response.statusCode == 200) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        VerificationSuccessfulScreen(),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.red,
+                                    content: Text(
+                                      jsonDecode(response.body)['message']
+                                          .toString()
+                                          .replaceAll(RegExp(r'\[|\]'), ''),
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.red,
+                                  content: Text(
+                                    "An error occurred. Please try again.",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            } finally {
+                              setState(() {
+                                _isLoading = false;
+                              });
+                            }
+                          },
+                        ),
                 ],
               ),
             ),
