@@ -129,7 +129,18 @@ class FollowSuggestion extends StatelessWidget {
                 ),
                 Spacer(),
                 InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfileScreen(
+                          isVerified: true,
+                          userName: handle,
+                          currentUser: currentUser,
+                        ),
+                      ),
+                    );
+                  },
                   child: Container(
                     height: getProportionateScreenHeight(37),
                     width: getProportionateScreenWidth(90),
@@ -139,7 +150,7 @@ class FollowSuggestion extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        "Follow",
+                        "View",
                         style: TextStyle(
                           fontSize: 12,
                           color: kBlack,

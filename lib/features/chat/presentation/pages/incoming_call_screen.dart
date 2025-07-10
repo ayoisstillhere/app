@@ -32,6 +32,7 @@ class IncomingCallScreen extends StatefulWidget {
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
   late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
+  bool _isVibrating = false; // Add this to track vibration state
 
   @override
   void initState() {
@@ -43,26 +44,19 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   @override
   void dispose() {
     _stopRingtone();
+    _stopVibration(); // Stop vibration when disposing
     _audioPlayer.dispose();
     super.dispose();
   }
 
   Future<void> _playRingtone() async {
     try {
-      // Start vibration pattern
-      if (await Vibration.hasVibrator()) {
-        Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
-      }
-      // Option 1: Play from assets
-      await _audioPlayer.play(AssetSource('assets/sounds/ringtone.mp3'));
-
-      // Option 2: Play system default ringtone (alternative)
-      // await _audioPlayer.play(AssetSource('sounds/default_ringtone.mp3'));
+      // Check if file exists and can be loaded
+      await _audioPlayer.setSource(AssetSource('sounds/ringtone.mp3'));
+      await _audioPlayer.resume();
 
       // Set to loop the ringtone
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-
-      // Set volume (0.0 to 1.0)
       await _audioPlayer.setVolume(0.8);
 
       setState(() {
@@ -70,6 +64,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
       });
     } catch (e) {
       debugPrint('Error playing ringtone: $e');
+      // Try fallback sound or show error
     }
   }
 
@@ -80,6 +75,21 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         _isPlaying = false;
       });
     }
+  }
+
+  Future<void> _stopVibration() async {
+    if (_isVibrating) {
+      await Vibration.cancel(); // Stop vibration
+      setState(() {
+        _isVibrating = false;
+      });
+    }
+  }
+
+  // Combined method to stop both ringtone and vibration
+  Future<void> _stopRingtoneAndVibration() async {
+    await _stopRingtone();
+    await _stopVibration();
   }
 
   @override
@@ -145,7 +155,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   }
 
   Future<void> _acceptCall() async {
-    await _stopRingtone(); // Stop ringtone when accepting call
+    await _stopRingtoneAndVibration(); // Stop both ringtone and vibration when accepting call
 
     final token = await AuthManager.getToken();
     String callToken;
@@ -190,7 +200,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   }
 
   Future<void> _declineCall() async {
-    await _stopRingtone(); // Stop ringtone when declining call
+    await _stopRingtoneAndVibration(); // Stop both ringtone and vibration when declining call
     Navigator.pop(context);
   }
 }
