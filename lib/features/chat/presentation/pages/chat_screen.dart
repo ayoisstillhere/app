@@ -368,22 +368,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
-    PermissionStatus microphoneStatus = await Permission.microphone.request();
-
-    // For Android, also request storage permission if needed
-    PermissionStatus storageStatus = PermissionStatus.granted;
-    if (Platform.isAndroid) {
-      storageStatus = await Permission.storage.request();
-    }
-
-    if (microphoneStatus != PermissionStatus.granted ||
-        storageStatus != PermissionStatus.granted) {
-      return;
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      throw Exception("Microphone permission not granted");
     }
     final tempDir = await getTemporaryDirectory();
     _recordingPath =
         '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
-
+    await _audioRecorder.openRecorder();
     await _audioRecorder.startRecorder(
       toFile: _recordingPath,
       codec: Codec.aacADTS,
