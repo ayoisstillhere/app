@@ -29,6 +29,9 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController controller;
 
+  // FAB expansion state
+  bool _isFabExpanded = false;
+
   // Recommended posts pagination
   List<Post> recommendedPosts = [];
   bool isRecommendedLoaded = false;
@@ -248,6 +251,35 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _toggleFabExpansion() {
+    setState(() {
+      _isFabExpanded = !_isFabExpanded;
+    });
+  }
+
+  void _navigateToCreatePost() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CreatePostScreen(profileImage: widget.currentUser.profileImage),
+      ),
+    );
+    // Close the expansion after navigation
+    setState(() {
+      _isFabExpanded = false;
+    });
+  }
+
+  void _handleLivestream() {
+    // TODO: Implement livestream functionality
+    print("Livestream button pressed");
+    // Close the expansion
+    setState(() {
+      _isFabExpanded = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final dividerColor =
@@ -260,24 +292,80 @@ class _HomeScreenState extends State<HomeScreen>
         : kBlack;
     return Scaffold(
       body: _buildHomeView(context, dividerColor, iconColor),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CreatePostScreen(
-                profileImage: widget.currentUser.profileImage,
-              ),
+      floatingActionButton: _buildExpandableFab(),
+    );
+  }
+
+  Widget _buildExpandableFab() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Livestream button
+        AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          height: _isFabExpanded ? 56 : 0,
+          child: AnimatedOpacity(
+            duration: Duration(milliseconds: 300),
+            opacity: _isFabExpanded ? 1.0 : 0.0,
+            child: _isFabExpanded
+                ? Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: FloatingActionButton(
+                      onPressed: _handleLivestream,
+                      heroTag: "livestream",
+                      shape: const CircleBorder(),
+                      mini: true,
+                      elevation: 4,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.live_tv, color: Colors.black, size: 20),
+                    ),
+                  )
+                : SizedBox.shrink(),
+          ),
+        ),
+        // Post button
+        AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          height: _isFabExpanded ? 56 : 0,
+          child: AnimatedOpacity(
+            duration: Duration(milliseconds: 300),
+            opacity: _isFabExpanded ? 1.0 : 0.0,
+            child: _isFabExpanded
+                ? Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: FloatingActionButton(
+                      onPressed: _navigateToCreatePost,
+                      heroTag: "post",
+                      shape: const CircleBorder(),
+                      mini: true,
+                      elevation: 4,
+                      backgroundColor: kLightPurple,
+                      child: Icon(Icons.edit, color: Colors.black, size: 20),
+                    ),
+                  )
+                : SizedBox.shrink(),
+          ),
+        ),
+        // Main FAB
+        FloatingActionButton(
+          onPressed: _toggleFabExpansion,
+          heroTag: "main",
+          shape: const CircleBorder(),
+          mini: false,
+          elevation: 4,
+          backgroundColor: kLightPurple,
+          child: AnimatedRotation(
+            turns: _isFabExpanded ? 0.125 : 0, // 45 degrees rotation for X
+            duration: Duration(milliseconds: 300),
+            child: Icon(
+              _isFabExpanded ? Icons.close : Icons.add,
+              color: Colors.black,
             ),
-          );
-        },
-        shape: const CircleBorder(),
-        mini: false,
-        elevation: 0,
-        highlightElevation: 0,
-        backgroundColor: kLightPurple,
-        child: Icon(Icons.add),
-      ),
+          ),
+        ),
+      ],
     );
   }
 
