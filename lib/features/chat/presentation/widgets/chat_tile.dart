@@ -1,5 +1,10 @@
+import 'dart:convert';
+
+import 'package:app/features/chat/data/models/get_messages_response_model.dart';
 import 'package:app/features/chat/presentation/pages/secret_chat_screen.dart';
+import 'package:fast_rsa/fast_rsa.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
@@ -7,9 +12,11 @@ import 'package:app/features/chat/domain/entities/get_messages_response_entity.d
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
+import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
 
-class ChatTile extends StatelessWidget {
+class ChatTile extends StatefulWidget {
   const ChatTile({
     super.key,
     required this.dividerColor,
@@ -46,41 +53,65 @@ class ChatTile extends StatelessWidget {
   final bool isConversationBlockedForMe;
 
   @override
+  State<ChatTile> createState() => _ChatTileState();
+}
+
+class _ChatTileState extends State<ChatTile> {
+  late final EncryptionService _encryptionService;
+  @override
+  void initState() {
+    super.initState();
+    _initializeServices();
+  }
+
+  void _initializeServices() {
+    _encryptionService = EncryptionService();
+    _encryptionService.setSecretKey(
+      '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        if (isSecretChat) {
+        if (widget.isSecretChat) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => SecretChatScreen(
-                chatId: chatId,
-                name: name,
-                imageUrl: image,
-                currentUser: currentUser,
-                isGroup: isGroup,
-                chatHandle: chatHandle,
-                participants: participants,
-                isConversationMuted: isConversationMuted,
-                isConversationBlockedForMe: isConversationBlockedForMe,
+                chatId: widget.chatId,
+                name: widget.name,
+                imageUrl: widget.image,
+                currentUser: widget.currentUser,
+                isGroup: widget.isGroup,
+                chatHandle: widget.chatHandle,
+                participants: widget.participants,
+                isConversationMuted: widget.isConversationMuted,
+                isConversationBlockedForMe: widget.isConversationBlockedForMe,
               ),
             ),
-          );
+          ).then((result) {
+            if (result != null && result['recreateSecretChat'] == true) {
+              // Call a method to recreate the secret chat
+              _recreateSecretChat();
+            }
+          });
         } else {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ChatScreen(
-                chatId: chatId,
-                name: name,
-                imageUrl: image,
-                currentUser: currentUser,
-                encryptionKey: encryptionKey!,
-                isGroup: isGroup,
-                chatHandle: chatHandle,
-                participants: participants,
-                isConversationMuted: isConversationMuted,
-                isConversationBlockedForMe: isConversationBlockedForMe,
+                chatId: widget.chatId,
+                name: widget.name,
+                imageUrl: widget.image,
+                currentUser: widget.currentUser,
+                encryptionKey: widget.encryptionKey!,
+                isGroup: widget.isGroup,
+                chatHandle: widget.chatHandle,
+                participants: widget.participants,
+                isConversationMuted: widget.isConversationMuted,
+                isConversationBlockedForMe: widget.isConversationBlockedForMe,
               ),
             ),
           );
@@ -91,7 +122,9 @@ class ChatTile extends StatelessWidget {
           vertical: getProportionateScreenHeight(10),
         ),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: dividerColor, width: 1.0)),
+          border: Border(
+            bottom: BorderSide(color: widget.dividerColor, width: 1.0),
+          ),
         ),
         child: Row(
           children: [
@@ -104,9 +137,9 @@ class ChatTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: image.isEmpty
+                      image: widget.image.isEmpty
                           ? NetworkImage(defaultAvatar)
-                          : NetworkImage(image),
+                          : NetworkImage(widget.image),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -118,7 +151,7 @@ class ChatTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        widget.name,
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: getProportionateScreenHeight(16),
@@ -133,7 +166,7 @@ class ChatTile extends StatelessWidget {
                             SizedBox(
                               width: getProportionateScreenWidth(140),
                               child: Text(
-                                lastMessage,
+                                widget.lastMessage,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   fontSize: getProportionateScreenHeight(12),
@@ -143,7 +176,7 @@ class ChatTile extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              timeago.format(time),
+                              timeago.format(widget.time),
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: getProportionateScreenHeight(12),
@@ -159,7 +192,7 @@ class ChatTile extends StatelessWidget {
               ],
             ),
             Spacer(),
-            unreadMessages > 0
+            widget.unreadMessages > 0
                 ? Container(
                     height: getProportionateScreenHeight(25),
                     width: getProportionateScreenWidth(25),
@@ -169,7 +202,7 @@ class ChatTile extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        '$unreadMessages',
+                        '${widget.unreadMessages}',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: getProportionateScreenHeight(12),
@@ -183,5 +216,91 @@ class ChatTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _recreateSecretChat() async {
+    if (widget.isGroup) {
+      return;
+    }
+    final token = await AuthManager.getToken();
+    final uri = Uri.parse('$baseUrl/api/v1/chat/secret-conversations');
+
+    // Generate a conversation key for end-to-end encryption
+    final conversationKey = _encryptionService.generateConversationKey();
+
+    // Get the current user's participant data
+    final myParticipant = widget.participants.firstWhere(
+      (participant) => participant.userId == widget.currentUser.id,
+      orElse: () => throw Exception("Current user not found in participants"),
+    );
+
+    // Get the other participant's data
+    final otherParticipant = widget.participants.firstWhere(
+      (participant) => participant.userId != widget.currentUser.id,
+      orElse: () => throw Exception("Other participant not found"),
+    );
+
+    // Get both public keys
+    final myPublicKey = myParticipant.user.publicKey;
+    final otherPublicKey = otherParticipant.user.publicKey;
+
+    // Use RSA to encrypt the conversation key with both public keys
+    final myEncryptedKey = await RSA.encryptPKCS1v15(
+      conversationKey,
+      myPublicKey!,
+    );
+    final otherEncryptedKey = await RSA.encryptPKCS1v15(
+      conversationKey,
+      otherPublicKey!,
+    );
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      "participantUserIds": widget.participants.map((e) => e.userId).toList(),
+      "myConversationKey": myEncryptedKey,
+      "otherParticipantConversationKey": otherEncryptedKey,
+      "deleteFormerChat": true,
+    });
+
+    try {
+      final response = await http.post(uri, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SecretChatScreen(
+              chatId: jsonDecode(response.body)['id'],
+              name: widget.name,
+              imageUrl: widget.image,
+              currentUser: widget.currentUser,
+              chatHandle: widget.chatHandle,
+              isGroup: false,
+              participants: (jsonDecode(response.body)['participants'] as List)
+                  .map((e) => ParticipantModel.fromJson(e))
+                  .toList(),
+
+              isConversationMuted: jsonDecode(
+                response.body,
+              )['isConversationMutedForMe'],
+              isConversationBlockedForMe: jsonDecode(
+                response.body,
+              )['isConversationBlockedForMe'],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(e.toString(), style: TextStyle(color: Colors.white)),
+        ),
+      );
+    }
   }
 }
