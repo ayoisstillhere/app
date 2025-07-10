@@ -15,7 +15,7 @@ class LiveStreamScreen extends StatefulWidget {
 
 class _LiveStreamScreenState extends State<LiveStreamScreen> {
   late StreamSubscription<CallState> _callStateSubscription;
-  
+
   @override
   void initState() {
     super.initState();
@@ -198,6 +198,9 @@ class LivestreamLiveWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamCallContainer(
+      onBackPressed: () {
+        call.end();
+      },
       call: call,
       callContentWidgetBuilder: (context, call) {
         return PartialCallStateBuilder(

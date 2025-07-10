@@ -187,12 +187,14 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(e.toString(), style: TextStyle(color: Colors.white)),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(e.toString(), style: TextStyle(color: Colors.white)),
+          ),
+        );
+      }
     }
   }
 

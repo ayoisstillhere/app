@@ -15,6 +15,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamCallContainer(
+        onBackPressed: () {
+          widget.call.end();
+        },
         call: widget.call,
         callConnectOptions: CallConnectOptions(
           microphone: TrackOption.enabled(),

@@ -15,6 +15,9 @@ class _CallScreenState extends State<CallScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamCallContainer(
+        onBackPressed: () {
+          widget.call.end();
+        },
         call: widget.call,
         callConnectOptions: CallConnectOptions(
           camera: TrackOption.disabled(),
