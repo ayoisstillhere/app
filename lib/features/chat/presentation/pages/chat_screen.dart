@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app/features/chat/data/models/get_messages_response_model.dart';
+import 'package:app/features/chat/presentation/pages/video_call_screen.dart';
 import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:file_picker/file_picker.dart';
@@ -476,7 +477,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Future<void> _initiateCall() async {
+  Future<void> _initiateCall(bool isVideo) async {
     final token = await AuthManager.getToken();
     String callToken;
     final response = await http.post(
@@ -510,11 +511,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
         await call.getOrCreate();
 
-        // Created ahead
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CallScreen(call: call)),
-        );
+        if (isVideo) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoCallScreen(call: call),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CallScreen(call: call)),
+          );
+        }
       } catch (e) {
         debugPrint('Error joining or creating call: $e');
         debugPrint(e.toString());
@@ -680,7 +689,7 @@ class _ChatScreenState extends State<ChatScreen> {
               width: getProportionateScreenWidth(24),
               child: InkWell(
                 onTap: () {
-                  _initiateCall();
+                  _initiateCall(false);
                 },
                 child: SvgPicture.asset(
                   "assets/icons/chat_phone.svg",
@@ -697,7 +706,9 @@ class _ChatScreenState extends State<ChatScreen> {
               height: getProportionateScreenHeight(24),
               width: getProportionateScreenWidth(24),
               child: InkWell(
-                onTap: () {},
+                onTap: () {
+                  _initiateCall(false);
+                },
                 child: SvgPicture.asset(
                   "assets/icons/chat_video.svg",
                   colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
