@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/data/models/get_messages_response_model.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
@@ -387,7 +389,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               currentUser: widget.currentUser,
               encryptionKey: jsonDecode(response.body)['encryptionKey'],
               isGroup: true,
-              participants: jsonDecode(response.body)['participants'],
+              participants: List<Participant>.from(
+                (jsonDecode(response.body)['participants'] as List)
+                    .map((e) => ParticipantModel.fromJson(e))
+                    .toList(),
+              ),
               isConversationMuted: jsonDecode(
                 response.body,
               )['isConversationMutedForMe'],
