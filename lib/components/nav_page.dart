@@ -4,6 +4,7 @@ import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_call_screen.dart';
+import 'package:app/features/chat/presentation/pages/incoming_livestream_screen.dart';
 import 'package:app/features/home/presentation/pages/home_screen.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:app/features/explore/presentation/pages/explore_screen.dart';
@@ -86,8 +87,9 @@ class _NavPageState extends State<NavPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => IncomingCallScreen(
-          callerName: data['initiatorFullName'],
+        builder: (_) => IncomingLivestreamScreen(
+          streamerName: data['initiatorFullName'],
+          streamTitle: "${data['initiatorName']} Live Stream",
           roomId: data['liveStreamId'],
           currentUser: user!,
           imageUrl: data['initiatorProfileImage'],

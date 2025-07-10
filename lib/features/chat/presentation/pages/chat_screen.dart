@@ -107,54 +107,54 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _createSecretChat({bool deleteFormerChat = false}) async {
-    if (widget.isGroup) {
-      return;
-    }
-    final token = await AuthManager.getToken();
-    final uri = Uri.parse('$baseUrl/api/v1/chat/secret-conversations');
-
-    // Generate a conversation key for end-to-end encryption
-    final conversationKey = _encryptionService.generateConversationKey();
-
-    // Get the current user's participant data
-    final myParticipant = widget.participants.firstWhere(
-      (participant) => participant.userId == widget.currentUser.id,
-      orElse: () => throw Exception("Current user not found in participants"),
-    );
-
-    // Get the other participant's data
-    final otherParticipant = widget.participants.firstWhere(
-      (participant) => participant.userId != widget.currentUser.id,
-      orElse: () => throw Exception("Other participant not found"),
-    );
-
-    // Get both public keys
-    final myPublicKey = myParticipant.user.publicKey;
-    final otherPublicKey = otherParticipant.user.publicKey;
-
-    // Use RSA to encrypt the conversation key with both public keys
-    final myEncryptedKey = await RSA.encryptPKCS1v15(
-      conversationKey,
-      myPublicKey!,
-    );
-    final otherEncryptedKey = await RSA.encryptPKCS1v15(
-      conversationKey,
-      otherPublicKey!,
-    );
-
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
-
-    final body = jsonEncode({
-      "participantUserIds": widget.participants.map((e) => e.userId).toList(),
-      "myConversationKey": myEncryptedKey,
-      "otherParticipantConversationKey": otherEncryptedKey,
-      "deleteFormerChat": deleteFormerChat,
-    });
-
     try {
+      if (widget.isGroup) {
+        return;
+      }
+      final token = await AuthManager.getToken();
+      final uri = Uri.parse('$baseUrl/api/v1/chat/secret-conversations');
+
+      // Generate a conversation key for end-to-end encryption
+      final conversationKey = _encryptionService.generateConversationKey();
+
+      // Get the current user's participant data
+      final myParticipant = widget.participants.firstWhere(
+        (participant) => participant.userId == widget.currentUser.id,
+        orElse: () => throw Exception("Current user not found in participants"),
+      );
+
+      // Get the other participant's data
+      final otherParticipant = widget.participants.firstWhere(
+        (participant) => participant.userId != widget.currentUser.id,
+        orElse: () => throw Exception("Other participant not found"),
+      );
+
+      // Get both public keys
+      final myPublicKey = myParticipant.user.publicKey;
+      final otherPublicKey = otherParticipant.user.publicKey;
+
+      // Use RSA to encrypt the conversation key with both public keys
+      final myEncryptedKey = await RSA.encryptPKCS1v15(
+        conversationKey,
+        myPublicKey!,
+      );
+      final otherEncryptedKey = await RSA.encryptPKCS1v15(
+        conversationKey,
+        otherPublicKey!,
+      );
+
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
+
+      final body = jsonEncode({
+        "participantUserIds": widget.participants.map((e) => e.userId).toList(),
+        "myConversationKey": myEncryptedKey,
+        "otherParticipantConversationKey": otherEncryptedKey,
+        "deleteFormerChat": deleteFormerChat,
+      });
+
       final response = await http.post(uri, headers: headers, body: body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -187,11 +187,15 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
+      debugPrint(e.toString());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red,
-            content: Text(e.toString(), style: TextStyle(color: Colors.white)),
+            content: Text(
+              "A secret Chat cannot be created with this user currently",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         );
       }
