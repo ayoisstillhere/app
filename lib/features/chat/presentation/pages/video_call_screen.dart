@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
-class CallScreen extends StatefulWidget {
+class VideoCallScreen extends StatefulWidget {
   final Call call;
 
-  const CallScreen({super.key, required this.call});
+  const VideoCallScreen({super.key, required this.call});
 
   @override
-  State<CallScreen> createState() => _CallScreenState();
+  State<VideoCallScreen> createState() => _VideoCallScreenState();
 }
 
-class _CallScreenState extends State<CallScreen> {
+class _VideoCallScreenState extends State<VideoCallScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamCallContainer(
         call: widget.call,
         callConnectOptions: CallConnectOptions(
-          camera: TrackOption.disabled(),
           microphone: TrackOption.enabled(),
         ),
       ),
