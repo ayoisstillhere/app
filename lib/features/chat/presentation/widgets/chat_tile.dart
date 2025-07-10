@@ -94,7 +94,7 @@ class _ChatTileState extends State<ChatTile> {
           ).then((result) {
             if (result != null && result['recreateSecretChat'] == true) {
               // Call a method to recreate the secret chat
-              _recreateSecretChat();
+              _recreateSecretChat(deleteFormerChat: true);
             }
           });
         } else {
@@ -218,7 +218,7 @@ class _ChatTileState extends State<ChatTile> {
     );
   }
 
-  Future<void> _recreateSecretChat() async {
+  Future<void> _recreateSecretChat({bool deleteFormerChat = true}) async {
     if (widget.isGroup) {
       return;
     }
@@ -263,7 +263,7 @@ class _ChatTileState extends State<ChatTile> {
       "participantUserIds": widget.participants.map((e) => e.userId).toList(),
       "myConversationKey": myEncryptedKey,
       "otherParticipantConversationKey": otherEncryptedKey,
-      "deleteFormerChat": true,
+      "deleteFormerChat": deleteFormerChat,
     });
 
     try {
@@ -292,7 +292,11 @@ class _ChatTileState extends State<ChatTile> {
               )['isConversationBlockedForMe'],
             ),
           ),
-        );
+        ).then((result) {
+          if (result != null && result['recreateSecretChat'] == true) {
+            _recreateSecretChat(deleteFormerChat: true);
+          }
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
