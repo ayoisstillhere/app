@@ -24,6 +24,7 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  bool _isLoading = false;
   final _signinFormKey = GlobalKey<FormState>();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
@@ -161,54 +162,102 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         SizedBox(height: getProportionateScreenHeight(24)),
                         // Inside the DefaultButton press callback in sign_in_screen.dart
-                        DefaultButton(
-                          press: () async {
-                            if (_signinFormKey.currentState!.validate()) {
-                              _signinFormKey.currentState!.save();
-                              final response = await http.post(
-                                Uri.parse('$baseUrl/api/v1/auth/login'),
-                                headers: {'Content-Type': 'application/json'},
-                                body: jsonEncode({
-                                  'emailOrUsername': _emailController.text
-                                      .trim(),
-                                  'password': _passwordController.text.trim(),
-                                  "deviceId": await _secureStorage.read(
-                                    key: "fcm_token",
-                                  ),
-                                }),
-                              );
-                              if (response.statusCode == 200) {
-                                final responseData = jsonDecode(response.body);
-                                final token = responseData['access_token'];
-                                final refreshToken =
-                                    responseData['refresh_token'];
+                        _isLoading
+                            ? Center(
+                                child: SizedBox(
+                                  height: getProportionateScreenHeight(45),
+                                  width: getProportionateScreenWidth(45),
+                                  child: const CircularProgressIndicator(),
+                                ),
+                              )
+                            : DefaultButton(
+                                press: () async {
+                                  if (_isLoading) return;
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  try {
+                                    if (_signinFormKey.currentState!
+                                        .validate()) {
+                                      _signinFormKey.currentState!.save();
+                                      final response = await http.post(
+                                        Uri.parse('$baseUrl/api/v1/auth/login'),
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        body: jsonEncode({
+                                          'emailOrUsername': _emailController
+                                              .text
+                                              .trim(),
+                                          'password': _passwordController.text
+                                              .trim(),
+                                          "deviceId": await _secureStorage.read(
+                                            key: "fcm_token",
+                                          ),
+                                        }),
+                                      );
+                                      if (response.statusCode == 200) {
+                                        final responseData = jsonDecode(
+                                          response.body,
+                                        );
+                                        final token =
+                                            responseData['access_token'];
+                                        final refreshToken =
+                                            responseData['refresh_token'];
 
-                                // Use AuthManager instead of SharedPreferences
-                                await AuthManager.setToken(token);
-                                await AuthManager.setRefreshToken(refreshToken);
+                                        // Use AuthManager instead of SharedPreferences
+                                        await AuthManager.setToken(token);
+                                        await AuthManager.setRefreshToken(
+                                          refreshToken,
+                                        );
 
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (context) => const NavPage(),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text(
-                                      jsonDecode(response.body)['message']
-                                          .toString()
-                                          .replaceAll(RegExp(r'\[|\]'), ''),
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          text: 'Sign In',
-                        ),
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const NavPage(),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Colors.red,
+                                            content: Text(
+                                              jsonDecode(
+                                                    response.body,
+                                                  )['message']
+                                                  .toString()
+                                                  .replaceAll(
+                                                    RegExp(r'\[|\]'),
+                                                    '',
+                                                  ),
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: Colors.red,
+                                        content: Text(
+                                          'An error occurred: $e',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    );
+                                  } finally {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
+                                },
+                                text: 'Sign In',
+                              ),
                         SizedBox(height: getProportionateScreenHeight(16)),
                         GoogleButton(press: () {}, isSignin: true),
                         SizedBox(height: getProportionateScreenHeight(32)),

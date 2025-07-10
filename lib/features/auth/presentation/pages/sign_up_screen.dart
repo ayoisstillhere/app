@@ -22,6 +22,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  bool _isLoading = false;
   final _signupFormKey = GlobalKey<FormState>();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
@@ -125,53 +126,102 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           validator: validatePassword,
                         ),
                         SizedBox(height: getProportionateScreenHeight(16)),
-                        DefaultButton(
-                          press: () async {
-                            if (_signupFormKey.currentState!.validate()) {
-                              _signupFormKey.currentState!.save();
-                              final response = await http.post(
-                                Uri.parse('$baseUrl/api/v1/auth/register'),
-                                headers: {'Content-Type': 'application/json'},
-                                body: jsonEncode({
-                                  'email': _emailController.text.trim(),
-                                  'password': _passwordController.text.trim(),
-                                }),
-                              );
-                              if (response.statusCode == 201) {
-                                final responseData = jsonDecode(response.body);
-                                final token = responseData['access_token'];
-                                final refreshToken =
-                                    responseData['refresh_token'];
-
-                                // Use AuthManager instead of SharedPreferences
-                                await AuthManager.setToken(token);
-                                await AuthManager.setRefreshToken(refreshToken);
-
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        EmailVerificationScreen(
-                                          email: _emailController.text.trim(),
+                        _isLoading
+                            ? Center(
+                                child: SizedBox(
+                                  height: getProportionateScreenHeight(45),
+                                  width: getProportionateScreenWidth(45),
+                                  child: const CircularProgressIndicator(),
+                                ),
+                              )
+                            : DefaultButton(
+                                press: () async {
+                                  if (_isLoading) return;
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  try {
+                                    if (_signupFormKey.currentState!
+                                        .validate()) {
+                                      _signupFormKey.currentState!.save();
+                                      final response = await http.post(
+                                        Uri.parse(
+                                          '$baseUrl/api/v1/auth/register',
                                         ),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text(
-                                      jsonDecode(response.body)['message']
-                                          .toString()
-                                          .replaceAll(RegExp(r'\[|\]'), ''),
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          text: 'Continue with email',
-                        ),
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        body: jsonEncode({
+                                          'email': _emailController.text.trim(),
+                                          'password': _passwordController.text
+                                              .trim(),
+                                        }),
+                                      );
+                                      if (response.statusCode == 201) {
+                                        final responseData = jsonDecode(
+                                          response.body,
+                                        );
+                                        final token =
+                                            responseData['access_token'];
+                                        final refreshToken =
+                                            responseData['refresh_token'];
+
+                                        // Use AuthManager instead of SharedPreferences
+                                        await AuthManager.setToken(token);
+                                        await AuthManager.setRefreshToken(
+                                          refreshToken,
+                                        );
+
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                EmailVerificationScreen(
+                                                  email: _emailController.text
+                                                      .trim(),
+                                                ),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: Colors.red,
+                                            content: Text(
+                                              jsonDecode(
+                                                    response.body,
+                                                  )['message']
+                                                  .toString()
+                                                  .replaceAll(
+                                                    RegExp(r'\[|\]'),
+                                                    '',
+                                                  ),
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: Colors.red,
+                                        content: Text(
+                                          'An error occurred: $e',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    );
+                                  } finally {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
+                                },
+                                text: 'Continue with email',
+                              ),
                         SizedBox(height: getProportionateScreenHeight(24)),
                         SizedBox(
                           width: double.infinity,
