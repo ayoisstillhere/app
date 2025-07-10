@@ -5,6 +5,8 @@ import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
@@ -28,6 +30,58 @@ class IncomingCallScreen extends StatefulWidget {
 }
 
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
+  late AudioPlayer _audioPlayer;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = AudioPlayer();
+    _playRingtone();
+  }
+
+  @override
+  void dispose() {
+    _stopRingtone();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playRingtone() async {
+    try {
+      // Start vibration pattern
+      if (await Vibration.hasVibrator()) {
+        Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
+      }
+      // Option 1: Play from assets
+      await _audioPlayer.play(AssetSource('assets/sounds/ringtone.mp3'));
+
+      // Option 2: Play system default ringtone (alternative)
+      // await _audioPlayer.play(AssetSource('sounds/default_ringtone.mp3'));
+
+      // Set to loop the ringtone
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+
+      // Set volume (0.0 to 1.0)
+      await _audioPlayer.setVolume(0.8);
+
+      setState(() {
+        _isPlaying = true;
+      });
+    } catch (e) {
+      debugPrint('Error playing ringtone: $e');
+    }
+  }
+
+  Future<void> _stopRingtone() async {
+    if (_isPlaying) {
+      await _audioPlayer.stop();
+      setState(() {
+        _isPlaying = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,9 +95,13 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
               style: TextStyle(color: Colors.white, fontSize: 24),
             ),
             SizedBox(height: 20),
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(widget.imageUrl),
+            // Animated avatar with pulsing effect
+            AnimatedContainer(
+              duration: Duration(milliseconds: 1000),
+              child: CircleAvatar(
+                radius: 50,
+                backgroundImage: NetworkImage(widget.imageUrl),
+              ),
             ),
             SizedBox(height: 20),
             Text(
@@ -57,19 +115,25 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
+                    shape: CircleBorder(),
+                    padding: EdgeInsets.all(20),
                   ),
-                  icon: Icon(Icons.call),
-                  label: Text('Accept'),
+                  icon: Icon(Icons.call, size: 30),
+                  label: Text(''),
                   onPressed: () {
                     _acceptCall();
                   },
                 ),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  icon: Icon(Icons.call_end),
-                  label: Text('Decline'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: CircleBorder(),
+                    padding: EdgeInsets.all(20),
+                  ),
+                  icon: Icon(Icons.call_end, size: 30),
+                  label: Text(''),
                   onPressed: () {
-                    Navigator.pop(context);
+                    _declineCall();
                   },
                 ),
               ],
@@ -81,6 +145,8 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   }
 
   Future<void> _acceptCall() async {
+    await _stopRingtone(); // Stop ringtone when accepting call
+
     final token = await AuthManager.getToken();
     String callToken;
     final response = await http.post(
@@ -114,16 +180,17 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         // Created ahead
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => CallScreen(
-              call: call,
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => CallScreen(call: call)),
         );
       } catch (e) {
         debugPrint('Error joining or creating call: $e');
         debugPrint(e.toString());
       }
     }
+  }
+
+  Future<void> _declineCall() async {
+    await _stopRingtone(); // Stop ringtone when declining call
+    Navigator.pop(context);
   }
 }
