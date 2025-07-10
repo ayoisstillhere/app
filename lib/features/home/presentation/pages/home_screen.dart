@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:app/features/home/data/models/post_response_model.dart';
-import 'package:app/features/home/domain/entities/post_response_entity.dart';
+import 'package:app/features/home/domain/entities/post_response_entity.dart'
+    hide User;
 import 'package:app/features/home/presentation/pages/create_post_screen.dart';
 import 'package:app/features/home/presentation/pages/notifications_screen.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +11,11 @@ import 'package:flutter_svg/svg.dart';
 import 'package:app/constants.dart';
 import 'package:app/size_config.dart';
 import 'package:http/http.dart' as http;
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../../../../services/auth_manager.dart';
 import '../../../auth/domain/entities/user_entity.dart';
+import '../../../chat/presentation/pages/live_stream_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../widgets/post_Card.dart';
 
@@ -271,10 +274,87 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-  void _handleLivestream() {
-    // TODO: Implement livestream functionality
-    print("Livestream button pressed");
-    // Close the expansion
+  Future<void> _handleLivestream() async {
+    final token = await AuthManager.getToken();
+    String callToken;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/calls/live-stream'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        callToken = jsonDecode(response.body)['token'];
+        StreamVideo.reset();
+        StreamVideo(
+          getStreamKey,
+          user: User(
+            info: UserInfo(
+              name: widget.currentUser.fullName,
+              id: widget.currentUser.id,
+            ),
+          ),
+          userToken: callToken,
+        );
+        String roomId = jsonDecode(response.body)['liveStream']['roomId'];
+        var call = StreamVideo.instance.makeCall(
+          callType: StreamCallType.liveStream(),
+          id: roomId,
+        );
+        final result = await call.getOrCreate(
+          members: [
+            MemberRequest(
+              userId: StreamVideo.instance.currentUser.id,
+              role: 'host',
+            ),
+          ],
+        );
+        if (result.isFailure) {
+          debugPrint('Not able to create a call.');
+          return;
+        }
+
+        // final updateResult = await call.update(
+        //   startsAt: DateTime.now().toUtc().add(const Duration(seconds: 120)),
+        //   backstage: const StreamBackstageSettings(
+        //     enabled: true,
+        //     joinAheadTimeSeconds: 120,
+        //   ),
+        // );
+
+        // if (updateResult.isFailure) {
+        //   debugPrint('Not able to update the call.');
+        //   debugPrint(updateResult.getErrorOrNull().toString());
+        //   return;
+        // }
+
+        final connectOptions = CallConnectOptions(
+          camera: TrackOption.enabled(),
+          microphone: TrackOption.enabled(),
+        );
+
+        await call.join(connectOptions: connectOptions);
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => LiveStreamScreen(livestreamCall: call),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error joining or creating call: $e');
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error joining or creating call: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     setState(() {
       _isFabExpanded = false;
     });

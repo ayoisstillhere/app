@@ -532,6 +532,17 @@ class _ChatScreenState extends State<ChatScreen> {
       } catch (e) {
         debugPrint('Error joining or creating call: $e');
         debugPrint(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                e.toString(),
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
       }
     }
   }
