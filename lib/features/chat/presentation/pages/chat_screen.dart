@@ -106,7 +106,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _initializeAudioRecorder();
   }
 
-  Future<void> _createSecretChat() async {
+  Future<void> _createSecretChat({bool deleteFormerChat = false}) async {
     if (widget.isGroup) {
       return;
     }
@@ -151,7 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
       "participantUserIds": widget.participants.map((e) => e.userId).toList(),
       "myConversationKey": myEncryptedKey,
       "otherParticipantConversationKey": otherEncryptedKey,
-      "deleteFormerChat": false
+      "deleteFormerChat": deleteFormerChat,
     });
 
     try {
@@ -180,7 +180,11 @@ class _ChatScreenState extends State<ChatScreen> {
               )['isConversationBlockedForMe'],
             ),
           ),
-        );
+        ).then((result) {
+          if (result != null && result['recreateSecretChat'] == true) {
+            _createSecretChat(deleteFormerChat: true);
+          }
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

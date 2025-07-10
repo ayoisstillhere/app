@@ -95,15 +95,26 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   }
 
   Future<void> _decryptConversationKey() async {
-    final participant = widget.participants.firstWhere(
-      (participant) => participant.userId == widget.currentUser.id,
-      orElse: () => throw Exception("Current user not found in participants"),
-    );
-    final encryptedConversationKey = participant.mySecretConversationKey!;
+    try {
+      final participant = widget.participants.firstWhere(
+        (participant) => participant.userId == widget.currentUser.id,
+        orElse: () => throw Exception("Current user not found in participants"),
+      );
+      final encryptedConversationKey = participant.mySecretConversationKey!;
 
-    // Decrypt the conversation key using the private key
-    _conversationKey = await _secretChatEncryptionService
-        .decryptConversationKey(encryptedConversationKey);
+      // Decrypt the conversation key using the private key
+      _conversationKey = await _secretChatEncryptionService
+          .decryptConversationKey(encryptedConversationKey);
+    } catch (e) {
+      print('Error decrypting conversation key: $e');
+
+      // Navigate back to chat screen and recreate secret chat
+      if (mounted) {
+        // We need to navigate back and call the _createSecretChat method
+        // with deleteFormerChat = true
+        Navigator.pop(context, {'recreateSecretChat': true});
+      }
+    }
   }
 
   void _initializeServices() {
