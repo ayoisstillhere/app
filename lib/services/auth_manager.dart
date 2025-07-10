@@ -1,10 +1,12 @@
 // lib/services/auth_manager.dart
 import 'dart:convert';
 
+import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants.dart';
+import '../features/auth/domain/entities/user_entity.dart';
 
 class AuthManager {
   static const String _tokenKey = 'auth_token';
@@ -168,5 +170,17 @@ class AuthManager {
     }
 
     return token;
+  }
+
+  static Future<UserEntity?> getCurrentUser() async {
+    final secureStorage = FlutterSecureStorage();
+    final userJson = await secureStorage.read(key: 'currentUser');
+
+    if (userJson != null) {
+      // Convert the JSON string back to a UserEntity object
+      return UserModel.fromJson(jsonDecode(userJson));
+    }
+
+    return null;
   }
 }

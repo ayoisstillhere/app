@@ -11,6 +11,7 @@ import 'package:app/services/auth_manager.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../constants.dart';
@@ -51,6 +52,10 @@ class _NavPageState extends State<NavPage> {
         debugPrint('Got a call notification');
         _navigateToCallScreen(message.data);
       }
+      if (message.data['type'] == 'LIVE_STREAM_NOTIFICATION') {
+        debugPrint('Got a live stream notification');
+        _navigateToLiveStreamScreen(message.data);
+      }
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -61,15 +66,31 @@ class _NavPageState extends State<NavPage> {
     });
   }
 
-  void _navigateToCallScreen(Map<String, dynamic> data) {
+  void _navigateToCallScreen(Map<String, dynamic> data) async {
+    final UserEntity? user = await AuthManager.getCurrentUser();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => IncomingCallScreen(
           callerName: data['initiatorName'],
           roomId: data['callId'],
-          currentUser: currentUser!,
+          currentUser: user!,
           imageUrl: data['initiatorImage'],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToLiveStreamScreen(Map<String, dynamic> data) async {
+    final UserEntity? user = await AuthManager.getCurrentUser();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => IncomingCallScreen(
+          callerName: data['initiatorFullName'],
+          roomId: data['liveStreamId'],
+          currentUser: user!,
+          imageUrl: data['initiatorProfileImage'],
         ),
       ),
     );
@@ -118,6 +139,8 @@ class _NavPageState extends State<NavPage> {
         isUserLoaded = true;
         currentUser = user;
       });
+      final secureStorage = FlutterSecureStorage();
+      await secureStorage.write(key: 'currentUser', value: jsonEncode(user));
     } else {
       if (response.statusCode == 401) {
         await AuthManager.logout();
