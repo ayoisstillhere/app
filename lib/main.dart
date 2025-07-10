@@ -40,6 +40,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // This runs when app is in background or terminated
   await Firebase.initializeApp();
   debugPrint("Handling background message: ${message.messageId}");
+  if (message.data['type'] == 'CALL_NOTIFICATION') {
+    // Handle background notification logic here
+  }
 }
 
 Future<void> initFCM() async {

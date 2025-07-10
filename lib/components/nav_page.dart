@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
+import 'package:app/features/chat/presentation/pages/incoming_call_screen.dart';
 import 'package:app/features/home/presentation/pages/home_screen.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:app/features/explore/presentation/pages/explore_screen.dart';
 import 'package:app/services/auth_manager.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -37,6 +39,40 @@ class _NavPageState extends State<NavPage> {
     super.initState();
     _getProfile();
     navPages = [];
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message?.data['type'] == 'CALL_NOTIFICATION') {
+        debugPrint('Got a call notification');
+        _navigateToCallScreen(message!.data);
+      }
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.data['type'] == 'CALL_NOTIFICATION') {
+        debugPrint('Got a call notification');
+        _navigateToCallScreen(message.data);
+      }
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      if (message.data['type'] == 'CALL_NOTIFICATION') {
+        debugPrint('Got a call notification');
+        _navigateToCallScreen(message.data);
+      }
+    });
+  }
+
+  void _navigateToCallScreen(Map<String, dynamic> data) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => IncomingCallScreen(
+          callerName: data['initiatorName'],
+          roomId: data['callId'],
+          currentUser: currentUser!,
+          imageUrl: data['initiatorImage'],
+        ),
+      ),
+    );
   }
 
   @override
