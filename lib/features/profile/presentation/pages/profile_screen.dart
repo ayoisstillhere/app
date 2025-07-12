@@ -21,6 +21,7 @@ import '../../../chat/presentation/pages/chat_screen.dart';
 import '../../../chat/presentation/pages/secret_chat_screen.dart';
 import '../../../home/data/models/post_response_model.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
+import 'followers_and_following_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -569,46 +570,66 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
           Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                NumberFormat.compact().format(user!.followerCount),
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(16),
-                  fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FollowersAndFollowingScreen(index: 0),
                 ),
-              ),
-              Text(
-                "Followers",
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(12),
-                  fontWeight: FontWeight.w500,
-                  color: kProfileText,
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  NumberFormat.compact().format(user!.followerCount),
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(16),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  "Followers",
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(12),
+                    fontWeight: FontWeight.w500,
+                    color: kProfileText,
+                  ),
+                ),
+              ],
+            ),
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                NumberFormat.compact().format(user!.followingCount),
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(16),
-                  fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FollowersAndFollowingScreen(index: 0),
                 ),
-              ),
-              Text(
-                "Following",
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(12),
-                  fontWeight: FontWeight.w500,
-                  color: kProfileText,
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  NumberFormat.compact().format(user!.followingCount),
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(16),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  "Following",
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(12),
+                    fontWeight: FontWeight.w500,
+                    color: kProfileText,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
