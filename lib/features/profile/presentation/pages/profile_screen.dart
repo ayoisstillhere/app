@@ -12,6 +12,7 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:app/size_config.dart';
 
+import '../../../../components/full_screen_image_widget.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../chat/data/models/get_messages_response_model.dart'
@@ -525,18 +526,31 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       child: Row(
         children: [
-          Container(
-            height: getProportionateScreenHeight(68),
-            width: getProportionateScreenWidth(68),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: user!.profileImage.isEmpty
-                    ? NetworkImage(defaultAvatar)
-                    : NetworkImage(user!.profileImage),
-                fit: BoxFit.cover,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FullScreenImageViewer(
+                    imageUrl: user!.profileImage,
+                    userName: user!.fullName,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              height: getProportionateScreenHeight(68),
+              width: getProportionateScreenWidth(68),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: user!.profileImage.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(user!.profileImage),
+                  fit: BoxFit.cover,
+                ),
+                border: Border.all(width: 1, color: kPrimPurple),
               ),
-              border: Border.all(width: 1, color: kPrimPurple),
             ),
           ),
           SizedBox(width: getProportionateScreenWidth(6)),
