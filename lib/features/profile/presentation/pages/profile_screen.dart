@@ -578,6 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   builder: (context) => FollowersAndFollowingScreen(
                     index: 0,
                     userName: user!.username,
+                    userId: user!.id,
                   ),
                 ),
               );
@@ -612,6 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   builder: (context) => FollowersAndFollowingScreen(
                     index: 1,
                     userName: user!.username,
+                    userId: user!.id,
                   ),
                 ),
               );
