@@ -29,7 +29,7 @@ class FollowingResponse {
 class Following {
   String id;
   String username;
-  String fullName;
+  String? fullName;
   String profileImage;
   String? bio;
   int followerCount;

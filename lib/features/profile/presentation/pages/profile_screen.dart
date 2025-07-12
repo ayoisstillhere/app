@@ -808,16 +808,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           Spacer(),
           InkWell(
-            onTap: () {},
-            child: SvgPicture.asset(
-              "assets/icons/search.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
-            ),
-          ),
-          SizedBox(width: getProportionateScreenWidth(10)),
-          InkWell(
             onTap: user!.isOwnProfile ? _onMyMoreButtonTap : _onMoreButtonTap,
             child: SvgPicture.asset(
               "assets/icons/more-vertical.svg",
@@ -947,7 +937,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to follow user. Please try again.")),
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Failed to follow user. Please try again.",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       );
     }
   }

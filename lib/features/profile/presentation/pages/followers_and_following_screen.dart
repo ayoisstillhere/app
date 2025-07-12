@@ -35,18 +35,25 @@ class _FollowersAndFollowingScreenState
   late TabController controller;
   bool userDataLoaded = false;
   late final UserEntity currentUser;
-  final FocusNode _searchFocusNode = FocusNode();
-  bool _isSearchFocused = false;
+
+  // Followers data
   int followersPage = 1;
   List<Follower> followers = [];
+  List<Follower> filteredFollowers = [];
   bool hasMoreFollowers = true;
   final int followersLimit = 10;
   bool isFollowersLoaded = false;
+
+  // Following data
   int followingPage = 1;
   List<Following> following = [];
+  List<Following> filteredFollowing = [];
   bool hasMoreFollowing = true;
   final int followingLimit = 10;
   bool isFollowingLoaded = false;
+
+  // Search query
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -57,11 +64,18 @@ class _FollowersAndFollowingScreenState
       initialIndex: widget.index,
     );
     getCurrentUser();
-    _searchFocusNode.addListener(_onSearchFocusChange);
+    _searchController.addListener(_onSearchChanged);
     if (mounted) {
       _getFollowers();
       _getFollowing();
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    controller.dispose();
+    super.dispose();
   }
 
   Future<void> _getFollowers({bool isRefresh = false}) async {
@@ -90,8 +104,10 @@ class _FollowersAndFollowingScreenState
         } else {
           followers.addAll(followerResponse.followers);
         }
-        isFollowingLoaded = true;
+        isFollowersLoaded = true;
         hasMoreFollowers = followerResponse.followers.length == followersLimit;
+        followersPage++;
+        _filterFollowers();
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,6 +152,8 @@ class _FollowersAndFollowingScreenState
         }
         isFollowingLoaded = true;
         hasMoreFollowing = followingResponse.following.length == followingLimit;
+        followingPage++;
+        _filterFollowing();
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -156,20 +174,419 @@ class _FollowersAndFollowingScreenState
     UserEntity? user = await AuthManager.getCurrentUser();
     if (mounted) {
       setState(() {
-        currentUser = user!; // This line causes the error if called twice
+        currentUser = user!;
         userDataLoaded = true;
       });
     }
   }
 
-  void _onSearchFocusChange() {
+  void _onSearchChanged() {
     setState(() {
-      _isSearchFocused = _searchFocusNode.hasFocus;
+      searchQuery = _searchController.text.toLowerCase();
+      _filterFollowers();
+      _filterFollowing();
     });
   }
 
+  void _filterFollowers() {
+    filteredFollowers = followers.where((follower) {
+      final name = follower.fullName.toLowerCase();
+      final username = follower.username.toLowerCase();
+      return name.contains(searchQuery) || username.contains(searchQuery);
+    }).toList();
+  }
+
+  void _filterFollowing() {
+    filteredFollowing = following.where((followingUser) {
+      final name = followingUser.fullName?.toLowerCase();
+      final username = followingUser.username.toLowerCase();
+      return name!.contains(searchQuery) || username.contains(searchQuery);
+    }).toList();
+  }
+
   void _onSearchSubmitted(String query) {
-    if (query.trim().isNotEmpty) {}
+    if (query.trim().isNotEmpty) {
+      // Search functionality is handled by _onSearchChanged
+    }
+  }
+
+  Widget _buildFollowerCard(Follower follower) {
+    return Card(
+      margin: EdgeInsets.only(bottom: getProportionateScreenHeight(12)),
+      elevation: 0,
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: getProportionateScreenWidth(16),
+          vertical: getProportionateScreenHeight(8),
+        ),
+        leading: CircleAvatar(
+          radius: getProportionateScreenWidth(24),
+          backgroundColor: kLightPurple.withOpacity(0.1),
+          backgroundImage: follower.profileImage != null
+              ? NetworkImage(follower.profileImage)
+              : null,
+          child: follower.profileImage == null
+              ? Icon(
+                  Icons.person,
+                  size: getProportionateScreenWidth(24),
+                  color: kLightPurple,
+                )
+              : null,
+        ),
+        title: Text(
+          follower.fullName ?? 'Unknown User',
+          style: TextStyle(
+            fontSize: getProportionateScreenHeight(16),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: follower.username != null
+            ? Text(
+                '@${follower.username}',
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(14),
+                  color: Colors.grey[600],
+                ),
+              )
+            : null,
+        trailing: follower.id != currentUser.id
+            ? OutlinedButton(
+                onPressed: () {
+                  // Handle follow/unfollow logic here
+                  _handleFollowUnfollow(follower.id);
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: kLightPurple),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      getProportionateScreenWidth(20),
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Follow',
+                  style: TextStyle(
+                    color: kLightPurple,
+                    fontSize: getProportionateScreenHeight(12),
+                  ),
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildFollowingCard(Following followingUser) {
+    return Card(
+      margin: EdgeInsets.only(bottom: getProportionateScreenHeight(12)),
+      elevation: 0,
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: getProportionateScreenWidth(16),
+          vertical: getProportionateScreenHeight(8),
+        ),
+        leading: CircleAvatar(
+          radius: getProportionateScreenWidth(24),
+          backgroundColor: kLightPurple.withOpacity(0.1),
+          backgroundImage: followingUser.profileImage != null
+              ? NetworkImage(followingUser.profileImage)
+              : null,
+          child: followingUser.profileImage == null
+              ? Icon(
+                  Icons.person,
+                  size: getProportionateScreenWidth(24),
+                  color: kLightPurple,
+                )
+              : null,
+        ),
+        title: Text(
+          followingUser.fullName ?? 'Unknown User',
+          style: TextStyle(
+            fontSize: getProportionateScreenHeight(16),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: followingUser.username != null
+            ? Text(
+                '@${followingUser.username}',
+                style: TextStyle(
+                  fontSize: getProportionateScreenHeight(14),
+                  color: Colors.grey[600],
+                ),
+              )
+            : null,
+        trailing: followingUser.id != currentUser.id
+            ? ElevatedButton(
+                onPressed: () {
+                  // Handle unfollow logic here
+                  _handleUnfollow(followingUser.id);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kLightPurple,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      getProportionateScreenWidth(20),
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Following',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: getProportionateScreenHeight(12),
+                  ),
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildFollowersTab() {
+    return RefreshIndicator(
+      onRefresh: () => _getFollowers(isRefresh: true),
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: getProportionateScreenWidth(16),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: getProportionateScreenHeight(25)),
+              TextFormField(
+                controller: _searchController,
+                onFieldSubmitted: _onSearchSubmitted,
+                decoration:
+                    _buildFollowersAndFollowingSearchFieldInputDecoration(
+                      context,
+                    ),
+              ),
+              SizedBox(height: getProportionateScreenHeight(24)),
+              if (!isFollowersLoaded)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(getProportionateScreenHeight(48)),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (filteredFollowers.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(getProportionateScreenHeight(48)),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: getProportionateScreenWidth(48),
+                          color: Colors.grey[400],
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(16)),
+                        Text(
+                          searchQuery.isEmpty
+                              ? 'No followers found'
+                              : 'No followers match your search',
+                          style: TextStyle(
+                            fontSize: getProportionateScreenHeight(16),
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount:
+                      filteredFollowers.length + (hasMoreFollowers ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == filteredFollowers.length) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(
+                            getProportionateScreenHeight(16),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () => _getFollowers(),
+                            child: Text('Load More'),
+                          ),
+                        ),
+                      );
+                    }
+                    return _buildFollowerCard(filteredFollowers[index]);
+                  },
+                ),
+              SizedBox(height: getProportionateScreenHeight(24)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFollowingTab() {
+    return RefreshIndicator(
+      onRefresh: () => _getFollowing(isRefresh: true),
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: getProportionateScreenWidth(16),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: getProportionateScreenHeight(25)),
+              TextFormField(
+                controller: _searchController,
+                onFieldSubmitted: _onSearchSubmitted,
+                decoration:
+                    _buildFollowersAndFollowingSearchFieldInputDecoration(
+                      context,
+                    ),
+              ),
+              SizedBox(height: getProportionateScreenHeight(24)),
+              if (!isFollowingLoaded)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(getProportionateScreenHeight(48)),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (filteredFollowing.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(getProportionateScreenHeight(48)),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: getProportionateScreenWidth(48),
+                          color: Colors.grey[400],
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(16)),
+                        Text(
+                          searchQuery.isEmpty
+                              ? 'No following found'
+                              : 'No following match your search',
+                          style: TextStyle(
+                            fontSize: getProportionateScreenHeight(16),
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount:
+                      filteredFollowing.length + (hasMoreFollowing ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == filteredFollowing.length) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(
+                            getProportionateScreenHeight(16),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () => _getFollowing(),
+                            child: Text('Load More'),
+                          ),
+                        ),
+                      );
+                    }
+                    return _buildFollowingCard(filteredFollowing[index]);
+                  },
+                ),
+              SizedBox(height: getProportionateScreenHeight(24)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleFollowUnfollow(String userId) async {
+    // Implement follow/unfollow logic here
+    // You'll need to call your API endpoint for following/unfollowing
+    final token = await AuthManager.getToken();
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/api/v1/user/$userId/follow"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        // Handle success - maybe refresh the lists
+        _getFollowers(isRefresh: true);
+        _getFollowing(isRefresh: true);
+      } else {
+        // Handle error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to follow/unfollow user',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'An error occurred',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleUnfollow(String userId) async {
+    // Implement unfollow logic here
+    final token = await AuthManager.getToken();
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/api/v1/user/$userId/follow"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        // Handle success - maybe refresh the lists
+        _getFollowers(isRefresh: true);
+        _getFollowing(isRefresh: true);
+      } else {
+        // Handle error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Failed to unfollow user',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'An error occurred',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -179,31 +596,7 @@ class _FollowersAndFollowingScreenState
             appBar: _buildAppBar(),
             body: TabBarView(
               controller: controller,
-              children: [
-                SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: getProportionateScreenWidth(16),
-                    ),
-                    child: Column(
-                      children: [
-                        SizedBox(height: getProportionateScreenHeight(25)),
-                        TextFormField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          onFieldSubmitted: _onSearchSubmitted,
-                          decoration:
-                              _buildFollowersAndFollowingSearchFieldInputDecoration(
-                                context,
-                              ),
-                        ),
-                        SizedBox(height: getProportionateScreenHeight(48)),
-                      ],
-                    ),
-                  ),
-                ),
-                const Center(child: Text("Following")),
-              ],
+              children: [_buildFollowersTab(), _buildFollowingTab()],
             ),
           )
         : const Center(child: CircularProgressIndicator());
