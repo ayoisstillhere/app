@@ -606,7 +606,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => FollowersAndFollowingScreen(index: 0),
+                  builder: (context) => FollowersAndFollowingScreen(index: 1),
                 ),
               );
             },
