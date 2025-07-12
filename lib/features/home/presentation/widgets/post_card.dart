@@ -231,8 +231,8 @@ class _PostCardState extends State<PostCard> {
                     );
                   },
                   child: Container(
-                    height: getProportionateScreenHeight(25),
-                    width: getProportionateScreenWidth(25),
+                    height: getProportionateScreenHeight(30),
+                    width: getProportionateScreenWidth(30),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
@@ -259,7 +259,7 @@ class _PostCardState extends State<PostCard> {
                                     .copyWith(
                                       fontWeight: FontWeight.w500,
                                       fontSize: getProportionateScreenHeight(
-                                        13,
+                                        15,
                                       ),
                                     ),
                               ),
@@ -335,7 +335,7 @@ class _PostCardState extends State<PostCard> {
                             style: Theme.of(context).textTheme.bodyMedium!
                                 .copyWith(
                                   fontWeight: FontWeight.w500,
-                                  fontSize: getProportionateScreenHeight(13),
+                                  fontSize: getProportionateScreenHeight(15),
                                 ),
                           ),
                           SizedBox(width: getProportionateScreenWidth(2)),
