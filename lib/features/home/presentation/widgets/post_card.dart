@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:video_player/video_player.dart';
 
 import 'package:app/components/social_text.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
@@ -73,6 +74,34 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   late PageController _pageController;
   int _currentPage = 0;
+  List<VideoPlayerController?> _videoControllers = [];
+
+  // Check if URL is a video based on file extension
+  bool _isVideoUrl(String url) {
+    final videoExtensions = [
+      'mp4',
+      'mov',
+      'avi',
+      'mkv',
+      'webm',
+      'm4v',
+      '3gp',
+      'flv',
+    ];
+    final uri = Uri.parse(url);
+    final extension = uri.pathSegments.isNotEmpty
+        ? uri.pathSegments.last.split('.').last.toLowerCase()
+        : '';
+    return videoExtensions.contains(extension);
+  }
+
+  // Get media items from pictures list
+  List<Map<String, dynamic>> get _mediaItems {
+    return widget.pictures.map((pic) {
+      final url = pic as String;
+      return {'url': url, 'type': _isVideoUrl(url) ? 'video' : 'image'};
+    }).toList();
+  }
 
   void _onLike() async {
     final token = await AuthManager.getToken();
@@ -153,31 +182,166 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _openImageViewer(int initialIndex) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ImageViewerScreen(
-          images: widget.pictures.cast<String>(),
-          initialIndex: initialIndex,
-          authorName: widget.authorName,
-          authorHandle: widget.authorHandle,
-          authorImageUrl: widget.imageUrl,
-          content: widget.content,
-          postTime: widget.postTime,
+    // Filter only images for the image viewer
+    final imageUrls = _mediaItems
+        .where((item) => item['type'] == 'image')
+        .map((item) => item['url'] as String)
+        .toList();
+
+    if (imageUrls.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ImageViewerScreen(
+            images: imageUrls,
+            initialIndex: initialIndex,
+            authorName: widget.authorName,
+            authorHandle: widget.authorHandle,
+            authorImageUrl: widget.imageUrl,
+            content: widget.content,
+            postTime: widget.postTime,
+          ),
         ),
-      ),
-    );
+      );
+    }
+  }
+
+  void _initializeVideoControllers() {
+    _videoControllers = _mediaItems.map((item) {
+      if (item['type'] == 'video') {
+        return VideoPlayerController.networkUrl(Uri.parse(item['url']));
+      }
+      return null;
+    }).toList();
+
+    // Initialize video controllers
+    for (int i = 0; i < _videoControllers.length; i++) {
+      if (_videoControllers[i] != null) {
+        _videoControllers[i]!.initialize().then((_) {
+          if (mounted) setState(() {});
+        });
+      }
+    }
+  }
+
+  void _disposeVideoControllers() {
+    for (var controller in _videoControllers) {
+      controller?.dispose();
+    }
+    _videoControllers.clear();
+  }
+
+  Widget _buildMediaItem(Map<String, dynamic> mediaItem, int index) {
+    final isVideo = mediaItem['type'] == 'video';
+    final url = mediaItem['url'] as String;
+
+    if (isVideo) {
+      final controller = _videoControllers[index];
+
+      return GestureDetector(
+        onTap: () {
+          if (controller != null && controller.value.isInitialized) {
+            if (controller.value.isPlaying) {
+              controller.pause();
+            } else {
+              controller.play();
+            }
+            setState(() {});
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              getProportionateScreenWidth(10),
+            ),
+            color: Colors.black,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (controller != null && controller.value.isInitialized)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    getProportionateScreenWidth(10),
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: controller.value.aspectRatio,
+                    child: VideoPlayer(controller),
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      getProportionateScreenWidth(10),
+                    ),
+                    color: Colors.grey[300],
+                  ),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              // Play/Pause button overlay
+              if (controller != null && controller.value.isInitialized)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      controller.value.isPlaying
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      if (controller.value.isPlaying) {
+                        controller.pause();
+                      } else {
+                        controller.play();
+                      }
+                      setState(() {});
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      // Image handling
+      return GestureDetector(
+        onTap: () => _openImageViewer(index),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              getProportionateScreenWidth(10),
+            ),
+            image: DecorationImage(
+              image: url.isEmpty
+                  ? NetworkImage(defaultAvatar)
+                  : NetworkImage(url),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    if (_mediaItems.isNotEmpty) {
+      _initializeVideoControllers();
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _disposeVideoControllers();
     super.dispose();
   }
 
@@ -400,34 +564,21 @@ class _PostCardState extends State<PostCard> {
                 onMentionTap: (p0) {},
               ),
             ),
-            widget.pictures.isEmpty
+            _mediaItems.isEmpty
                 ? Container()
                 : SizedBox(height: getProportionateScreenHeight(10)),
-            widget.pictures.isEmpty
+            _mediaItems.isEmpty
                 ? Container()
-                : widget.pictures.length == 1
+                : _mediaItems.length == 1
                 ? Padding(
                     padding: EdgeInsets.only(
                       left: getProportionateScreenWidth(37),
                       right: getProportionateScreenWidth(10),
                     ),
-                    child: GestureDetector(
-                      onTap: () => _openImageViewer(0),
-                      child: Container(
-                        width: double.infinity,
-                        height: getProportionateScreenHeight(193),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            getProportionateScreenWidth(10),
-                          ),
-                          image: DecorationImage(
-                            image: widget.pictures[0].isEmpty
-                                ? NetworkImage(defaultAvatar)
-                                : NetworkImage(widget.pictures[0]),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: getProportionateScreenHeight(193),
+                      child: _buildMediaItem(_mediaItems[0], 0),
                     ),
                   )
                 : Column(
@@ -445,26 +596,13 @@ class _PostCardState extends State<PostCard> {
                               _currentPage = page;
                             });
                           },
-                          itemCount: widget.pictures.length,
+                          itemCount: _mediaItems.length,
                           itemBuilder: (context, index) {
-                            return GestureDetector(
-                              onTap: () => _openImageViewer(index),
-                              child: Container(
-                                margin: EdgeInsets.only(
-                                  right: getProportionateScreenWidth(5),
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    getProportionateScreenWidth(10),
-                                  ),
-                                  image: DecorationImage(
-                                    image: widget.pictures[index].isEmpty
-                                        ? NetworkImage(defaultAvatar)
-                                        : NetworkImage(widget.pictures[index]),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                            return Container(
+                              margin: EdgeInsets.only(
+                                right: getProportionateScreenWidth(5),
                               ),
+                              child: _buildMediaItem(_mediaItems[index], index),
                             );
                           },
                         ),
@@ -473,7 +611,7 @@ class _PostCardState extends State<PostCard> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          widget.pictures.length,
+                          _mediaItems.length,
                           (index) => AnimatedContainer(
                             duration: Duration(milliseconds: 300),
                             margin: EdgeInsets.symmetric(
