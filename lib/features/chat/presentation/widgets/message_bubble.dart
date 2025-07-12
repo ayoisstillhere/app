@@ -8,6 +8,7 @@ import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_file/open_file.dart';
 
+import '../../../../components/full_screen_file_image_viewer.dart';
 import '../../../../constants.dart';
 import '../../../../services/file_encryptor.dart';
 import '../../../../size_config.dart';
@@ -413,23 +414,38 @@ class _MessageBubbleState extends State<MessageBubble> {
                       borderRadius: BorderRadius.circular(
                         getProportionateScreenWidth(8),
                       ),
-                      child: Image.file(
-                        decryptedFile!,
-                        width: double.infinity,
-                        height: getProportionateScreenHeight(200),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return SizedBox(
-                            height: getProportionateScreenHeight(200),
-                            child: Center(
-                              child: Icon(
-                                Icons.error,
-                                color: textColor,
-                                size: getProportionateScreenHeight(24),
+                      child: GestureDetector(
+                        onTap: () {
+                          if (decryptedFile != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenFileImageViewer(
+                                  imageFile: decryptedFile!,
+                                  title: decryptedFile!.path.split('/').last,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
+                        child: Image.file(
+                          decryptedFile!,
+                          width: double.infinity,
+                          height: getProportionateScreenHeight(200),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return SizedBox(
+                              height: getProportionateScreenHeight(200),
+                              child: Center(
+                                child: Icon(
+                                  Icons.error,
+                                  color: textColor,
+                                  size: getProportionateScreenHeight(24),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(4)),

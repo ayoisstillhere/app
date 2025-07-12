@@ -12,7 +12,7 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:app/size_config.dart';
 
-import '../../../../components/full_screen_image_widget.dart';
+import '../../../../components/full_screen_image_viewer.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../chat/data/models/get_messages_response_model.dart'
