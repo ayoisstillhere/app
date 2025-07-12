@@ -22,6 +22,8 @@ const kGreySearchInput = Color(0xFF1F1F1F);
 const kPrimPurple = Color(0xFF9500FF);
 const kProfileText = Color(0xFF727272);
 const kChatBubble = Color(0xFF373737);
+const kFollowerAndFollowingBorder = Color(0xFF939393);
+const kFollowerAndFollowingFill = Color(0xFF1F1F1F);
 const kChatBubbleGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
