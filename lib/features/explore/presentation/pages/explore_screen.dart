@@ -688,6 +688,13 @@ class _ExploreScreenState extends State<ExploreScreen>
             ),
             title: TextFormField(
               controller: _searchController,
+              focusNode: _searchFocusNode, // Add this line
+              onFieldSubmitted: _onSearchSubmitted, // Add this line
+              onChanged: (value) {
+                // Add this callback for real-time search (optional)
+                // You can implement real-time search here if needed
+                // For now, we'll just update on submission
+              },
               decoration: _buildExploreSearchFieldInputDecoration(context),
             ),
             bottom: TabBar(
