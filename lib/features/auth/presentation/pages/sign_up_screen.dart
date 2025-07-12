@@ -26,6 +26,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _signupFormKey = GlobalKey<FormState>();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
+  bool _obscureText = true;
 
   @override
   void initState() {
@@ -114,7 +115,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         SizedBox(height: getProportionateScreenHeight(6)),
                         TextFormField(
-                          obscureText: true,
+                          obscureText: _isLoading ? true : _obscureText,
                           controller: _passwordController,
                           style: Theme.of(context).textTheme.bodyMedium!
                               .copyWith(fontWeight: FontWeight.w500),
@@ -122,6 +123,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             hintText: "••••••••",
                             hintStyle: Theme.of(context).textTheme.bodyLarge!
                                 .copyWith(color: kGreyFormHint),
+                            suffixIcon: Padding(
+                              padding: const EdgeInsetsDirectional.only(
+                                end: 16,
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _obscureText = !_obscureText;
+                                  });
+                                },
+                                child: SvgPicture.asset(
+                                  'assets/icons/eye.svg',
+                                  color: _obscureText ? kGreyFormHint : null,
+                                ),
+                              ),
+                            ),
                           ),
                           validator: validatePassword,
                         ),

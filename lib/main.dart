@@ -102,7 +102,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    _setupFCM();
+    if (Platform.isAndroid) {
+      _setupFCM();
+    }
   }
 
   void _setupFCM() async {

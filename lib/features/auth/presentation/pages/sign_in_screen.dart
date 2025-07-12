@@ -6,6 +6,7 @@ import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../components/default_button.dart';
@@ -29,6 +30,7 @@ class _SignInScreenState extends State<SignInScreen> {
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
   static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  bool _obscureText = true;
 
   @override
   void initState() {
@@ -117,7 +119,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         SizedBox(height: getProportionateScreenHeight(6)),
                         TextFormField(
-                          obscureText: true,
+                          obscureText: _isLoading ? true : _obscureText,
                           controller: _passwordController,
                           style: Theme.of(context).textTheme.bodyMedium!
                               .copyWith(fontWeight: FontWeight.w500),
@@ -125,6 +127,22 @@ class _SignInScreenState extends State<SignInScreen> {
                             hintText: "••••••••",
                             hintStyle: Theme.of(context).textTheme.bodyLarge!
                                 .copyWith(color: kGreyFormHint),
+                            suffixIcon: Padding(
+                              padding: const EdgeInsetsDirectional.only(
+                                end: 16,
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _obscureText = !_obscureText;
+                                  });
+                                },
+                                child: SvgPicture.asset(
+                                  'assets/icons/eye.svg',
+                                  color: _obscureText ? kGreyFormHint : null,
+                                ),
+                              ),
+                            ),
                           ),
                           validator: validatePassword,
                         ),
