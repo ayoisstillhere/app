@@ -462,6 +462,29 @@ class _HomeScreenState extends State<HomeScreen>
       return Center(child: CircularProgressIndicator());
     }
 
+    // Add this check to handle empty posts list
+    if (posts.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          onRefresh();
+        },
+        child: ListView(
+          controller: scrollController,
+          children: [
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: Text(
+                  "No posts available",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         onRefresh();
@@ -478,26 +501,32 @@ class _HomeScreenState extends State<HomeScreen>
             );
           }
 
-          final post = posts[index];
-          return PostCard(
-            dividerColor: dividerColor,
-            iconColor: iconColor,
-            authorName: post.author.fullName,
-            authorHandle: post.author.username,
-            imageUrl: post.author.profileImage,
-            postTime: post.createdAt,
-            likes: post.count.likes,
-            comments: post.count.comments,
-            reposts: post.count.reposts,
-            bookmarks: post.count.saves,
-            content: post.content,
-            pictures: post.media,
-            currentUser: widget.currentUser,
-            postId: post.id,
-            isLiked: post.isLiked,
-            isReposted: post.isReposted,
-            isSaved: post.isSaved,
-          );
+          // Double-check index is valid (defensive programming)
+          if (index >= 0 && index < posts.length) {
+            final post = posts[index];
+            return PostCard(
+              dividerColor: dividerColor,
+              iconColor: iconColor,
+              authorName: post.author.fullName,
+              authorHandle: post.author.username,
+              imageUrl: post.author.profileImage,
+              postTime: post.createdAt,
+              likes: post.count.likes,
+              comments: post.count.comments,
+              reposts: post.count.reposts,
+              bookmarks: post.count.saves,
+              content: post.content,
+              pictures: post.media,
+              currentUser: widget.currentUser,
+              postId: post.id,
+              isLiked: post.isLiked,
+              isReposted: post.isReposted,
+              isSaved: post.isSaved,
+            );
+          } else {
+            // Return an empty container if index is somehow invalid
+            return SizedBox.shrink();
+          }
         },
       ),
     );
