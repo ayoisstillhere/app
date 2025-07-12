@@ -29,6 +29,7 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
 import '../cubit/chat_cubit.dart';
 import '../widgets/message_bubble.dart';
 import 'secret_chat_screen.dart';
@@ -662,6 +663,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final inputFillColor = isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
+    final otherParticipant = widget.participants.firstWhere(
+      (participant) => participant.userId != widget.currentUser.id,
+      orElse: () => throw Exception("Current user not found in participants"),
+    );
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -670,16 +675,32 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
         title: Row(
           children: [
-            Container(
-              height: getProportionateScreenHeight(40),
-              width: getProportionateScreenWidth(40),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: widget.imageUrl.isEmpty
-                      ? NetworkImage(defaultAvatar)
-                      : NetworkImage(widget.imageUrl),
-                  fit: BoxFit.cover,
+            InkWell(
+              onTap: () {
+                if (widget.isGroup) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileScreen(
+                      isVerified: true,
+                      isFromNav: false,
+                      userName: otherParticipant.user.username,
+                      currentUser: widget.currentUser,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                height: getProportionateScreenHeight(40),
+                width: getProportionateScreenWidth(40),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: widget.imageUrl.isEmpty
+                        ? NetworkImage(defaultAvatar)
+                        : NetworkImage(widget.imageUrl),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),

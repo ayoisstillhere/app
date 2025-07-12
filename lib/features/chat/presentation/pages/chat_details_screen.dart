@@ -660,6 +660,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
       ),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
+          final otherParticipant = widget.participants.firstWhere(
+            (participant) => participant.userId != widget.currentUser.id,
+            orElse: () =>
+                throw Exception("Current user not found in participants"),
+          );
           return [
             // ... [Your existing header sliver code remains the same]
             SliverToBoxAdapter(
@@ -667,16 +672,32 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                 child: Column(
                   children: [
                     SizedBox(height: getProportionateScreenHeight(32)),
-                    Container(
-                      height: getProportionateScreenHeight(60),
-                      width: getProportionateScreenWidth(60),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: widget.chatImage.isEmpty
-                              ? NetworkImage(defaultAvatar)
-                              : NetworkImage(widget.chatImage),
-                          fit: BoxFit.cover,
+                    InkWell(
+                      onTap: () {
+                        if (widget.isGroup) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfileScreen(
+                              isVerified: true,
+                              isFromNav: false,
+                              userName: otherParticipant.user.username,
+                              currentUser: widget.currentUser,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: getProportionateScreenHeight(60),
+                        width: getProportionateScreenWidth(60),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: widget.chatImage.isEmpty
+                                ? NetworkImage(defaultAvatar)
+                                : NetworkImage(widget.chatImage),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
