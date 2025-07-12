@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
@@ -22,15 +24,23 @@ class FollowersAndFollowingScreen extends StatefulWidget {
 class _FollowersAndFollowingScreenState
     extends State<FollowersAndFollowingScreen>
     with SingleTickerProviderStateMixin {
+  final TextEditingController _searchController = TextEditingController();
   late TabController controller;
   bool userDataLoaded = false;
   late final UserEntity currentUser;
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchFocused = false;
 
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: 2, vsync: this);
+    controller = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.index,
+    );
     getCurrentUser();
+    _searchFocusNode.addListener(_onSearchFocusChange);
   }
 
   Future<void> getCurrentUser() async {
@@ -43,6 +53,16 @@ class _FollowersAndFollowingScreenState
     }
   }
 
+  void _onSearchFocusChange() {
+    setState(() {
+      _isSearchFocused = _searchFocusNode.hasFocus;
+    });
+  }
+
+  void _onSearchSubmitted(String query) {
+    if (query.trim().isNotEmpty) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return userDataLoaded
@@ -51,7 +71,28 @@ class _FollowersAndFollowingScreenState
             body: TabBarView(
               controller: controller,
               children: [
-                const Center(child: Text("Followers")),
+                SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: getProportionateScreenWidth(16),
+                    ),
+                    child: Column(
+                      children: [
+                        SizedBox(height: getProportionateScreenHeight(25)),
+                        TextFormField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          onFieldSubmitted: _onSearchSubmitted,
+                          decoration:
+                              _buildFollowersAndFollowingSearchFieldInputDecoration(
+                                context,
+                              ),
+                        ),
+                        SizedBox(height: getProportionateScreenHeight(48)),
+                      ],
+                    ),
+                  ),
+                ),
                 const Center(child: Text("Following")),
               ],
             ),
@@ -90,7 +131,11 @@ class _FollowersAndFollowingScreenState
               child: SizedBox(
                 width: getProportionateScreenWidth(143),
                 child: Center(
-                  child: Text("${currentUser.followerCount} followers"),
+                  child: Text(
+                    currentUser.followerCount == 1
+                        ? "1 follower"
+                        : "${NumberFormat.compact().format(currentUser.followerCount)} followers",
+                  ),
                 ),
               ),
             ),
@@ -98,7 +143,9 @@ class _FollowersAndFollowingScreenState
               child: SizedBox(
                 width: getProportionateScreenWidth(143),
                 child: Center(
-                  child: Text("${currentUser.followingCount} following"),
+                  child: Text(
+                    "${NumberFormat.compact().format(currentUser.followingCount)} following",
+                  ),
                 ),
               ),
             ),
@@ -106,6 +153,64 @@ class _FollowersAndFollowingScreenState
           indicatorSize: TabBarIndicatorSize.label,
         ),
       ),
+    );
+  }
+
+  InputDecoration _buildFollowersAndFollowingSearchFieldInputDecoration(
+    BuildContext context,
+  ) {
+    return InputDecoration(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
+        borderSide: BorderSide(
+          color: MediaQuery.of(context).platformBrightness == Brightness.dark
+              ? kGreyDarkInputBorder
+              : kGreyInputBorder,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
+        borderSide: BorderSide(
+          color: MediaQuery.of(context).platformBrightness == Brightness.dark
+              ? kGreyDarkInputBorder
+              : kGreyInputBorder,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
+        borderSide: BorderSide(
+          color: MediaQuery.of(context).platformBrightness == Brightness.dark
+              ? kGreyDarkInputBorder
+              : kGreyInputBorder,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(getProportionateScreenWidth(30)),
+        borderSide: BorderSide(
+          color: MediaQuery.of(context).platformBrightness == Brightness.dark
+              ? kGreyDarkInputBorder
+              : kGreyInputBorder,
+        ),
+      ),
+      fillColor: MediaQuery.of(context).platformBrightness == Brightness.dark
+          ? kGreySearchInput
+          : null,
+      filled: MediaQuery.of(context).platformBrightness == Brightness.dark,
+      prefixIcon: Padding(
+        padding: EdgeInsets.all(getProportionateScreenHeight(14)),
+        child: SvgPicture.asset(
+          "assets/icons/search.svg",
+          colorFilter: ColorFilter.mode(
+            MediaQuery.of(context).platformBrightness == Brightness.dark
+                ? kGreyDarkInputBorder
+                : kGreyInputBorder,
+            BlendMode.srcIn,
+          ),
+          width: getProportionateScreenWidth(14),
+          height: getProportionateScreenHeight(14),
+        ),
+      ),
+      hintText: "Search",
     );
   }
 }

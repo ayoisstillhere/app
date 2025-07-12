@@ -593,7 +593,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ),
                 Text(
-                  "Followers",
+                  user!.followerCount == 1 ? "Follower" : "Followers",
                   style: TextStyle(
                     fontSize: getProportionateScreenHeight(12),
                     fontWeight: FontWeight.w500,
