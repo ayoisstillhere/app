@@ -72,6 +72,9 @@ const String baseUrl = 'https://api.hiraofficial.com';
 // ignore: constant_identifier_names
 enum MessageType { TEXT, AUDIO, VIDEO, IMAGE, FILE }
 
+// Enum to define field types
+enum FieldType { name, email, bio, username, location }
+
 String formatDuration(DateTime from, DateTime to) {
   Duration diff = to.difference(from).abs();
 

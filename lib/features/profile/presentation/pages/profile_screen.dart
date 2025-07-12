@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:app/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -675,7 +676,16 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           // Edit Profile / Follow buttons
           if (user!.isOwnProfile)
-            _buildActionButton("Edit Profile", null, () {}),
+            _buildActionButton("Edit Profile", null, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return EditProfileScreen();
+                  },
+                ),
+              );
+            }),
           if (!user!.isOwnProfile && !user!.isFollowing && !user!.followsYou)
             _buildActionButton("Follow", kAccentColor, _followUser),
           if (!user!.isOwnProfile && user!.isFollowing)
