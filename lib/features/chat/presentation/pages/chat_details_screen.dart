@@ -16,6 +16,7 @@ import '../../../profile/presentation/pages/profile_screen.dart';
 import '../widgets/file_widget.dart';
 import '../widgets/media_widget.dart';
 import '../widgets/voice_widget.dart';
+import 'change_group_name_screen.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({
@@ -680,12 +681,45 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(19.5)),
-                    Text(
-                      widget.chatName,
-                      style: TextStyle(
-                        fontSize: getProportionateScreenHeight(24),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.chatName,
+                          style: TextStyle(
+                            fontSize: getProportionateScreenHeight(24),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        widget.isGroup
+                            ? SizedBox(width: getProportionateScreenWidth(20))
+                            : const SizedBox(),
+                        widget.isGroup
+                            ? InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ChangeGroupNameScreen(
+                                            currentName: widget.chatName,
+                                            chatId: widget.chatId,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                child: SvgPicture.asset(
+                                  "assets/icons/pencil.svg",
+                                  colorFilter: ColorFilter.mode(
+                                    iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  width: getProportionateScreenWidth(19),
+                                  height: getProportionateScreenHeight(19),
+                                ),
+                              )
+                            : const SizedBox(),
+                      ],
                     ),
                     SizedBox(height: getProportionateScreenHeight(22.5)),
                     Container(

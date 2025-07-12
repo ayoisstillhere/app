@@ -1,40 +1,36 @@
-// Generic edit field screen
 import 'dart:convert';
 
-import 'package:app/components/default_button.dart';
-import 'package:app/components/nav_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../components/default_button.dart';
+import '../../../../components/nav_page.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 
-class EditFieldScreen extends StatefulWidget {
-  final String title;
-  final String currentValue;
-  final FieldType fieldType;
-
-  const EditFieldScreen({
+class ChangeGroupNameScreen extends StatefulWidget {
+  const ChangeGroupNameScreen({
     super.key,
-    required this.title,
-    required this.currentValue,
-    required this.fieldType,
+    required this.currentName,
+    required this.chatId,
   });
+  final String currentName;
+  final String chatId;
 
   @override
-  State<EditFieldScreen> createState() => _EditFieldScreenState();
+  State<ChangeGroupNameScreen> createState() => _ChangeGroupNameScreenState();
 }
 
-class _EditFieldScreenState extends State<EditFieldScreen> {
+class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
   late TextEditingController _controller;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.currentValue);
+    _controller = TextEditingController(text: widget.currentName);
   }
 
   @override
@@ -44,7 +40,7 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
   }
 
   Future<void> _saveChanges() async {
-    if (_controller.text.trim() == widget.currentValue) {
+    if (_controller.text.trim() == widget.currentName) {
       // No changes made
       Navigator.pop(context);
       return;
@@ -61,26 +57,13 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
       final updatedValue = _controller.text.trim();
       final token = await AuthManager.getToken();
 
-      String key = "";
-      if (widget.fieldType == FieldType.name) {
-        key = "fullName";
-      } else if (widget.fieldType == FieldType.email) {
-        key = "email";
-      } else if (widget.fieldType == FieldType.bio) {
-        key = "bio";
-      } else if (widget.fieldType == FieldType.username) {
-        key = "username";
-      } else if (widget.fieldType == FieldType.location) {
-        key = "location";
-      }
-
       final response = await http.put(
-        Uri.parse('$baseUrl/api/v1/user/profile'),
+        Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({key: updatedValue}),
+        body: jsonEncode({"name": updatedValue}),
       );
 
       // Return success result
@@ -99,7 +82,7 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
           SnackBar(
             backgroundColor: Colors.red,
             content: Text(
-              'Failed to update ${widget.fieldType.name}',
+              'Failed to update Group Name',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -107,9 +90,9 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
       }
     } catch (e) {
       // Handle error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating ${widget.fieldType.name}: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error updating Group Name: $e')));
     } finally {
       setState(() {
         _isLoading = false;
@@ -133,19 +116,18 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
                   children: [
                     SizedBox(height: getProportionateScreenHeight(23)),
                     Text(
-                      "Enter a new profile ${widget.fieldType.name}",
+                      "Change Group Name",
                       style: TextStyle(
                         fontSize: getProportionateScreenHeight(20),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(32)),
+                    Text("Name"),
+                    SizedBox(height: getProportionateScreenHeight(6)),
                     TextField(
                       controller: _controller,
-                      maxLines: widget.fieldType == FieldType.bio ? 3 : 1,
-                      keyboardType: widget.fieldType == FieldType.email
-                          ? TextInputType.emailAddress
-                          : TextInputType.text,
+                      maxLines: 1,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -163,10 +145,7 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
                       ),
                     ),
                     Spacer(),
-                    DefaultButton(
-                      text: "Change ${widget.title}",
-                      press: _saveChanges,
-                    ),
+                    DefaultButton(text: "Change Name", press: _saveChanges),
                     SizedBox(height: getProportionateScreenHeight(44)),
                   ],
                 ),
@@ -181,7 +160,7 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
     final iconColor = isDarkMode ? kWhite : kBlack;
     return AppBar(
       title: Text(
-        "Profile ${widget.title}",
+        "Group Name",
         style: TextStyle(
           fontSize: getProportionateScreenHeight(24),
           fontWeight: FontWeight.w500,
