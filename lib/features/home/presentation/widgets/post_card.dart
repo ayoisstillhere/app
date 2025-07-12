@@ -11,6 +11,7 @@ import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
+import '../pages/image_viewer_screen.dart';
 import '../pages/write_comment_screen.dart';
 
 class PostCard extends StatefulWidget {
@@ -149,6 +150,23 @@ class _PostCardState extends State<PostCard> {
         headers: {"Authorization": "Bearer $token"},
       );
     }
+  }
+
+  void _openImageViewer(int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageViewerScreen(
+          images: widget.pictures.cast<String>(),
+          initialIndex: initialIndex,
+          authorName: widget.authorName,
+          authorHandle: widget.authorHandle,
+          authorImageUrl: widget.imageUrl,
+          content: widget.content,
+          postTime: widget.postTime,
+        ),
+      ),
+    );
   }
 
   @override
@@ -393,18 +411,21 @@ class _PostCardState extends State<PostCard> {
                       left: getProportionateScreenWidth(37),
                       right: getProportionateScreenWidth(10),
                     ),
-                    child: Container(
-                      width: double.infinity,
-                      height: getProportionateScreenHeight(193),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          getProportionateScreenWidth(10),
-                        ),
-                        image: DecorationImage(
-                          image: widget.pictures[0].isEmpty
-                              ? NetworkImage(defaultAvatar)
-                              : NetworkImage(widget.pictures[0]),
-                          fit: BoxFit.cover,
+                    child: GestureDetector(
+                      onTap: () => _openImageViewer(0),
+                      child: Container(
+                        width: double.infinity,
+                        height: getProportionateScreenHeight(193),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            getProportionateScreenWidth(10),
+                          ),
+                          image: DecorationImage(
+                            image: widget.pictures[0].isEmpty
+                                ? NetworkImage(defaultAvatar)
+                                : NetworkImage(widget.pictures[0]),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -426,19 +447,22 @@ class _PostCardState extends State<PostCard> {
                           },
                           itemCount: widget.pictures.length,
                           itemBuilder: (context, index) {
-                            return Container(
-                              margin: EdgeInsets.only(
-                                right: getProportionateScreenWidth(5),
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  getProportionateScreenWidth(10),
+                            return GestureDetector(
+                              onTap: () => _openImageViewer(index),
+                              child: Container(
+                                margin: EdgeInsets.only(
+                                  right: getProportionateScreenWidth(5),
                                 ),
-                                image: DecorationImage(
-                                  image: widget.pictures[index].isEmpty
-                                      ? NetworkImage(defaultAvatar)
-                                      : NetworkImage(widget.pictures[index]),
-                                  fit: BoxFit.cover,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                    getProportionateScreenWidth(10),
+                                  ),
+                                  image: DecorationImage(
+                                    image: widget.pictures[index].isEmpty
+                                        ? NetworkImage(defaultAvatar)
+                                        : NetworkImage(widget.pictures[index]),
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                             );
