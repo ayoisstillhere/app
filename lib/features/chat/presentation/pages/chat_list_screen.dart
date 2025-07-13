@@ -78,6 +78,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   bool isAllMessagesLoaded = false;
   bool isSecretMessagesLoaded = false;
+  bool isArchivedMessagesLoaded = false;
+  bool isRequestsMessagesLoaded = false;
   bool isLoading = false;
 
   static const int _pageSize = 20;
@@ -130,6 +132,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     await Future.wait([
       _fetchConversations(false, 1),
       _fetchConversations(true, 1),
+      _fetchArchivedConversations(1),
+      _fetchRequestsConversations(1),
     ]);
 
     _processGroupMessages();
@@ -161,7 +165,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         case 'Groups':
           await _fetchConversations(false, nextPage, isLoadMore: true);
           break;
-        // Add cases for Archived and Requests when implemented
+        case 'Archived':
+          await _fetchArchivedConversations(nextPage, isLoadMore: true);
+          break;
+        case 'Requests':
+          await _fetchRequestsConversations(nextPage, isLoadMore: true);
+          break;
       }
 
       _currentPages[currentFilter] = nextPage;
@@ -234,6 +243,90 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Future<void> _fetchArchivedConversations(
+    int page, {
+    bool isLoadMore = false,
+  }) async {
+    try {
+      final token = await AuthManager.getToken();
+      String url =
+          '$baseUrl/api/v1/chat/conversations?page=$page&limit=$_pageSize&isArchived=true';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = GetMessageResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        if (isLoadMore) {
+          // Append to existing conversations
+          _allConversations['Archived']!.addAll(responseData.conversations);
+          archivedMessagesResponse = GetMessageResponse(
+            conversations: _allConversations['Archived']!,
+            pagination: responseData.pagination,
+          );
+        } else {
+          // Replace conversations (initial load)
+          _allConversations['Archived'] = responseData.conversations;
+          archivedMessagesResponse = responseData;
+        }
+
+        _hasMore['Archived'] = responseData.pagination.hasMore;
+        setState(() => isArchivedMessagesLoaded = true);
+      } else {
+        _showErrorSnackBar(response.body);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load archived conversations: $e');
+    }
+  }
+
+  Future<void> _fetchRequestsConversations(
+    int page, {
+    bool isLoadMore = false,
+  }) async {
+    try {
+      final token = await AuthManager.getToken();
+      String url =
+          '$baseUrl/api/v1/chat/conversations?page=$page&limit=$_pageSize&isRequest=true';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = GetMessageResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        if (isLoadMore) {
+          // Append to existing conversations
+          _allConversations['Requests']!.addAll(responseData.conversations);
+          requestsMessagesResponse = GetMessageResponse(
+            conversations: _allConversations['Requests']!,
+            pagination: responseData.pagination,
+          );
+        } else {
+          // Replace conversations (initial load)
+          _allConversations['Requests'] = responseData.conversations;
+          requestsMessagesResponse = responseData;
+        }
+
+        _hasMore['Requests'] = responseData.pagination.hasMore;
+        setState(() => isRequestsMessagesLoaded = true);
+      } else {
+        _showErrorSnackBar(response.body);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load requests conversations: $e');
+    }
+  }
+
   void _processGroupMessages() {
     if (_allConversations['All']!.isEmpty) return;
 
@@ -264,12 +357,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final secretCount = _allConversations['Secret']!
         .where((conversation) => conversation.lastMessage != null)
         .length;
+    final archivedCount = _allConversations['Archived']!
+        .where((conversation) => conversation.lastMessage != null)
+        .length;
+    final requestsCount = _allConversations['Requests']!
+        .where((conversation) => conversation.lastMessage != null)
+        .length;
 
     setState(() {
       filters[0]['count'] = allCount;
       filters[1]['count'] = groupCount;
       filters[2]['count'] = secretCount;
-      // Update other counts as needed
+      filters[3]['count'] = archivedCount;
+      filters[4]['count'] = requestsCount;
     });
   }
 
