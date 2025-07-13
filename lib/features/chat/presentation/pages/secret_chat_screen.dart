@@ -1092,8 +1092,6 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       _videoController = null;
     }
 
-    _disableProtection();
-
     super.dispose();
   }
 
