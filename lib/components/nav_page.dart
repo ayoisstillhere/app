@@ -214,37 +214,43 @@ class _NavPageState extends State<NavPage> {
         iconSize: getProportionateScreenHeight(24),
         items: [
           BottomNavigationBarItem(
-            icon: Opacity(
-              opacity: _page == 0 ? 1.0 : 0.5,
-              child: SvgPicture.asset(
-                "assets/icons/home.svg",
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                width: getProportionateScreenWidth(24),
-                height: getProportionateScreenHeight(24),
-              ),
-            ),
+            icon: _page == 0
+                ? SvgPicture.asset(
+                    "assets/icons/home_new.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  )
+                : SvgPicture.asset(
+                    "assets/icons/home_new_white.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
           ),
           BottomNavigationBarItem(
-            icon: Opacity(
-              opacity: _page == 1 ? 1.0 : 0.5,
-              child: SvgPicture.asset(
-                "assets/icons/search.svg",
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                width: getProportionateScreenWidth(24),
-                height: getProportionateScreenHeight(24),
-              ),
-            ),
+            icon: _page == 1
+                ? SvgPicture.asset(
+                    "assets/icons/explore_new.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  )
+                : SvgPicture.asset(
+                    "assets/icons/explore_new_white.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
           ),
           BottomNavigationBarItem(
-            icon: Opacity(
-              opacity: _page == 2 ? 1.0 : 0.5,
-              child: SvgPicture.asset(
-                "assets/icons/message_icon.svg",
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                width: getProportionateScreenWidth(24),
-                height: getProportionateScreenHeight(24),
-              ),
-            ),
+            icon: _page == 2
+                ? SvgPicture.asset(
+                    "assets/icons/chat_new.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  )
+                : SvgPicture.asset(
+                    "assets/icons/chat_new_white.svg",
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
           ),
           BottomNavigationBarItem(
             icon: Opacity(
