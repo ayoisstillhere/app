@@ -121,18 +121,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
     final token = await AuthManager.getToken();
 
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
+    // Create multipart request
+    final request = http.MultipartRequest('POST', url);
 
-    final body = jsonEncode({
-      "participantUserIds": selectedUsers,
-      "type": "DIRECT",
-    });
+    // Add headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add form fields
+    request.fields['participantUserIds'] = jsonEncode(selectedUsers);
+    request.fields['type'] = 'DIRECT';
 
     try {
-      final response = await http.post(url, headers: headers, body: body);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (jsonDecode(response.body)['isSecret']) {
@@ -205,9 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            jsonDecode(
-              "$e",
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            'Error: ${e.toString()}',
             style: TextStyle(color: Colors.white),
           ),
         ),
