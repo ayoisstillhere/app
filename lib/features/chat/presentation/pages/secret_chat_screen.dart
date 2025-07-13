@@ -403,6 +403,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       original.isViewOnce,
       original.mediaUrl,
       original.reactions,
+      original.replyToId,
       original.senderId,
       original.type,
       original.encryptionMetadata,

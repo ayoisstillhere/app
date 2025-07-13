@@ -551,6 +551,7 @@ class _ChatScreenState extends State<ChatScreen> {
       original.isViewOnce,
       original.mediaUrl,
       original.reactions,
+      original.replyToId,
       original.senderId,
       original.type,
       original.encryptionMetadata,
