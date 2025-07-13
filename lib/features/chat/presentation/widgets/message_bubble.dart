@@ -59,11 +59,30 @@ class _MessageBubbleState extends State<MessageBubble> {
     _audioPlayer.durationStream.listen((d) {
       if (mounted) setState(() => duration = d ?? Duration.zero);
     });
+
     _audioPlayer.positionStream.listen((p) {
       if (mounted) setState(() => position = p);
     });
+
     _audioPlayer.playerStateStream.listen((state) {
-      if (mounted) setState(() => isPlaying = state.playing);
+      if (mounted) {
+        setState(() {
+          isPlaying = state.playing;
+        });
+
+        // Handle playback completion
+        if (state.processingState == ProcessingState.completed) {
+          if (mounted) {
+            setState(() {
+              isPlaying = false;
+              position = Duration.zero;
+            });
+          }
+          // Reset to beginning for next play
+          _audioPlayer.stop();
+          _audioPlayer.seek(Duration.zero);
+        }
+      }
     });
   }
 
@@ -239,6 +258,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
   }
 
+  // Update your _decryptFile method to preload audio duration
   Future<void> _decryptFile() async {
     if (!mounted) return;
     if (widget.message.type == MessageType.TEXT.name) return;
@@ -250,6 +270,10 @@ class _MessageBubbleState extends State<MessageBubble> {
         setState(() {
           decryptedFile = cachedFile;
         });
+        // If it's an audio file, preload it to get duration
+        if (widget.message.type == MessageType.AUDIO.name) {
+          await _preloadAudioFile(cachedFile);
+        }
       }
       return;
     }
@@ -277,6 +301,11 @@ class _MessageBubbleState extends State<MessageBubble> {
 
         // Cache the file for future use
         await _cacheFile(file);
+
+        // If it's an audio file, preload it to get duration
+        if (widget.message.type == MessageType.AUDIO.name) {
+          await _preloadAudioFile(file);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -285,6 +314,16 @@ class _MessageBubbleState extends State<MessageBubble> {
           isDecrypting = false;
         });
       }
+    }
+  }
+
+  // Add this method to preload audio file and get duration
+  Future<void> _preloadAudioFile(File audioFile) async {
+    try {
+      await _audioPlayer.setFilePath(audioFile.path);
+      // The duration will be automatically updated via the stream listener
+    } catch (e) {
+      // print('Error preloading audio file: $e');
     }
   }
 
@@ -913,10 +952,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Audio bars
+                          // Audio bars with scrubbing capability
                           SizedBox(
                             height: getProportionateScreenHeight(24),
-                            child: _buildAudioBars(textColor),
+                            child: _buildScrubbableAudioBars(textColor),
                           ),
                           SizedBox(height: getProportionateScreenHeight(4)),
 
@@ -974,43 +1013,79 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  Widget _buildAudioBars(Color textColor) {
-    // Generate audio bars with different heights
+  Widget _buildScrubbableAudioBars(Color textColor) {
     final int barCount = 40;
     final double maxHeight = getProportionateScreenHeight(20);
     final double minHeight = getProportionateScreenHeight(3);
     final double barWidth = getProportionateScreenWidth(2);
     final double barSpacing = getProportionateScreenWidth(1);
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(barCount, (index) {
-        // Calculate progress based on current position
-        final double progress = duration.inMilliseconds > 0
-            ? position.inMilliseconds / duration.inMilliseconds
-            : 0.0;
+    return GestureDetector(
+      onTapDown: (details) {
+        _onAudioBarTap(details.localPosition);
+      },
+      onPanUpdate: (details) {
+        _onAudioBarTap(details.localPosition);
+      },
+      child: SizedBox(
+        height: maxHeight,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(barCount, (index) {
+                // Calculate progress based on current position
+                final double progress = duration.inMilliseconds > 0
+                    ? position.inMilliseconds / duration.inMilliseconds
+                    : 0.0;
 
-        // Determine if this bar should be "filled" (played)
-        final bool isPlayed = (index / barCount) <= progress;
+                // Determine if this bar should be "filled" (played)
+                final bool isPlayed = (index / barCount) <= progress;
 
-        // Generate varied heights for a more natural look
-        final double heightFactor = _getBarHeight(index);
-        final double barHeight =
-            minHeight + (maxHeight - minHeight) * heightFactor;
+                // Generate varied heights for a more natural look
+                final double heightFactor = _getBarHeight(index);
+                final double barHeight =
+                    minHeight + (maxHeight - minHeight) * heightFactor;
 
-        return AnimatedContainer(
-          duration: Duration(milliseconds: 150),
-          width: barWidth,
-          height: barHeight,
-          decoration: BoxDecoration(
-            color: isPlayed
-                ? textColor.withValues(alpha: 0.8)
-                : textColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(1),
-          ),
-        );
-      }),
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 150),
+                  width: barWidth,
+                  height: barHeight,
+                  decoration: BoxDecoration(
+                    color: isPlayed
+                        ? textColor.withValues(alpha: 0.8)
+                        : textColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                );
+              }),
+            );
+          },
+        ),
+      ),
     );
+  }
+
+  void _onAudioBarTap(Offset localPosition) async {
+    if (duration.inMilliseconds > 0) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final double totalWidth =
+          renderBox.size.width -
+          getProportionateScreenWidth(
+            16 * 2 + 40 + 12,
+          ); // Account for padding and button
+
+      final double progress = (localPosition.dx / totalWidth).clamp(0.0, 1.0);
+      final Duration seekPosition = Duration(
+        milliseconds: (duration.inMilliseconds * progress).round(),
+      );
+
+      try {
+        await _audioPlayer.seek(seekPosition);
+      } catch (e) {
+        // print('Audio seek error: $e');
+      }
+    }
   }
 
   double _getBarHeight(int index) {
