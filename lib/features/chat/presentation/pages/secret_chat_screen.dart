@@ -86,7 +86,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   bool _showSecretChatOverlay = true;
   String? _conversationKey;
 
-  final noScreenshot = NoScreenshot.instance;
+  final _noScreenshot = NoScreenshot.instance;
 
   @override
   void initState() {
@@ -95,7 +95,17 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     BlocProvider.of<ChatCubit>(context).getTextMessages();
     _markAllAssRead();
     _decryptConversationKey();
-    noScreenshot.screenshotOff();
+    disableScreenshot();
+  }
+
+  void disableScreenshot() async {
+    bool result = await _noScreenshot.screenshotOff();
+    debugPrint('Screenshot Off: $result');
+  }
+
+  void enableScreenshot() async {
+    bool result = await _noScreenshot.screenshotOn();
+    debugPrint('Enable Screenshot: $result');
   }
 
   Future<void> _decryptConversationKey() async {
@@ -1095,7 +1105,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       _videoController!.dispose();
       _videoController = null;
     }
-    noScreenshot.screenshotOn();
+    enableScreenshot();
 
     super.dispose();
   }
