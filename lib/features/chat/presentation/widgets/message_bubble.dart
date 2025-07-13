@@ -16,8 +16,11 @@ import '../../../../components/full_screen_file_image_viewer.dart';
 import '../../../../constants.dart';
 import '../../../../services/file_encryptor.dart';
 import '../../../../services/media_download_service.dart';
+import '../../../../services/message_reaction_service.dart';
 import '../../../../size_config.dart';
 import 'full_screen_video_player.dart';
+import 'message_reactions_display.dart';
+import 'reaction_picker.dart';
 
 class MessageBubble extends StatefulWidget {
   final TextMessageEntity message;
@@ -55,6 +58,11 @@ class _MessageBubbleState extends State<MessageBubble> {
   static const int _maxCacheAge =
       7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
+  // Add these for reactions
+  bool _showReactionPicker = false;
+  OverlayEntry? _reactionPickerOverlay;
+  final LayerLink _layerLink = LayerLink();
+
   @override
   void initState() {
     super.initState();
@@ -89,6 +97,115 @@ class _MessageBubbleState extends State<MessageBubble> {
         }
       }
     });
+  }
+
+  // Add these methods for reaction handling
+  void _showReactionPickerOverlay() {
+    if (_reactionPickerOverlay != null) {
+      _hideReactionPickerOverlay();
+      return;
+    }
+
+    // Add this check before creating overlay
+    if (!mounted || !context.mounted) return;
+
+    setState(() {
+      _showReactionPicker = true;
+    });
+
+    _reactionPickerOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        width: MediaQuery.of(context).size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0, -60),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              alignment: Alignment.center,
+              child: ReactionPicker(
+                onReactionSelected: _handleReactionSelected,
+                onCancel: _hideReactionPickerOverlay,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Add safety check before inserting overlay
+    if (mounted && context.mounted) {
+      Overlay.of(context).insert(_reactionPickerOverlay!);
+    }
+  }
+
+  void _hideReactionPickerOverlay() {
+    _reactionPickerOverlay?.remove();
+    _reactionPickerOverlay = null;
+
+    // Add this null check and ensure widget is still active
+    if (mounted && context.mounted) {
+      setState(() {
+        _showReactionPicker = false;
+      });
+    }
+  }
+
+  void _handleReactionSelected(String emoji) async {
+    _hideReactionPickerOverlay();
+
+    // Check if current user has already reacted with this emoji
+    final reactions = widget.message.reactions;
+    final userIds = reactions[emoji] as List<String>? ?? [];
+    final hasReacted = userIds.contains(widget.currentUser.id);
+
+    bool success;
+    if (hasReacted) {
+      success = await MessageReactionsService.removeReaction(
+        widget.message.id,
+        emoji,
+      );
+    } else {
+      success = await MessageReactionsService.addReaction(
+        widget.message.id,
+        emoji,
+      );
+    }
+
+    if (!success) {
+      _showSnackBar('Failed to update reaction');
+    }
+    // Note: You'll need to update the message in your parent widget
+    // when reactions change, typically through a callback or state management
+  }
+
+  void _handleReactionTap(String emoji) async {
+    // Toggle reaction when tapping existing reaction
+    final reactions = widget.message.reactions ?? {};
+    final userIds =
+        (reactions[emoji] as List?)
+            ?.map((item) => item['userId'] as String)
+            .toList() ??
+        <String>[];
+    final hasReacted = userIds.contains(widget.currentUser.id);
+
+    bool success;
+    if (hasReacted) {
+      success = await MessageReactionsService.removeReaction(
+        widget.message.id,
+        emoji,
+      );
+    } else {
+      success = await MessageReactionsService.addReaction(
+        widget.message.id,
+        emoji,
+      );
+    }
+
+    if (!success) {
+      _showSnackBar('Failed to update reaction');
+    }
   }
 
   Future<String> _getCacheKey() async {
@@ -354,6 +471,9 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   @override
   void dispose() {
+    // Clean up overlay first before disposing other resources
+    _hideReactionPickerOverlay();
+
     if (_audioPlayer.playing) {
       _audioPlayer.stop().then((_) {
         _audioPlayer.dispose();
@@ -370,22 +490,65 @@ class _MessageBubbleState extends State<MessageBubble> {
     final bubbleColor = widget.isDark
         ? kGreyInputFillDark
         : kGreyInputBorder.withValues(alpha: 0.3);
-
     final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
+    Widget messageContent;
+
     if (widget.message.type == MessageType.TEXT.name) {
-      return _buildTextMessage(isMe, bubbleColor, textColor);
+      messageContent = _buildTextMessage(isMe, bubbleColor, textColor);
     } else if (widget.message.type == MessageType.IMAGE.name) {
-      return _buildImageMessage();
+      messageContent = _buildImageMessage();
     } else if (widget.message.type == MessageType.VIDEO.name) {
-      return _buildVideoMessage();
+      messageContent = _buildVideoMessage();
     } else if (widget.message.type == MessageType.AUDIO.name) {
-      return _buildAudioMessage();
+      messageContent = _buildAudioMessage();
     } else if (widget.message.type == MessageType.FILE.name) {
-      return _buildFileMessage();
+      messageContent = _buildFileMessage();
     } else {
-      return Container();
+      messageContent = Container();
     }
+
+    return _buildMessageWithReactions(
+      messageContent: messageContent,
+      isMe: isMe,
+      textColor: textColor,
+    );
+  }
+
+  // Add this method to wrap your message content with long press detection
+  Widget _buildMessageWithReactions({
+    required Widget messageContent,
+    required bool isMe,
+    required Color textColor,
+  }) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        onLongPress: _showReactionPickerOverlay,
+        child: Column(
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            messageContent,
+            // Add reactions display
+            if (widget.message.reactions.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(
+                  left: isMe ? 0 : getProportionateScreenWidth(32),
+                  right: isMe ? getProportionateScreenWidth(32) : 0,
+                ),
+                child: MessageReactionsDisplay(
+                  reactions: widget.message.reactions,
+                  currentUser: widget.currentUser,
+                  onReactionTap: _handleReactionTap,
+                  isDark: widget.isDark,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   // Rest of your existing methods remain the same...
