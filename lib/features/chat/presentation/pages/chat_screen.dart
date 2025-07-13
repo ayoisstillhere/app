@@ -1016,31 +1016,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                       getProportionateScreenWidth(20),
                                     ),
                                   ),
-                                  child: _isSending
-                                      ? SizedBox(
-                                          width: getProportionateScreenWidth(
-                                            20,
-                                          ),
-                                          height: getProportionateScreenHeight(
-                                            20,
-                                          ),
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                          ),
-                                        )
-                                      : SvgPicture.asset(
-                                          "assets/icons/send.svg",
-                                          height: getProportionateScreenHeight(
-                                            21.27,
-                                          ),
-                                          width: getProportionateScreenWidth(
-                                            21.27,
-                                          ),
-                                        ),
+                                  child: SvgPicture.asset(
+                                    "assets/icons/send.svg",
+                                    height: getProportionateScreenHeight(21.27),
+                                    width: getProportionateScreenWidth(21.27),
+                                  ),
                                 ),
                               )
                             else
@@ -1082,35 +1062,17 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     ),
                                                   ),
                                             ),
-                                            child: _isSending
-                                                ? SizedBox(
-                                                    width:
-                                                        getProportionateScreenWidth(
-                                                          20,
-                                                        ),
-                                                    height:
-                                                        getProportionateScreenHeight(
-                                                          20,
-                                                        ),
-                                                    child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      valueColor:
-                                                          AlwaysStoppedAnimation<
-                                                            Color
-                                                          >(Colors.white),
-                                                    ),
-                                                  )
-                                                : SvgPicture.asset(
-                                                    "assets/icons/send.svg",
-                                                    height:
-                                                        getProportionateScreenHeight(
-                                                          21.27,
-                                                        ),
-                                                    width:
-                                                        getProportionateScreenWidth(
-                                                          21.27,
-                                                        ),
+                                            child: SvgPicture.asset(
+                                              "assets/icons/send.svg",
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    21.27,
                                                   ),
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    21.27,
+                                                  ),
+                                            ),
                                           ),
                                         ),
                                       // Attachment icons
