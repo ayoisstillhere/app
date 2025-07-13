@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:crypto/crypto.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
@@ -40,10 +43,209 @@ class _MessageBubbleState extends State<MessageBubble> {
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
 
+  // Cache management
+  static const String _cacheKeyPrefix = 'cached_file_';
+  static const String _cacheMetadataKey = 'cache_metadata';
+  static const int _maxCacheSize = 100 * 1024 * 1024; // 100MB
+  static const int _maxCacheAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+  @override
+  void initState() {
+    super.initState();
+    _decryptFile();
+    _audioPlayer = AudioPlayer();
+
+    _audioPlayer.durationStream.listen((d) {
+      if (mounted) setState(() => duration = d ?? Duration.zero);
+    });
+    _audioPlayer.positionStream.listen((p) {
+      if (mounted) setState(() => position = p);
+    });
+    _audioPlayer.playerStateStream.listen((state) {
+      if (mounted) setState(() => isPlaying = state.playing);
+    });
+  }
+
+  Future<String> _getCacheKey() async {
+    // Create a unique cache key based on message ID and media URL
+    final content = '${widget.message.id}_${widget.message.mediaUrl}';
+    final bytes = utf8.encode(content);
+    final digest = sha256.convert(bytes);
+    return '$_cacheKeyPrefix${digest.toString()}';
+  }
+
+  Future<Directory> _getCacheDirectory() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final cacheDir = Directory('${appDir.path}/message_cache');
+    if (!await cacheDir.exists()) {
+      await cacheDir.create(recursive: true);
+    }
+    return cacheDir;
+  }
+
+  Future<File?> _getCachedFile() async {
+    try {
+      final cacheKey = await _getCacheKey();
+      final prefs = await SharedPreferences.getInstance();
+      final cachedPath = prefs.getString(cacheKey);
+      
+      if (cachedPath != null) {
+        final file = File(cachedPath);
+        if (await file.exists()) {
+          // Check if file is still valid (not too old)
+          final stat = await file.stat();
+          final now = DateTime.now().millisecondsSinceEpoch;
+          final fileAge = now - stat.modified.millisecondsSinceEpoch;
+          
+          if (fileAge < _maxCacheAge) {
+            return file;
+          } else {
+            // File is too old, remove it
+            await _removeCachedFile(cacheKey, cachedPath);
+          }
+        } else {
+          // File doesn't exist, remove from cache
+          await prefs.remove(cacheKey);
+        }
+      }
+    } catch (e) {
+      print('Error getting cached file: $e');
+    }
+    return null;
+  }
+
+  Future<void> _cacheFile(File file) async {
+    try {
+      final cacheKey = await _getCacheKey();
+      final cacheDir = await _getCacheDirectory();
+      
+      // Create cache filename with original extension
+      dynamic json = jsonDecode(widget.message.encryptionMetadata!);
+      final originalFilename = json['filename'] as String;
+      final extension = originalFilename.split('.').last;
+      final cacheFilename = '${cacheKey.replaceAll(_cacheKeyPrefix, '')}.${extension}';
+      final cachedFile = File('${cacheDir.path}/$cacheFilename');
+      
+      // Copy file to cache directory
+      await file.copy(cachedFile.path);
+      
+      // Store cache reference
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(cacheKey, cachedFile.path);
+      
+      // Update cache metadata
+      await _updateCacheMetadata(cacheKey, cachedFile.path, await cachedFile.length());
+      
+      // Clean up old cache if needed
+      await _cleanupOldCache();
+      
+    } catch (e) {
+      print('Error caching file: $e');
+    }
+  }
+
+  Future<void> _updateCacheMetadata(String key, String path, int size) async {
+    final prefs = await SharedPreferences.getInstance();
+    final metadataJson = prefs.getString(_cacheMetadataKey) ?? '{}';
+    final metadata = jsonDecode(metadataJson) as Map<String, dynamic>;
+    
+    metadata[key] = {
+      'path': path,
+      'size': size,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    
+    await prefs.setString(_cacheMetadataKey, jsonEncode(metadata));
+  }
+
+  Future<void> _removeCachedFile(String key, String path) async {
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(key);
+      
+      // Update metadata
+      final metadataJson = prefs.getString(_cacheMetadataKey) ?? '{}';
+      final metadata = jsonDecode(metadataJson) as Map<String, dynamic>;
+      metadata.remove(key);
+      await prefs.setString(_cacheMetadataKey, jsonEncode(metadata));
+    } catch (e) {
+      print('Error removing cached file: $e');
+    }
+  }
+
+  Future<void> _cleanupOldCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final metadataJson = prefs.getString(_cacheMetadataKey) ?? '{}';
+      final metadata = jsonDecode(metadataJson) as Map<String, dynamic>;
+      
+      // Calculate total cache size
+      int totalSize = 0;
+      final entries = <MapEntry<String, dynamic>>[];
+      
+      for (final entry in metadata.entries) {
+        final data = entry.value as Map<String, dynamic>;
+        totalSize += data['size'] as int;
+        entries.add(MapEntry(entry.key, data));
+      }
+      
+      // If cache is too large, remove oldest files
+      if (totalSize > _maxCacheSize) {
+        entries.sort((a, b) => (a.value['timestamp'] as int).compareTo(b.value['timestamp'] as int));
+        
+        for (final entry in entries) {
+          if (totalSize <= _maxCacheSize * 0.8) break; // Clean to 80% of max size
+          
+          final data = entry.value as Map<String, dynamic>;
+          await _removeCachedFile(entry.key, data['path'] as String);
+          totalSize -= data['size'] as int;
+        }
+      }
+      
+      // Remove files older than max age
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final keysToRemove = <String>[];
+      
+      for (final entry in metadata.entries) {
+        final data = entry.value as Map<String, dynamic>;
+        final age = now - (data['timestamp'] as int);
+        
+        if (age > _maxCacheAge) {
+          keysToRemove.add(entry.key);
+        }
+      }
+      
+      for (final key in keysToRemove) {
+        final data = metadata[key] as Map<String, dynamic>;
+        await _removeCachedFile(key, data['path'] as String);
+      }
+      
+    } catch (e) {
+      print('Error cleaning up cache: $e');
+    }
+  }
+
   Future<void> _decryptFile() async {
     if (!mounted) return;
     if (widget.message.type == MessageType.TEXT.name) return;
 
+    // First, try to get cached file
+    final cachedFile = await _getCachedFile();
+    if (cachedFile != null) {
+      if (mounted) {
+        setState(() {
+          decryptedFile = cachedFile;
+        });
+      }
+      return;
+    }
+
+    // If not cached, decrypt and cache
     setState(() {
       isDecrypting = true;
       decryptionError = null;
@@ -63,6 +265,9 @@ class _MessageBubbleState extends State<MessageBubble> {
           decryptedFile = file;
           isDecrypting = false;
         });
+        
+        // Cache the file for future use
+        await _cacheFile(file);
       }
     } catch (e) {
       if (mounted) {
@@ -95,27 +300,7 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    // Call async method properly
-    _decryptFile();
-    _audioPlayer = AudioPlayer();
-
-    // Using mounted check to prevent updates after widget disposal
-    _audioPlayer.durationStream.listen((d) {
-      if (mounted) setState(() => duration = d ?? Duration.zero);
-    });
-    _audioPlayer.positionStream.listen((p) {
-      if (mounted) setState(() => position = p);
-    });
-    _audioPlayer.playerStateStream.listen((state) {
-      if (mounted) setState(() => isPlaying = state.playing);
-    });
-  }
-
-  @override
   void dispose() {
-    // Make sure we stop playback before disposing
     if (_audioPlayer.playing) {
       _audioPlayer.stop().then((_) {
         _audioPlayer.dispose();
@@ -150,6 +335,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
   }
 
+  // Rest of your existing methods remain the same...
   Widget _buildLoadingOrError() {
     final bool isMe = widget.message.senderId == widget.currentUser.id;
     final bubbleColor = widget.isDark
@@ -222,7 +408,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ),
                           SizedBox(width: getProportionateScreenWidth(8)),
                           Text(
-                            'Decrypting...',
+                            'Loading...',
                             style: TextStyle(
                               color: textColor,
                               fontSize: getProportionateScreenHeight(12),
