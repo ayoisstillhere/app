@@ -15,6 +15,7 @@ import 'package:app/size_config.dart';
 import '../../../../components/full_screen_image_viewer.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import '../../../../services/profile_sharing_service.dart';
 import '../../../chat/data/models/get_messages_response_model.dart'
     hide UserModel;
 import '../../../chat/domain/entities/get_messages_response_entity.dart';
@@ -100,6 +101,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       _tabScrollControllers[i]?.dispose();
     }
     super.dispose();
+  }
+
+  void _shareProfile() {
+    ProfileSharingService.shareProfile(
+      username: user!.username,
+      fullName: user!.fullName,
+      profileImage: user!.profileImage,
+    );
   }
 
   Future<void> _createChat(
@@ -738,8 +747,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
           Spacer(),
 
-          // Share Profile button
-          _buildActionButton("Share Profile", null, () {}),
+          // Share Profile button - Updated with actual functionality
+          _buildActionButton("Share Profile", null, _shareProfile),
 
           // Message button
           if (canMessage) ...[
@@ -879,7 +888,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       ],
     );
 
-    if (selected == 'Settings' && mounted) {
+    if (selected == 'Share Profile' && mounted) {
+      _shareProfile();
+    } else if (selected == 'Settings' && mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => SettingsScreen()),
@@ -941,8 +952,11 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ],
     );
+
     if (selected == 'Unfollow' && mounted) {
       await _unfollowUser();
+    } else if (selected == 'Share Profile' && mounted) {
+      _shareProfile();
     }
   }
 

@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'injection_container.dart' as di;
+import 'services/deep_link_navigation_service.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -34,6 +35,8 @@ Future<void> main() async {
     await initFCM();
   }
   runApp(const MyApp());
+  // Initialize deep link handling
+  DeepLinkNavigationService.initialize();
 }
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -170,6 +173,7 @@ class _MyAppState extends State<MyApp> {
         ).copyWith(platformBrightness: Brightness.dark),
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
+          navigatorKey: DeepLinkNavigationService.navigatorKey,
           title: 'Flutter Demo',
           theme: theme(),
           darkTheme: darkTheme(),

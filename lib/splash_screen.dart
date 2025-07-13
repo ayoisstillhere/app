@@ -1,6 +1,7 @@
 import 'package:app/components/nav_page.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:app/services/secret_chat_encryption_service.dart';
+import 'package:app/services/deep_link_navigation_service.dart'; // Add this import
 import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,13 +123,24 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _navigateToHome() {
+  void _navigateToHome() async {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
 
+    // Navigate to main app
     Navigator.of(
       context,
     ).pushReplacement(MaterialPageRoute(builder: (context) => const NavPage()));
+
+    // Handle initial deep link after navigation is complete
+    // Add a small delay to ensure the navigation is complete
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Now handle any initial deep link
+    DeepLinkNavigationService.handleInitialLink();
+
+    // Process any queued deep links
+    DeepLinkNavigationService.onAppReady();
   }
 
   void _navigateToOnboarding() {
