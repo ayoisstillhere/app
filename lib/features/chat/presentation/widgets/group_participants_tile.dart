@@ -95,16 +95,52 @@ class _GroupParticipantsTileState extends State<GroupParticipantsTile> {
 
   void _removeParticipant() async {
     final token = await AuthManager.getToken();
-    final response = await http.put(
-      Uri.parse(
-        '$baseUrl/api/v1/chat/conversations/${widget.conversationId}/remove-participant',
-      ),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'userId': widget.participant.userId}),
-    );
-    Navigator.pop(context);
+    try {
+      final response = await http.put(
+        Uri.parse(
+          '$baseUrl/api/v1/chat/conversations/${widget.conversationId}/remove-participant',
+        ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'userId': widget.participant.id}),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(
+              "Participant removed successfully.",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Failed to remove participant. Please try again.",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 }
