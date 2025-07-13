@@ -252,20 +252,57 @@ class _FollowersAndFollowingScreenState
             ),
             Spacer(),
             (follower.followsYou && !follower.youFollow)
-                ? Container(
-                    width: getProportionateScreenWidth(90),
-                    height: getProportionateScreenHeight(37),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: kAccentColor,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Follow Back',
-                        style: TextStyle(
-                          color: kBlack,
-                          fontWeight: FontWeight.w500,
-                          fontSize: getProportionateScreenHeight(12),
+                ? InkWell(
+                    onTap: () async {
+                      final token = await AuthManager.getToken();
+                      final response = await http.post(
+                        Uri.parse("$baseUrl/api/v1/user/follow"),
+                        headers: {
+                          "Authorization": "Bearer $token",
+                          "Content-Type": "application/json",
+                        },
+                        body: jsonEncode({"userId": follower.id}),
+                      );
+
+                      if (response.statusCode == 200) {
+                        if (mounted) {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => ProfileScreen(
+                                isVerified: true,
+                                userName: follower.username,
+                                currentUser: currentUser,
+                              ),
+                            ),
+                          );
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text(
+                              "Failed to follow user. Please try again.",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: getProportionateScreenWidth(90),
+                      height: getProportionateScreenHeight(37),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: kAccentColor,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Follow Back',
+                          style: TextStyle(
+                            color: kBlack,
+                            fontWeight: FontWeight.w500,
+                            fontSize: getProportionateScreenHeight(12),
+                          ),
                         ),
                       ),
                     ),
