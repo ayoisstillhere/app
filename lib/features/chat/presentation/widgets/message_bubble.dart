@@ -536,7 +536,6 @@ class _MessageBubbleState extends State<MessageBubble> {
               Padding(
                 padding: EdgeInsets.only(
                   left: isMe ? 0 : getProportionateScreenWidth(32),
-                  right: isMe ? getProportionateScreenWidth(32) : 0,
                 ),
                 child: MessageReactionsDisplay(
                   reactions: widget.message.reactions,
