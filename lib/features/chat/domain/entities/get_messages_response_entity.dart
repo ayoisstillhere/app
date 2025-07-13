@@ -22,6 +22,7 @@ class Conversation {
   final bool isConversationBlockedForMe;
   final Message? lastMessage;
   final int unreadCount;
+  final String? groupImage;
 
   Conversation({
     required this.id,
@@ -40,6 +41,7 @@ class Conversation {
     required this.lastMessage,
     required this.unreadCount,
     required this.isConversationBlockedForMe,
+    required this.groupImage,
   });
 }
 

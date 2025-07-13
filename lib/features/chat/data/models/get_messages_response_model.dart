@@ -41,6 +41,7 @@ class ConversationModel extends Conversation {
     required MessageModel? lastMessage,
     required super.unreadCount,
     required super.isConversationBlockedForMe,
+    required super.groupImage,
   }) : super(
          participants: participants,
          messages: messages,
@@ -71,6 +72,7 @@ class ConversationModel extends Conversation {
           : null,
       unreadCount: json['unreadCount'],
       isConversationBlockedForMe: json['isConversationBlockedForMe'],
+      groupImage: json['groupImage'],
     );
   }
 
@@ -95,6 +97,7 @@ class ConversationModel extends Conversation {
         : null,
     'unreadCount': unreadCount,
     'isConversationBlockedForMe': isConversationBlockedForMe,
+    'groupImage': groupImage,
   };
 }
 

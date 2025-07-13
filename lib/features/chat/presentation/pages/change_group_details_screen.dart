@@ -1,8 +1,10 @@
-import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../components/nav_page.dart';
@@ -10,22 +12,27 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 
-class ChangeGroupNameScreen extends StatefulWidget {
-  const ChangeGroupNameScreen({
+class ChangeGroupDetailsScreen extends StatefulWidget {
+  const ChangeGroupDetailsScreen({
     super.key,
     required this.currentName,
     required this.chatId,
+    this.currentImageUrl,
   });
   final String currentName;
   final String chatId;
+  final String? currentImageUrl;
 
   @override
-  State<ChangeGroupNameScreen> createState() => _ChangeGroupNameScreenState();
+  State<ChangeGroupDetailsScreen> createState() =>
+      _ChangeGroupDetailsScreenState();
 }
 
-class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
+class _ChangeGroupDetailsScreenState extends State<ChangeGroupDetailsScreen> {
   late TextEditingController _controller;
   bool _isLoading = false;
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -39,8 +46,45 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
     super.dispose();
   }
 
+  Future<File> compressImage(File file) async {
+    final compressedBytes = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      quality: 50, // adjust as needed
+    );
+
+    final compressedFile = File('${file.path}_compressed.jpg')
+      ..writeAsBytesSync(compressedBytes!);
+    return compressedFile;
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final File imageFile = File(image.path);
+        final File compressedImage = await compressImage(imageFile);
+        setState(() {
+          _selectedImage = compressedImage;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Failed to pick image: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _saveChanges() async {
-    if (_controller.text.trim() == widget.currentName) {
+    final nameChanged = _controller.text.trim() != widget.currentName;
+    final imageChanged = _selectedImage != null;
+
+    if (!nameChanged && !imageChanged) {
       // No changes made
       Navigator.pop(context);
       return;
@@ -51,22 +95,34 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
     });
 
     try {
-      // Here you would call your API to update the user data
-      // Example:
-      // await AuthManager.updateUserField(widget.fieldType, _controller.text.trim());
-      final updatedValue = _controller.text.trim();
       final token = await AuthManager.getToken();
 
-      final response = await http.put(
+      // Create multipart request
+      final request = http.MultipartRequest(
+        'PUT',
         Uri.parse('$baseUrl/api/v1/chat/conversations/${widget.chatId}'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({"name": updatedValue}),
       );
 
-      // Return success result
+      // Add headers
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Add name field
+      request.fields['name'] = _controller.text.trim();
+
+      // Add image if selected
+      if (_selectedImage != null) {
+        final multipartFile = await http.MultipartFile.fromPath(
+          'groupImage',
+          _selectedImage!.path,
+        );
+        request.files.add(multipartFile);
+      }
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      // Handle response
       if (response.statusCode == 200) {
         Navigator.pushReplacement(
           context,
@@ -82,7 +138,7 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
           SnackBar(
             backgroundColor: Colors.red,
             content: Text(
-              'Failed to update Group Name',
+              'Failed to update Group Details, Please Contact Admin',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -90,14 +146,78 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
       }
     } catch (e) {
       // Handle error
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error updating Group Name: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating Group Details: $e')),
+      );
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  Widget _buildProfilePictureSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Profile Picture"),
+        SizedBox(height: getProportionateScreenHeight(12)),
+        Center(
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: getProportionateScreenWidth(100),
+              height: getProportionateScreenWidth(100),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: kGreySearchInput, width: 2),
+                color: Colors.grey[200],
+              ),
+              child: _selectedImage != null
+                  ? ClipOval(
+                      child: Image.file(
+                        _selectedImage!,
+                        fit: BoxFit.cover,
+                        width: getProportionateScreenWidth(100),
+                        height: getProportionateScreenWidth(100),
+                      ),
+                    )
+                  : widget.currentImageUrl != null
+                  ? ClipOval(
+                      child: Image.network(
+                        widget.currentImageUrl!,
+                        fit: BoxFit.cover,
+                        width: getProportionateScreenWidth(100),
+                        height: getProportionateScreenWidth(100),
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholderAvatar();
+                        },
+                      ),
+                    )
+                  : _buildPlaceholderAvatar(),
+            ),
+          ),
+        ),
+        SizedBox(height: getProportionateScreenHeight(8)),
+        Center(
+          child: Text(
+            "Tap to change picture",
+            style: TextStyle(
+              fontSize: getProportionateScreenHeight(12),
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlaceholderAvatar() {
+    return Icon(
+      Icons.group,
+      size: getProportionateScreenWidth(50),
+      color: Colors.grey[400],
+    );
   }
 
   @override
@@ -116,13 +236,15 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
                   children: [
                     SizedBox(height: getProportionateScreenHeight(23)),
                     Text(
-                      "Change Group Name",
+                      "Change Group Details",
                       style: TextStyle(
                         fontSize: getProportionateScreenHeight(20),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(32)),
+                    _buildProfilePictureSection(),
+                    SizedBox(height: getProportionateScreenHeight(24)),
                     Text("Name"),
                     SizedBox(height: getProportionateScreenHeight(6)),
                     TextField(
@@ -145,7 +267,7 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
                       ),
                     ),
                     Spacer(),
-                    DefaultButton(text: "Change Name", press: _saveChanges),
+                    DefaultButton(text: "Save Changes", press: _saveChanges),
                     SizedBox(height: getProportionateScreenHeight(44)),
                   ],
                 ),
@@ -164,7 +286,7 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
         : kGreyInputBorder;
     return AppBar(
       title: Text(
-        "Group Name",
+        "Group Details",
         style: TextStyle(
           fontSize: getProportionateScreenHeight(24),
           fontWeight: FontWeight.w500,

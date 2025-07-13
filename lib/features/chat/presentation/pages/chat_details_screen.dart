@@ -17,7 +17,7 @@ import '../../../profile/presentation/pages/profile_screen.dart';
 import '../widgets/file_widget.dart';
 import '../widgets/media_widget.dart';
 import '../widgets/voice_widget.dart';
-import 'change_group_name_screen.dart';
+import 'change_group_details_screen.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({
@@ -723,9 +723,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          ChangeGroupNameScreen(
+                                          ChangeGroupDetailsScreen(
                                             currentName: widget.chatName,
                                             chatId: widget.chatId,
+                                            currentImageUrl: widget.chatImage,
                                           ),
                                     ),
                                   );
