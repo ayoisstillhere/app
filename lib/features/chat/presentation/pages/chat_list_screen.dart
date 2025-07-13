@@ -84,6 +84,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   static const int _pageSize = 20;
 
+  List<String> archiveSelectedConersations = [];
+  bool showCheckbox = false;
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +99,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
     _encryptionService.setSecretKey(
       '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
     );
+  }
+
+  void toggleConversationSelection(String conversationId) {
+    setState(() {
+      if (archiveSelectedConersations.contains(conversationId)) {
+        archiveSelectedConersations.remove(conversationId);
+      } else {
+        archiveSelectedConersations.add(conversationId);
+      }
+    });
+  }
+
+  void removeSelectedConversation(String conversationId) {
+    setState(() {
+      archiveSelectedConersations.remove(conversationId);
+    });
   }
 
   @override
@@ -118,6 +137,48 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       _loadMoreConversations();
+    }
+  }
+
+  Future<void> _archiveChats() async {
+    if (archiveSelectedConersations.isEmpty) return;
+
+    try {
+      final token = await AuthManager.getToken();
+      // Join the selected user IDs with commas
+      final commaSeparatedIds = archiveSelectedConersations.join(',');
+
+      final http.Response response;
+      if (selectedChip != 'Archived') {
+        response = await http.put(
+          Uri.parse(
+            '$baseUrl/api/v1/chat/conversations/$commaSeparatedIds/archive',
+          ),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+      } else {
+        response = await http.put(
+          Uri.parse(
+            '$baseUrl/api/v1/chat/conversations/$commaSeparatedIds/unarchive',
+          ),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+      }
+
+      if (response.statusCode == 200) {
+        // Clear selected users after successful archive
+        setState(() {
+          archiveSelectedConersations.clear();
+          showCheckbox = false;
+        });
+
+        // Reload conversations
+        await _loadInitialConversations();
+      } else {
+        _showErrorSnackBar('Failed to archive chats: ${response.body}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error archiving chats: $e');
     }
   }
 
@@ -349,7 +410,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   void _updateFilterCounts() {
     final allCount = _allConversations['All']!
-        .where((conversation) => conversation.lastMessage != null)
+        .where(
+          (conversation) =>
+              conversation.lastMessage != null &&
+              !conversation.isConversationArchivedForMe,
+        )
         .length;
     final groupCount = _allConversations['Groups']!
         .where((conversation) => conversation.lastMessage != null)
@@ -444,24 +509,41 @@ class _ChatListScreenState extends State<ChatListScreen> {
       leading: Container(),
       centerTitle: false,
       actions: [
-        Padding(
-          padding: EdgeInsets.only(right: getProportionateScreenWidth(22)),
-          child: InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    NewChatScreen(currentUser: widget.currentUser),
+        showCheckbox
+            ? Padding(
+                padding: EdgeInsets.only(
+                  right: getProportionateScreenWidth(22),
+                ),
+                child: InkWell(
+                  onTap: _archiveChats,
+                  child: SvgPicture.asset(
+                    "assets/icons/archive-restore.svg",
+                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
+                ),
+              )
+            : Padding(
+                padding: EdgeInsets.only(
+                  right: getProportionateScreenWidth(22),
+                ),
+                child: InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          NewChatScreen(currentUser: widget.currentUser),
+                    ),
+                  ),
+                  child: SvgPicture.asset(
+                    "assets/icons/edit.svg",
+                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
+                ),
               ),
-            ),
-            child: SvgPicture.asset(
-              "assets/icons/edit.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -639,42 +721,65 @@ class _ChatListScreenState extends State<ChatListScreen> {
             (participant) =>
                 participant.user.username != widget.currentUser.username,
           );
+    bool isSelected = isGroupChat
+        ? false
+        : archiveSelectedConersations.contains(conversation.id);
 
     return conversation.lastMessage?.content == null
         ? Container()
-        : ChatTile(
-            dividerColor: dividerColor,
-            image: isGroupChat
-                ? "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                : otherParticipant?.user.profileImage,
-            name: isGroupChat
-                ? conversation.name ?? 'Group Chat'
-                : otherParticipant?.user.fullName ?? 'Unknown User',
-            lastMessage: conversation.isSecret
-                ? '[Secret Message]'
-                : conversation.lastMessage?.type == "TEXT"
-                ? _decryptMessageContent(
-                    conversation.lastMessage!.content,
-                    conversation.encryptionKey,
+        : conversation.isConversationArchivedForMe && selectedChip != 'Archived'
+        ? Container()
+        : GestureDetector(
+            onLongPress: () {
+              setState(() {
+                showCheckbox = !showCheckbox;
+              });
+            },
+            child: ChatTile(
+              dividerColor: dividerColor,
+              image: isGroupChat
+                  ? "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                  : otherParticipant?.user.profileImage,
+              name: isGroupChat
+                  ? conversation.name ?? 'Group Chat'
+                  : otherParticipant?.user.fullName ?? 'Unknown User',
+              lastMessage: conversation.isSecret
+                  ? '[Secret Message]'
+                  : conversation.lastMessage?.type == "TEXT"
+                  ? _decryptMessageContent(
+                      conversation.lastMessage!.content,
+                      conversation.encryptionKey,
+                    )
+                  : conversation.lastMessage.type.toString(),
+              time: conversation.lastMessage?.createdAt ?? DateTime.now(),
+              unreadMessages: conversation.unreadCount ?? 0,
+              chatId: conversation.id,
+              currentUser: widget.currentUser,
+              encryptionKey: conversation.encryptionKey,
+              chatHandle: conversation.participants
+                  .firstWhere(
+                    (participant) =>
+                        participant.user.username !=
+                        widget.currentUser.username,
                   )
-                : conversation.lastMessage.type.toString(),
-            time: conversation.lastMessage?.createdAt ?? DateTime.now(),
-            unreadMessages: conversation.unreadCount ?? 0,
-            chatId: conversation.id,
-            currentUser: widget.currentUser,
-            encryptionKey: conversation.encryptionKey,
-            chatHandle: conversation.participants
-                .firstWhere(
-                  (participant) =>
-                      participant.user.username != widget.currentUser.username,
-                )
-                .user
-                .username,
-            isGroup: conversation.type == "GROUP",
-            participants: conversation.participants,
-            isConversationMuted: conversation.isConversationMutedForMe,
-            isSecretChat: conversation.isSecret,
-            isConversationBlockedForMe: conversation.isConversationBlockedForMe,
+                  .user
+                  .username,
+              isGroup: conversation.type == "GROUP",
+              participants: conversation.participants,
+              isConversationMuted: conversation.isConversationMutedForMe,
+              isSecretChat: conversation.isSecret,
+              isConversationBlockedForMe:
+                  conversation.isConversationBlockedForMe,
+              isSelected: isSelected,
+              showCheckbox: isGroupChat ? false : showCheckbox,
+              onSelectionChanged: (selected) {
+                if (selected) {
+                  toggleConversationSelection(conversation.id);
+                } else {
+                  removeSelectedConversation(conversation.id);
+                }
+              },
+            ),
           );
   }
 

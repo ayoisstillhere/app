@@ -34,6 +34,9 @@ class ChatTile extends StatefulWidget {
     required this.isConversationMuted,
     required this.isSecretChat,
     required this.isConversationBlockedForMe,
+    this.isSelected = false,
+    this.showCheckbox = false,
+    this.onSelectionChanged,
   });
 
   final Color dividerColor;
@@ -51,6 +54,9 @@ class ChatTile extends StatefulWidget {
   final bool isConversationMuted;
   final bool isSecretChat;
   final bool isConversationBlockedForMe;
+  final bool isSelected;
+  final bool showCheckbox;
+  final Function(bool)? onSelectionChanged;
 
   @override
   State<ChatTile> createState() => _ChatTileState();
@@ -175,14 +181,18 @@ class _ChatTileState extends State<ChatTile> {
                                 maxLines: 1,
                               ),
                             ),
-                            Text(
-                              timeago.format(widget.time),
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: getProportionateScreenHeight(12),
-                                color: kGreyTimeText,
-                              ),
-                            ),
+                            widget.showCheckbox
+                                ? Container()
+                                : Text(
+                                    timeago.format(widget.time),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: getProportionateScreenHeight(
+                                        12,
+                                      ),
+                                      color: kGreyTimeText,
+                                    ),
+                                  ),
                           ],
                         ),
                       ),
@@ -192,7 +202,20 @@ class _ChatTileState extends State<ChatTile> {
               ],
             ),
             Spacer(),
-            widget.unreadMessages > 0
+            widget.showCheckbox
+                ? SizedBox(
+                    height: getProportionateScreenHeight(25),
+                    width: getProportionateScreenWidth(25),
+                    child: Checkbox(
+                      value: widget.isSelected,
+                      onChanged: (value) {
+                        if (widget.onSelectionChanged != null) {
+                          widget.onSelectionChanged!(value ?? false);
+                        }
+                      },
+                    ),
+                  )
+                : widget.unreadMessages > 0
                 ? Container(
                     height: getProportionateScreenHeight(25),
                     width: getProportionateScreenWidth(25),
