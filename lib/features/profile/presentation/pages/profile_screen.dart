@@ -847,6 +847,16 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       items: [
         PopupMenuItem<String>(
+          value: 'Share Profile',
+          child: Text(
+            'Share Profile',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
           value: 'Settings',
           child: Text(
             'Settings',
@@ -899,6 +909,16 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
           ),
+        PopupMenuItem<String>(
+          value: 'Share Profile',
+          child: Text(
+            'Share Profile',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
         PopupMenuItem<String>(
           value: 'Mute',
           child: Text(
