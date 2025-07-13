@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
@@ -259,8 +260,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
         File fileToSend = _selectedFile!.file;
 
-        if (type == MessageType.IMAGE || type == MessageType.VIDEO) {
+        if (type == MessageType.IMAGE) {
           fileToSend = await compressImage(File(_selectedFile!.file.path));
+        } else if (type == MessageType.VIDEO) {
+          fileToSend = await compressVideo(File(_selectedFile!.file.path));
         }
 
         final encryptedFile = await FileEncryptor.encryptFile(fileToSend);
@@ -319,6 +322,37 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Camera functionality
   Future<void> _takePicture() async {
+    // Show dialog to choose between photo and video
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Choose Media Type'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_camera),
+              title: Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _capturePhoto();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.videocam),
+              title: Text('Record Video'),
+              onTap: () {
+                Navigator.pop(context);
+                _captureVideo();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _capturePhoto() async {
     final XFile? image = await _imagePicker.pickImage(
       source: ImageSource.camera,
       maxWidth: 1920,
@@ -331,17 +365,40 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Gallery functionality
-  Future<void> _pickImageFromGallery() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      maxHeight: 1080,
-      imageQuality: 85,
+  Future<void> _captureVideo() async {
+    final XFile? video = await _imagePicker.pickVideo(
+      source: ImageSource.camera,
+      maxDuration: const Duration(minutes: 5), // Set max duration as needed
     );
 
-    if (image != null) {
-      _setSelectedFile(File(image.path), MessageType.IMAGE);
+    if (video != null) {
+      _setSelectedFile(File(video.path), MessageType.VIDEO);
+    }
+  }
+
+  // Gallery functionality
+  Future<void> _pickMediaFromGallery() async {
+    try {
+      // This will show both images and videos in the picker
+      final XFile? media = await _imagePicker.pickMedia(
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (media != null) {
+        final file = File(media.path);
+        final extension = media.path.split('.').last.toLowerCase();
+
+        MessageType type = MessageType.IMAGE;
+        if (['mp4', 'mov', 'avi', 'mkv', 'webm'].contains(extension)) {
+          type = MessageType.VIDEO;
+        }
+
+        _setSelectedFile(file, type);
+      }
+    } catch (e) {
+      debugPrint('Error picking media: $e');
     }
   }
 
@@ -608,15 +665,15 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  _selectedFile!.file.path.split('/').last,
-                  style: TextStyle(
-                    fontSize: getProportionateScreenHeight(14),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                // Text(
+                //   _selectedFile!.file.path.split('/').last,
+                //   style: TextStyle(
+                //     fontSize: getProportionateScreenHeight(14),
+                //     fontWeight: FontWeight.w500,
+                //   ),
+                //   maxLines: 1,
+                //   overflow: TextOverflow.ellipsis,
+                // ),
                 Text(
                   _selectedFile!.type.name,
                   style: TextStyle(
@@ -1135,7 +1192,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                           width: getProportionateScreenWidth(8),
                                         ),
                                         InkWell(
-                                          onTap: _pickImageFromGallery,
+                                          onTap: _pickMediaFromGallery,
                                           child: SvgPicture.asset(
                                             "assets/icons/chat_image.svg",
                                             height:
@@ -1195,5 +1252,19 @@ class _ChatScreenState extends State<ChatScreen> {
     final compressedFile = File('${file.path}_compressed.jpg')
       ..writeAsBytesSync(compressedBytes!);
     return compressedFile;
+  }
+
+  Future<File> compressVideo(File file) async {
+    final compressedVideo = await VideoCompress.compressVideo(
+      file.path,
+      quality: VideoQuality.MediumQuality,
+      deleteOrigin: false,
+      includeAudio: true,
+    );
+
+    if (compressedVideo != null) {
+      return File(compressedVideo.path!);
+    }
+    return file; // Return original if compression fails
   }
 }
