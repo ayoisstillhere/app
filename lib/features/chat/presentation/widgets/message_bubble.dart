@@ -15,6 +15,7 @@ import '../../../../components/full_screen_file_image_viewer.dart';
 import '../../../../constants.dart';
 import '../../../../services/file_encryptor.dart';
 import '../../../../size_config.dart';
+import 'full_screen_video_player.dart';
 
 class MessageBubble extends StatefulWidget {
   final TextMessageEntity message;
@@ -765,9 +766,16 @@ class _MessageBubbleState extends State<MessageBubble> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        // Handle video playback - you'll need to implement this
-                        // For example, navigate to a video player screen
-                        // print('Play video: ${decryptedFile!.path}');
+                        // Navigate to full screen video player
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullScreenVideoPlayer(
+                              videoFile: decryptedFile!,
+                              message: widget.message,
+                            ),
+                          ),
+                        );
                       },
                       child: Container(
                         height: getProportionateScreenHeight(200),
