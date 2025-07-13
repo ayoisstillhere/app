@@ -189,10 +189,6 @@ class _NavPageState extends State<NavPage> {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-    final iconColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? kWhite
-        : kBlack;
     final bgColor = MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kBlackBg
         : kWhite;

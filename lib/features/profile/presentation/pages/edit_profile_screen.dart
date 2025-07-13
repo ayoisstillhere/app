@@ -239,6 +239,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final isDarkMode =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
     final iconColor = isDarkMode ? kWhite : kBlack;
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
     return AppBar(
       title: Text(
         "Profile",
@@ -262,6 +266,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ],
+      bottom: PreferredSize(
+        preferredSize: Size.fromHeight(getProportionateScreenHeight(20)),
+        child: Container(
+          width: double.infinity,
+          height: 1,
+          color: dividerColor,
+        ),
+      ),
     );
   }
 }

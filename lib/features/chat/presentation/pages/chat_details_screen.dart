@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:app/features/chat/presentation/pages/group_participants_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -1357,37 +1358,78 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                   ),
                             SizedBox(height: getProportionateScreenHeight(26)),
                             widget.isGroup
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "People",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(15),
-                                          fontWeight: FontWeight.w500,
+                                ? InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              GroupParticipantsScreen(
+                                                participants:
+                                                    widget.participants,
+                                                conversationId: widget.chatId,
+                                              ),
                                         ),
-                                      ),
-                                      SizedBox(
-                                        width: getProportionateScreenWidth(285),
-                                        child: Text(
-                                          widget.participants
-                                              .map((e) => e.user.fullName)
-                                              .join(", "),
+                                      );
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "People",
                                           style: TextStyle(
                                             fontSize:
                                                 getProportionateScreenHeight(
-                                                  13,
+                                                  15,
                                                 ),
-                                            fontWeight: FontWeight.normal,
-                                            color: kProfileText,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                    ],
+                                        Row(
+                                          children: [
+                                            SizedBox(
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    230,
+                                                  ),
+                                              child: Text(
+                                                widget.participants
+                                                    .map((e) => e.user.fullName)
+                                                    .join(", "),
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        13,
+                                                      ),
+                                                  fontWeight: FontWeight.normal,
+                                                  color: kProfileText,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    5,
+                                                  ),
+                                            ),
+                                            Text(
+                                              "more",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      13,
+                                                    ),
+                                                fontWeight: FontWeight.normal,
+                                                color: kProfileText,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   )
                                 : Text(
                                     "Move Chat",

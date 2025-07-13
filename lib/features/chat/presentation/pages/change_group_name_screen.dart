@@ -158,6 +158,10 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
     final isDarkMode =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
     final iconColor = isDarkMode ? kWhite : kBlack;
+    final dividerColor =
+        MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? kGreyInputFillDark
+        : kGreyInputBorder;
     return AppBar(
       title: Text(
         "Group Name",
@@ -181,6 +185,14 @@ class _ChangeGroupNameScreenState extends State<ChangeGroupNameScreen> {
           ),
         ),
       ],
+      bottom: PreferredSize(
+        preferredSize: Size.fromHeight(getProportionateScreenHeight(20)),
+        child: Container(
+          width: double.infinity,
+          height: 1,
+          color: dividerColor,
+        ),
+      ),
     );
   }
 }
