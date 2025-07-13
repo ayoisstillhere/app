@@ -35,6 +35,8 @@ class Follower {
   int followerCount;
   int followingCount;
   DateTime followedAt;
+  bool followsYou;
+  bool youFollow;
 
   Follower({
     required this.id,
@@ -45,6 +47,8 @@ class Follower {
     required this.followerCount,
     required this.followingCount,
     required this.followedAt,
+    required this.followsYou,
+    required this.youFollow,
   });
 
   factory Follower.fromJson(Map<String, dynamic> json) => Follower(
@@ -56,6 +60,8 @@ class Follower {
     followerCount: json["followerCount"],
     followingCount: json["followingCount"],
     followedAt: DateTime.parse(json["followedAt"]),
+    followsYou: json["follow_you"],
+    youFollow: json["you_follow"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -67,6 +73,8 @@ class Follower {
     "followerCount": followerCount,
     "followingCount": followingCount,
     "followedAt": followedAt.toIso8601String(),
+    "follow_you": followsYou,
+    "you_follow": youFollow,
   };
 }
 

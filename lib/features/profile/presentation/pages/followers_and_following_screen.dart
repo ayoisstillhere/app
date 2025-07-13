@@ -251,25 +251,44 @@ class _FollowersAndFollowingScreenState
               ],
             ),
             Spacer(),
-            Container(
-              width: getProportionateScreenWidth(90),
-              height: getProportionateScreenHeight(37),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: kFollowerAndFollowingBorder),
-                color: kFollowerAndFollowingFill,
-              ),
-              child: Center(
-                child: Text(
-                  'Message',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontWeight: FontWeight.w500,
-                    fontSize: getProportionateScreenHeight(12),
+            (follower.followsYou && !follower.youFollow)
+                ? Container(
+                    width: getProportionateScreenWidth(90),
+                    height: getProportionateScreenHeight(37),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: kAccentColor,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Follow Back',
+                        style: TextStyle(
+                          color: kBlack,
+                          fontWeight: FontWeight.w500,
+                          fontSize: getProportionateScreenHeight(12),
+                        ),
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: getProportionateScreenWidth(90),
+                    height: getProportionateScreenHeight(37),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: kFollowerAndFollowingBorder),
+                      color: kFollowerAndFollowingFill,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Message',
+                        style: TextStyle(
+                          color: kWhite,
+                          fontWeight: FontWeight.w500,
+                          fontSize: getProportionateScreenHeight(12),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
