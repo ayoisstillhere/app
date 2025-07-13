@@ -715,8 +715,8 @@ class _MessageBubbleState extends State<MessageBubble> {
               ),
               child: Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: getProportionateScreenWidth(16),
-                  vertical: getProportionateScreenHeight(10),
+                  horizontal: getProportionateScreenWidth(10),
+                  vertical: getProportionateScreenHeight(2),
                 ),
                 decoration: isMe
                     ? BoxDecoration(
