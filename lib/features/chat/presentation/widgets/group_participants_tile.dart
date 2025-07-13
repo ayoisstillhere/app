@@ -104,7 +104,7 @@ class _GroupParticipantsTileState extends State<GroupParticipantsTile> {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'userId': widget.participant.id}),
+        body: jsonEncode({'userId': widget.participant.userId}),
       );
 
       if (response.statusCode == 200) {

@@ -9,6 +9,7 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
@@ -85,6 +86,8 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   bool _showSecretChatOverlay = true;
   String? _conversationKey;
 
+  final noScreenshot = NoScreenshot.instance;
+
   @override
   void initState() {
     super.initState();
@@ -92,6 +95,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     BlocProvider.of<ChatCubit>(context).getTextMessages();
     _markAllAssRead();
     _decryptConversationKey();
+    noScreenshot.screenshotOff();
   }
 
   Future<void> _decryptConversationKey() async {
@@ -1091,6 +1095,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       _videoController!.dispose();
       _videoController = null;
     }
+    noScreenshot.screenshotOn();
 
     super.dispose();
   }

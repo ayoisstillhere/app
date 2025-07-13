@@ -93,7 +93,8 @@ class AuthManager {
   }
 
   static Future<void> clearSecretKeys() async {
-    await _secureStorage.delete(key: 'private_key');
+    UserEntity? user = await AuthManager.getCurrentUser();
+    await _secureStorage.delete(key: '${user!.id}_private_key');
   }
 
   // Refresh token method
@@ -123,6 +124,7 @@ class AuthManager {
         if (data['refresh_token'] != null) {
           await setRefreshToken(data['refresh_token']);
         }
+        _fetchCurrentUser();
 
         return true;
       } else {
@@ -182,5 +184,23 @@ class AuthManager {
     }
 
     return null;
+  }
+
+  static Future<void> _fetchCurrentUser() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/user/profile"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      final UserEntity user = UserModel.fromJson(jsonDecode(response.body));
+      final secureStorage = FlutterSecureStorage();
+      await secureStorage.write(key: 'currentUser', value: jsonEncode(user));
+    } else {
+      if (response.statusCode == 401) {
+        await AuthManager.logout();
+      }
+      throw Exception('Failed to fetch current user');
+    }
   }
 }

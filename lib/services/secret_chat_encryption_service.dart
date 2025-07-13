@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:encrypt/encrypt.dart' as symmetric;
 import 'package:fast_rsa/fast_rsa.dart';
@@ -50,12 +51,20 @@ class SecretChatEncryptionService {
   }
 
   Future<void> storePrivateKey(String privateKey) async {
-    await _secureStorage.write(key: 'private_key', value: privateKey);
+    UserEntity? user = await AuthManager.getCurrentUser();
+    if (user == null) {
+      // Fetch the current user
+    }
+    await _secureStorage.write(
+      key: '${user!.id}_private_key',
+      value: privateKey,
+    );
   }
 
   // Retrieve private key securely
   Future<String?> getPrivateKey() async {
-    return await _secureStorage.read(key: 'private_key');
+    UserEntity? user = await AuthManager.getCurrentUser();
+    return await _secureStorage.read(key: '${user!.id}_private_key');
   }
 
   Future<bool> ensureKeyPairExists() async {
