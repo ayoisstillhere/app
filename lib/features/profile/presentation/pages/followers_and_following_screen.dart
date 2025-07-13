@@ -12,6 +12,10 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../../auth/domain/entities/user_entity.dart';
+import '../../../chat/data/models/get_messages_response_model.dart';
+import '../../../chat/domain/entities/get_messages_response_entity.dart';
+import '../../../chat/presentation/pages/chat_screen.dart';
+import '../../../chat/presentation/pages/secret_chat_screen.dart';
 
 class FollowersAndFollowingScreen extends StatefulWidget {
   const FollowersAndFollowingScreen({
@@ -212,6 +216,9 @@ class _FollowersAndFollowingScreenState
   }
 
   Widget _buildFollowerCard(Follower follower) {
+    List selectedUsers = [];
+    selectedUsers.add(follower.id);
+    selectedUsers.add(currentUser.id);
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -307,21 +314,31 @@ class _FollowersAndFollowingScreenState
                       ),
                     ),
                   )
-                : Container(
-                    width: getProportionateScreenWidth(90),
-                    height: getProportionateScreenHeight(37),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: kFollowerAndFollowingBorder),
-                      color: kFollowerAndFollowingFill,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Message',
-                        style: TextStyle(
-                          color: kWhite,
-                          fontWeight: FontWeight.w500,
-                          fontSize: getProportionateScreenHeight(12),
+                : InkWell(
+                    onTap: () {
+                      _goToMessage(
+                        selectedUsers,
+                        follower.fullName,
+                        follower.profileImage,
+                        follower.username,
+                      );
+                    },
+                    child: Container(
+                      width: getProportionateScreenWidth(90),
+                      height: getProportionateScreenHeight(37),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: kFollowerAndFollowingBorder),
+                        color: kFollowerAndFollowingFill,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Message',
+                          style: TextStyle(
+                            color: kWhite,
+                            fontWeight: FontWeight.w500,
+                            fontSize: getProportionateScreenHeight(12),
+                          ),
                         ),
                       ),
                     ),
@@ -333,6 +350,9 @@ class _FollowersAndFollowingScreenState
   }
 
   Widget _buildFollowingCard(Following followingUser) {
+    List selectedUsers = [];
+    selectedUsers.add(followingUser.id);
+    selectedUsers.add(currentUser.id);
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -372,21 +392,31 @@ class _FollowersAndFollowingScreenState
               ],
             ),
             Spacer(),
-            Container(
-              width: getProportionateScreenWidth(90),
-              height: getProportionateScreenHeight(37),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: kFollowerAndFollowingBorder),
-                color: kFollowerAndFollowingFill,
-              ),
-              child: Center(
-                child: Text(
-                  'Message',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontWeight: FontWeight.w500,
-                    fontSize: getProportionateScreenHeight(12),
+            InkWell(
+              onTap: () {
+                _goToMessage(
+                  selectedUsers,
+                  followingUser.fullName ?? '',
+                  followingUser.profileImage,
+                  followingUser.username,
+                );
+              },
+              child: Container(
+                width: getProportionateScreenWidth(90),
+                height: getProportionateScreenHeight(37),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: kFollowerAndFollowingBorder),
+                  color: kFollowerAndFollowingFill,
+                ),
+                child: Center(
+                  child: Text(
+                    'Message',
+                    style: TextStyle(
+                      color: kWhite,
+                      fontWeight: FontWeight.w500,
+                      fontSize: getProportionateScreenHeight(12),
+                    ),
                   ),
                 ),
               ),
@@ -767,5 +797,107 @@ class _FollowersAndFollowingScreenState
       ),
       hintText: "Search",
     );
+  }
+
+  Future<void> _goToMessage(
+    List selectedUsers,
+    String name,
+    String image,
+    String handle,
+  ) async {
+    final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
+    final token = await AuthManager.getToken();
+
+    // Create multipart request
+    final request = http.MultipartRequest('POST', url);
+
+    // Add headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add form fields
+    request.fields['participantUserIds'] = jsonEncode(selectedUsers);
+    request.fields['type'] = 'DIRECT';
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (jsonDecode(response.body)['isSecret']) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SecretChatScreen(
+                chatId: jsonDecode(response.body)['id'],
+                name: name,
+                imageUrl: image,
+                currentUser: currentUser,
+                chatHandle: handle,
+                isGroup: false,
+                participants: List<Participant>.from(
+                  (jsonDecode(response.body)['participants'] as List)
+                      .map((e) => ParticipantModel.fromJson(e))
+                      .toList(),
+                ),
+                isConversationMuted: jsonDecode(
+                  response.body,
+                )['isConversationMutedForMe'],
+                isConversationBlockedForMe: jsonDecode(
+                  response.body,
+                )['isConversationBlockedForMe'],
+              ),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: jsonDecode(response.body)['id'],
+                name: name,
+                imageUrl: image,
+                currentUser: currentUser,
+                encryptionKey: jsonDecode(response.body)['encryptionKey'],
+                chatHandle: handle,
+                isGroup: false,
+                participants: List<Participant>.from(
+                  (jsonDecode(response.body)['participants'] as List)
+                      .map((e) => ParticipantModel.fromJson(e))
+                      .toList(),
+                ),
+                isConversationMuted: jsonDecode(
+                  response.body,
+                )['isConversationMutedForMe'],
+                isConversationBlockedForMe: jsonDecode(
+                  response.body,
+                )['isConversationBlockedForMe'],
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error: ${e.toString()}',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 }
