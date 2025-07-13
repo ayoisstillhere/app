@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:app/features/profile/data/models/followers_response_model.dart';
 import 'package:app/features/profile/data/models/following_response_model.dart';
+import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -211,100 +212,131 @@ class _FollowersAndFollowingScreenState
   }
 
   Widget _buildFollowerCard(Follower follower) {
-    return Container(
-      margin: EdgeInsets.only(bottom: getProportionateScreenHeight(24)),
-      child: Row(
-        children: [
-          Container(
-            width: getProportionateScreenWidth(25),
-            height: getProportionateScreenHeight(25),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: follower.profileImage != null
-                    ? NetworkImage(follower.profileImage)
-                    : AssetImage('assets/images/avatar.png'),
-                fit: BoxFit.cover,
-              ),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfileScreen(
+              isVerified: true,
+              userName: follower.username,
+              currentUser: currentUser,
             ),
           ),
-          SizedBox(width: getProportionateScreenWidth(10)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [Text(follower.fullName), Text('@${follower.username}')],
-          ),
-          Spacer(),
-          Container(
-            width: getProportionateScreenWidth(90),
-            height: getProportionateScreenHeight(37),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: kFollowerAndFollowingBorder),
-              color: kFollowerAndFollowingFill,
-            ),
-            child: Center(
-              child: Text(
-                'Message',
-                style: TextStyle(
-                  color: kWhite,
-                  fontWeight: FontWeight.w500,
-                  fontSize: getProportionateScreenHeight(12),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: getProportionateScreenHeight(24)),
+        child: Row(
+          children: [
+            Container(
+              width: getProportionateScreenWidth(25),
+              height: getProportionateScreenHeight(25),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: follower.profileImage != null
+                      ? NetworkImage(follower.profileImage)
+                      : AssetImage('assets/images/avatar.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-          ),
-        ],
+            SizedBox(width: getProportionateScreenWidth(10)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(follower.fullName),
+                Text('@${follower.username}'),
+              ],
+            ),
+            Spacer(),
+            Container(
+              width: getProportionateScreenWidth(90),
+              height: getProportionateScreenHeight(37),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: kFollowerAndFollowingBorder),
+                color: kFollowerAndFollowingFill,
+              ),
+              child: Center(
+                child: Text(
+                  'Message',
+                  style: TextStyle(
+                    color: kWhite,
+                    fontWeight: FontWeight.w500,
+                    fontSize: getProportionateScreenHeight(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildFollowingCard(Following followingUser) {
-    return Container(
-      margin: EdgeInsets.only(bottom: getProportionateScreenHeight(24)),
-      child: Row(
-        children: [
-          Container(
-            width: getProportionateScreenWidth(25),
-            height: getProportionateScreenHeight(25),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: followingUser.profileImage != null
-                    ? NetworkImage(followingUser.profileImage)
-                    : AssetImage('assets/images/avatar.png'),
-                fit: BoxFit.cover,
-              ),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfileScreen(
+              isVerified: true,
+              userName: followingUser.username,
+              currentUser: currentUser,
             ),
           ),
-          SizedBox(width: getProportionateScreenWidth(10)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(followingUser.fullName ?? ''),
-              Text('@${followingUser.username}'),
-            ],
-          ),
-          Spacer(),
-          Container(
-            width: getProportionateScreenWidth(90),
-            height: getProportionateScreenHeight(37),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: kFollowerAndFollowingBorder),
-              color: kFollowerAndFollowingFill,
-            ),
-            child: Center(
-              child: Text(
-                'Message',
-                style: TextStyle(
-                  color: kWhite,
-                  fontWeight: FontWeight.w500,
-                  fontSize: getProportionateScreenHeight(12),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: getProportionateScreenHeight(24)),
+        child: Row(
+          children: [
+            Container(
+              width: getProportionateScreenWidth(25),
+              height: getProportionateScreenHeight(25),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: followingUser.profileImage != null
+                      ? NetworkImage(followingUser.profileImage)
+                      : AssetImage('assets/images/avatar.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-          ),
-        ],
+            SizedBox(width: getProportionateScreenWidth(10)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(followingUser.fullName ?? ''),
+                Text('@${followingUser.username}'),
+              ],
+            ),
+            Spacer(),
+            Container(
+              width: getProportionateScreenWidth(90),
+              height: getProportionateScreenHeight(37),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: kFollowerAndFollowingBorder),
+                color: kFollowerAndFollowingFill,
+              ),
+              child: Center(
+                child: Text(
+                  'Message',
+                  style: TextStyle(
+                    color: kWhite,
+                    fontWeight: FontWeight.w500,
+                    fontSize: getProportionateScreenHeight(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
