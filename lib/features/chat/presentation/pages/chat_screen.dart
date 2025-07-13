@@ -937,12 +937,30 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     itemCount: requiredMessages.length,
                     itemBuilder: (context, index) {
+                      String image;
+                      String username;
+                      if (!widget.isGroup) {
+                        image = widget.imageUrl;
+                        username = '';
+                      } else {
+                        final participant = widget.participants.firstWhere(
+                          (participant) =>
+                              participant.userId ==
+                              requiredMessages[index].senderId,
+                        );
+                        if (participant.user.profileImage == null) {
+                          image = widget.imageUrl;
+                        }
+                        image = participant.user.profileImage!;
+                        username = participant.user.username;
+                      }
                       final message = requiredMessages[index];
                       return MessageBubble(
                         message: message,
                         isDark: isDark,
-                        imageUrl: widget.imageUrl,
+                        imageUrl: image,
                         currentUser: widget.currentUser,
+                        username: username,
                       );
                     },
                   ),

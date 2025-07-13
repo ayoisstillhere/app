@@ -22,6 +22,7 @@ class MessageBubble extends StatefulWidget {
   final bool isDark;
   final String imageUrl;
   final UserEntity currentUser;
+  final String? username;
 
   const MessageBubble({
     super.key,
@@ -29,6 +30,7 @@ class MessageBubble extends StatefulWidget {
     required this.isDark,
     required this.imageUrl,
     required this.currentUser,
+    this.username = '',
   });
 
   @override
@@ -514,18 +516,30 @@ class _MessageBubbleState extends State<MessageBubble> {
             : MainAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            Container(
-              height: getProportionateScreenHeight(24),
-              width: getProportionateScreenWidth(24),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: widget.imageUrl.isEmpty
-                      ? NetworkImage(defaultAvatar)
-                      : NetworkImage(widget.imageUrl),
-                  fit: BoxFit.cover,
+            Column(
+              children: [
+                Container(
+                  height: getProportionateScreenHeight(24),
+                  width: getProportionateScreenWidth(24),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: widget.imageUrl.isEmpty
+                          ? NetworkImage(defaultAvatar)
+                          : NetworkImage(widget.imageUrl),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-              ),
+                // if (!isMe && widget.username!.isNotEmpty)
+                //   Text(
+                //     "${widget.username}",
+                //     style: TextStyle(
+                //       color: kWhite,
+                //       fontSize: getProportionateScreenHeight(12),
+                //     ),
+                //   ),
+              ],
             ),
             SizedBox(width: getProportionateScreenWidth(8)),
           ],
