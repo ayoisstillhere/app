@@ -81,7 +81,11 @@ class _GroupParticipantsScreenState extends State<GroupParticipantsScreen> {
                 itemCount: widget.participants.length,
                 itemBuilder: (context, index) {
                   final participant = widget.participants[index];
-                  return GroupParticipantsTile(dividerColor: dividerColor, participant: participant);
+                  return GroupParticipantsTile(
+                    dividerColor: dividerColor,
+                    participant: participant,
+                    conversationId: widget.conversationId,
+                  );
                 },
               ),
             ],

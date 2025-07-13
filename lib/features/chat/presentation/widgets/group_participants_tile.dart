@@ -1,25 +1,38 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../domain/entities/get_messages_response_entity.dart';
 
-class GroupParticipantsTile extends StatelessWidget {
+class GroupParticipantsTile extends StatefulWidget {
   const GroupParticipantsTile({
     super.key,
     required this.dividerColor,
     required this.participant,
+    required this.conversationId,
   });
 
   final Color dividerColor;
   final Participant participant;
+  final String conversationId;
 
+  @override
+  State<GroupParticipantsTile> createState() => _GroupParticipantsTileState();
+}
+
+class _GroupParticipantsTileState extends State<GroupParticipantsTile> {
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(10)),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: dividerColor, width: 1.0)),
+        border: Border(
+          bottom: BorderSide(color: widget.dividerColor, width: 1.0),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -30,9 +43,9 @@ class GroupParticipantsTile extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
-                image: participant.user.profileImage!.isEmpty
+                image: widget.participant.user.profileImage!.isEmpty
                     ? NetworkImage(defaultAvatar)
-                    : NetworkImage(participant.user.profileImage!),
+                    : NetworkImage(widget.participant.user.profileImage!),
                 fit: BoxFit.cover,
               ),
             ),
@@ -44,7 +57,7 @@ class GroupParticipantsTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  participant.user.fullName!,
+                  widget.participant.user.fullName!,
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: getProportionateScreenHeight(16),
@@ -52,7 +65,7 @@ class GroupParticipantsTile extends StatelessWidget {
                 ),
                 SizedBox(height: getProportionateScreenHeight(4)),
                 Text(
-                  '@${participant.user.username}',
+                  '@${widget.participant.user.username}',
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: getProportionateScreenHeight(12),
@@ -64,16 +77,34 @@ class GroupParticipantsTile extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            "Remove",
-            style: TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
-              fontSize: getProportionateScreenHeight(13),
+          InkWell(
+            onTap: _removeParticipant,
+            child: Text(
+              "Remove",
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+                fontSize: getProportionateScreenHeight(13),
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _removeParticipant() async {
+    final token = await AuthManager.getToken();
+    final response = await http.put(
+      Uri.parse(
+        '$baseUrl/api/v1/chat/conversations/${widget.conversationId}/remove-participant',
+      ),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'userId': widget.participant.userId}),
+    );
+    Navigator.pop(context);
   }
 }
