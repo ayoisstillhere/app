@@ -47,7 +47,8 @@ class _MessageBubbleState extends State<MessageBubble> {
   static const String _cacheKeyPrefix = 'cached_file_';
   static const String _cacheMetadataKey = 'cache_metadata';
   static const int _maxCacheSize = 100 * 1024 * 1024; // 100MB
-  static const int _maxCacheAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+  static const int _maxCacheAge =
+      7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
   @override
   void initState() {
@@ -88,7 +89,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       final cacheKey = await _getCacheKey();
       final prefs = await SharedPreferences.getInstance();
       final cachedPath = prefs.getString(cacheKey);
-      
+
       if (cachedPath != null) {
         final file = File(cachedPath);
         if (await file.exists()) {
@@ -96,7 +97,7 @@ class _MessageBubbleState extends State<MessageBubble> {
           final stat = await file.stat();
           final now = DateTime.now().millisecondsSinceEpoch;
           final fileAge = now - stat.modified.millisecondsSinceEpoch;
-          
+
           if (fileAge < _maxCacheAge) {
             return file;
           } else {
@@ -118,27 +119,31 @@ class _MessageBubbleState extends State<MessageBubble> {
     try {
       final cacheKey = await _getCacheKey();
       final cacheDir = await _getCacheDirectory();
-      
+
       // Create cache filename with original extension
       dynamic json = jsonDecode(widget.message.encryptionMetadata!);
       final originalFilename = json['filename'] as String;
       final extension = originalFilename.split('.').last;
-      final cacheFilename = '${cacheKey.replaceAll(_cacheKeyPrefix, '')}.${extension}';
+      final cacheFilename =
+          '${cacheKey.replaceAll(_cacheKeyPrefix, '')}.$extension';
       final cachedFile = File('${cacheDir.path}/$cacheFilename');
-      
+
       // Copy file to cache directory
       await file.copy(cachedFile.path);
-      
+
       // Store cache reference
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(cacheKey, cachedFile.path);
-      
+
       // Update cache metadata
-      await _updateCacheMetadata(cacheKey, cachedFile.path, await cachedFile.length());
-      
+      await _updateCacheMetadata(
+        cacheKey,
+        cachedFile.path,
+        await cachedFile.length(),
+      );
+
       // Clean up old cache if needed
       await _cleanupOldCache();
-      
     } catch (e) {
       print('Error caching file: $e');
     }
@@ -148,13 +153,13 @@ class _MessageBubbleState extends State<MessageBubble> {
     final prefs = await SharedPreferences.getInstance();
     final metadataJson = prefs.getString(_cacheMetadataKey) ?? '{}';
     final metadata = jsonDecode(metadataJson) as Map<String, dynamic>;
-    
+
     metadata[key] = {
       'path': path,
       'size': size,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
-    
+
     await prefs.setString(_cacheMetadataKey, jsonEncode(metadata));
   }
 
@@ -164,10 +169,10 @@ class _MessageBubbleState extends State<MessageBubble> {
       if (await file.exists()) {
         await file.delete();
       }
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(key);
-      
+
       // Update metadata
       final metadataJson = prefs.getString(_cacheMetadataKey) ?? '{}';
       final metadata = jsonDecode(metadataJson) as Map<String, dynamic>;
@@ -183,48 +188,52 @@ class _MessageBubbleState extends State<MessageBubble> {
       final prefs = await SharedPreferences.getInstance();
       final metadataJson = prefs.getString(_cacheMetadataKey) ?? '{}';
       final metadata = jsonDecode(metadataJson) as Map<String, dynamic>;
-      
+
       // Calculate total cache size
       int totalSize = 0;
       final entries = <MapEntry<String, dynamic>>[];
-      
+
       for (final entry in metadata.entries) {
         final data = entry.value as Map<String, dynamic>;
         totalSize += data['size'] as int;
         entries.add(MapEntry(entry.key, data));
       }
-      
+
       // If cache is too large, remove oldest files
       if (totalSize > _maxCacheSize) {
-        entries.sort((a, b) => (a.value['timestamp'] as int).compareTo(b.value['timestamp'] as int));
-        
+        entries.sort(
+          (a, b) => (a.value['timestamp'] as int).compareTo(
+            b.value['timestamp'] as int,
+          ),
+        );
+
         for (final entry in entries) {
-          if (totalSize <= _maxCacheSize * 0.8) break; // Clean to 80% of max size
-          
+          if (totalSize <= _maxCacheSize * 0.8)
+            break; // Clean to 80% of max size
+
           final data = entry.value as Map<String, dynamic>;
           await _removeCachedFile(entry.key, data['path'] as String);
           totalSize -= data['size'] as int;
         }
       }
-      
+
       // Remove files older than max age
       final now = DateTime.now().millisecondsSinceEpoch;
       final keysToRemove = <String>[];
-      
+
       for (final entry in metadata.entries) {
         final data = entry.value as Map<String, dynamic>;
         final age = now - (data['timestamp'] as int);
-        
+
         if (age > _maxCacheAge) {
           keysToRemove.add(entry.key);
         }
       }
-      
+
       for (final key in keysToRemove) {
         final data = metadata[key] as Map<String, dynamic>;
         await _removeCachedFile(key, data['path'] as String);
       }
-      
     } catch (e) {
       print('Error cleaning up cache: $e');
     }
@@ -265,7 +274,7 @@ class _MessageBubbleState extends State<MessageBubble> {
           decryptedFile = file;
           isDecrypting = false;
         });
-        
+
         // Cache the file for future use
         await _cacheFile(file);
       }
@@ -860,142 +869,100 @@ class _MessageBubbleState extends State<MessageBubble> {
                           getProportionateScreenWidth(10),
                         ),
                       ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () async {
-                            try {
-                              if (isPlaying) {
-                                await _audioPlayer.pause();
-                              } else {
-                                // Check if we need to load the file first
-                                if (_audioPlayer.audioSource == null) {
-                                  // Make sure the widget is still mounted before proceeding
-                                  if (!mounted) return;
-                                  await _audioPlayer.setFilePath(
-                                    decryptedFile!.path,
-                                  );
-                                }
-                                await _audioPlayer.play();
-                              }
-                            } catch (e) {
-                              // print('Audio play error: $e');
+                    // Play/Pause button
+                    GestureDetector(
+                      onTap: () async {
+                        try {
+                          if (isPlaying) {
+                            await _audioPlayer.pause();
+                          } else {
+                            // Check if we need to load the file first
+                            if (_audioPlayer.audioSource == null) {
+                              // Make sure the widget is still mounted before proceeding
+                              if (!mounted) return;
+                              await _audioPlayer.setFilePath(
+                                decryptedFile!.path,
+                              );
                             }
-                          },
-                          child: Container(
-                            height: getProportionateScreenHeight(40),
-                            width: getProportionateScreenWidth(40),
-                            decoration: BoxDecoration(
-                              color: textColor.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isPlaying ? Icons.pause : Icons.play_arrow,
-                              color: textColor,
-                              size: getProportionateScreenHeight(20),
-                            ),
-                          ),
+                            await _audioPlayer.play();
+                          }
+                        } catch (e) {
+                          // print('Audio play error: $e');
+                        }
+                      },
+                      child: Container(
+                        height: getProportionateScreenHeight(40),
+                        width: getProportionateScreenWidth(40),
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
                         ),
-                        SizedBox(width: getProportionateScreenWidth(12)),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Icon(
+                          isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: textColor,
+                          size: getProportionateScreenHeight(20),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: getProportionateScreenWidth(12)),
+
+                    // Audio bars visualization
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Audio bars
+                          SizedBox(
+                            height: getProportionateScreenHeight(24),
+                            child: _buildAudioBars(textColor),
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(4)),
+
+                          // Duration and timestamp row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // Audio progress bar
-                              SizedBox(
-                                height: getProportionateScreenHeight(20),
-                                child: Stack(
-                                  alignment: Alignment.centerLeft,
-                                  children: [
-                                    Container(
-                                      height: getProportionateScreenHeight(4),
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: textColor.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                    ),
-                                    if (duration != Duration.zero)
-                                      FractionallySizedBox(
-                                        widthFactor:
-                                            position.inMilliseconds /
-                                            (duration.inMilliseconds == 0
-                                                ? 1
-                                                : duration.inMilliseconds),
-                                        child: Container(
-                                          height: getProportionateScreenHeight(
-                                            4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: textColor,
-                                            borderRadius: BorderRadius.circular(
-                                              2,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: getProportionateScreenHeight(4)),
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    _formatDuration(position),
-                                    style: TextStyle(
-                                      color: textColor.withValues(alpha: 0.6),
-                                      fontSize: getProportionateScreenHeight(
-                                        10,
-                                      ),
-                                    ),
+                                  Icon(
+                                    Icons.mic,
+                                    size: getProportionateScreenHeight(12),
+                                    color: textColor.withValues(alpha: 0.6),
+                                  ),
+                                  SizedBox(
+                                    width: getProportionateScreenWidth(4),
                                   ),
                                   Text(
-                                    _formatDuration(duration),
+                                    isPlaying
+                                        ? _formatDuration(
+                                            duration - position,
+                                          ) // Countdown when playing
+                                        : _formatDuration(
+                                            duration,
+                                          ), // Total duration when not playing
                                     style: TextStyle(
-                                      color: textColor.withValues(alpha: 0.6),
+                                      color: textColor.withValues(alpha: 0.8),
                                       fontSize: getProportionateScreenHeight(
-                                        10,
+                                        12,
                                       ),
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
+                              Text(
+                                _formatTime(widget.message.createdAt.toDate()),
+                                style: TextStyle(
+                                  color: textColor.withValues(alpha: 0.6),
+                                  fontSize: getProportionateScreenHeight(10),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: getProportionateScreenHeight(4)),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.mic,
-                          size: getProportionateScreenHeight(12),
-                          color: textColor.withValues(alpha: 0.6),
-                        ),
-                        SizedBox(width: getProportionateScreenWidth(4)),
-                        Text(
-                          'Voice message',
-                          style: TextStyle(
-                            color: textColor.withValues(alpha: 0.8),
-                            fontSize: getProportionateScreenHeight(12),
-                          ),
-                        ),
-                        SizedBox(width: getProportionateScreenWidth(8)),
-                        Text(
-                          _formatTime(widget.message.createdAt.toDate()),
-                          style: TextStyle(
-                            color: textColor.withValues(alpha: 0.6),
-                            fontSize: getProportionateScreenHeight(10),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1005,6 +972,94 @@ class _MessageBubbleState extends State<MessageBubble> {
         ],
       ),
     );
+  }
+
+  Widget _buildAudioBars(Color textColor) {
+    // Generate audio bars with different heights
+    final int barCount = 40;
+    final double maxHeight = getProportionateScreenHeight(20);
+    final double minHeight = getProportionateScreenHeight(3);
+    final double barWidth = getProportionateScreenWidth(2);
+    final double barSpacing = getProportionateScreenWidth(1);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(barCount, (index) {
+        // Calculate progress based on current position
+        final double progress = duration.inMilliseconds > 0
+            ? position.inMilliseconds / duration.inMilliseconds
+            : 0.0;
+
+        // Determine if this bar should be "filled" (played)
+        final bool isPlayed = (index / barCount) <= progress;
+
+        // Generate varied heights for a more natural look
+        final double heightFactor = _getBarHeight(index);
+        final double barHeight =
+            minHeight + (maxHeight - minHeight) * heightFactor;
+
+        return AnimatedContainer(
+          duration: Duration(milliseconds: 150),
+          width: barWidth,
+          height: barHeight,
+          decoration: BoxDecoration(
+            color: isPlayed
+                ? textColor.withValues(alpha: 0.8)
+                : textColor.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        );
+      }),
+    );
+  }
+
+  double _getBarHeight(int index) {
+    // Create a pseudo-random but consistent pattern for bar heights
+    // This simulates audio waveform visualization
+    final List<double> pattern = [
+      0.3,
+      0.7,
+      0.5,
+      0.9,
+      0.2,
+      0.8,
+      0.4,
+      0.6,
+      0.1,
+      0.9,
+      0.5,
+      0.3,
+      0.8,
+      0.6,
+      0.4,
+      0.7,
+      0.2,
+      0.9,
+      0.5,
+      0.3,
+      0.8,
+      0.1,
+      0.6,
+      0.9,
+      0.4,
+      0.7,
+      0.2,
+      0.5,
+      0.8,
+      0.3,
+      0.6,
+      0.9,
+      0.1,
+      0.4,
+      0.7,
+      0.5,
+      0.2,
+      0.8,
+      0.6,
+      0.3,
+    ];
+
+    return pattern[index % pattern.length];
   }
 
   Widget _buildFileMessage() {

@@ -382,6 +382,29 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _startRecording() async {
     final status = await Permission.microphone.request();
+
+    if (status == PermissionStatus.permanentlyDenied) {
+      // Show dialog to open app settings
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Microphone Permission Required'),
+          content: Text('Please enable microphone access in Settings'),
+          actions: [
+            TextButton(
+              onPressed: () => openAppSettings(),
+              child: Text('Open Settings'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     if (status != PermissionStatus.granted) {
       throw Exception("Microphone permission not granted");
     }
