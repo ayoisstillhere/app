@@ -13,6 +13,7 @@ import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:app/size_config.dart';
 
 import '../../../../components/full_screen_image_viewer.dart';
+import '../../../../components/nav_page.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../services/profile_sharing_service.dart';
@@ -957,6 +958,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       await _unfollowUser();
     } else if (selected == 'Share Profile' && mounted) {
       _shareProfile();
+    } else if (selected == 'Block' && mounted) {
+      await _onBlock();
     }
   }
 
@@ -1022,6 +1025,22 @@ class _ProfileScreenState extends State<ProfileScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to unfollow user. Please try again.")),
+      );
+    }
+  }
+
+  Future<void> _onBlock() async {
+    final token = await AuthManager.getToken();
+    final userId = user!.id;
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/user/block/$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const NavPage()),
       );
     }
   }
