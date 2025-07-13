@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 
@@ -14,6 +15,7 @@ import 'package:open_file/open_file.dart';
 import '../../../../components/full_screen_file_image_viewer.dart';
 import '../../../../constants.dart';
 import '../../../../services/file_encryptor.dart';
+import '../../../../services/media_download_service.dart';
 import '../../../../size_config.dart';
 import 'full_screen_video_player.dart';
 
@@ -132,7 +134,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         }
       }
     } catch (e) {
-      print('Error getting cached file: $e');
+      debugPrint('Error getting cached file: $e');
     }
     return null;
   }
@@ -167,7 +169,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       // Clean up old cache if needed
       await _cleanupOldCache();
     } catch (e) {
-      print('Error caching file: $e');
+      debugPrint('Error caching file: $e');
     }
   }
 
@@ -201,7 +203,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       metadata.remove(key);
       await prefs.setString(_cacheMetadataKey, jsonEncode(metadata));
     } catch (e) {
-      print('Error removing cached file: $e');
+      debugPrint('Error removing cached file: $e');
     }
   }
 
@@ -257,7 +259,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         await _removeCachedFile(key, data['path'] as String);
       }
     } catch (e) {
-      print('Error cleaning up cache: $e');
+      debugPrint('Error cleaning up cache: $e');
     }
   }
 
@@ -659,43 +661,71 @@ class _MessageBubbleState extends State<MessageBubble> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        getProportionateScreenWidth(8),
-                      ),
-                      child: GestureDetector(
-                        onTap: () {
-                          if (decryptedFile != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FullScreenFileImageViewer(
-                                  imageFile: decryptedFile!,
-                                  title: decryptedFile!.path.split('/').last,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        child: Image.file(
-                          decryptedFile!,
-                          width: double.infinity,
-                          height: getProportionateScreenHeight(200),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return SizedBox(
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            getProportionateScreenWidth(8),
+                          ),
+                          child: GestureDetector(
+                            onTap: () {
+                              if (decryptedFile != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        FullScreenFileImageViewer(
+                                          imageFile: decryptedFile!,
+                                          title: decryptedFile!.path
+                                              .split('/')
+                                              .last,
+                                        ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Image.file(
+                              decryptedFile!,
+                              width: double.infinity,
                               height: getProportionateScreenHeight(200),
-                              child: Center(
-                                child: Icon(
-                                  Icons.error,
-                                  color: textColor,
-                                  size: getProportionateScreenHeight(24),
-                                ),
-                              ),
-                            );
-                          },
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return SizedBox(
+                                  height: getProportionateScreenHeight(200),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.error,
+                                      color: textColor,
+                                      size: getProportionateScreenHeight(24),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
+                        // Download button overlay
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () =>
+                                _showDownloadOptions(context, decryptedFile!),
+                            child: Container(
+                              padding: EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.download,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: getProportionateScreenHeight(4)),
                     Row(
@@ -778,62 +808,87 @@ class _MessageBubbleState extends State<MessageBubble> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to full screen video player
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FullScreenVideoPlayer(
-                              videoFile: decryptedFile!,
-                              message: widget.message,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: getProportionateScreenHeight(200),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(
-                            getProportionateScreenWidth(8),
-                          ),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Video thumbnail - you might want to generate this from the video file
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[800],
-                                borderRadius: BorderRadius.circular(
-                                  getProportionateScreenWidth(8),
+                    Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            // Navigate to full screen video player
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenVideoPlayer(
+                                  videoFile: decryptedFile!,
+                                  message: widget.message,
                                 ),
                               ),
-                              child: Icon(
-                                Icons.videocam,
-                                size: getProportionateScreenHeight(40),
-                                color: Colors.grey[400],
+                            );
+                          },
+                          child: Container(
+                            height: getProportionateScreenHeight(200),
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(
+                                getProportionateScreenWidth(8),
                               ),
                             ),
-                            // Play button overlay
-                            Container(
-                              height: getProportionateScreenHeight(50),
-                              width: getProportionateScreenWidth(50),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Video thumbnail
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(
+                                      getProportionateScreenWidth(8),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.videocam,
+                                    size: getProportionateScreenHeight(40),
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                                // Play button overlay
+                                Container(
+                                  height: getProportionateScreenHeight(50),
+                                  width: getProportionateScreenWidth(50),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: getProportionateScreenHeight(30),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Download button overlay
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () =>
+                                _showDownloadOptions(context, decryptedFile!),
+                            child: Container(
+                              padding: EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.7),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                Icons.play_arrow,
+                                Icons.download,
                                 color: Colors.white,
-                                size: getProportionateScreenHeight(30),
+                                size: 20,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                     SizedBox(height: getProportionateScreenHeight(4)),
                     Row(
@@ -870,6 +925,90 @@ class _MessageBubbleState extends State<MessageBubble> {
         ],
       ),
     );
+  }
+
+  // Helper method to show download options
+  void _showDownloadOptions(BuildContext context, File mediaFile) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text('Save to Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _downloadToGallery(mediaFile);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.share),
+                title: Text('Share'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _shareFile(mediaFile);
+                },
+              ),
+              if (Platform.isAndroid)
+                ListTile(
+                  leading: Icon(Icons.download),
+                  title: Text('Save to Downloads'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _downloadToFolder(mediaFile);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper methods for download actions
+  Future<void> _downloadToGallery(File mediaFile) async {
+    try {
+      bool success;
+      if (mediaFile.path.toLowerCase().contains('.mp4') ||
+          mediaFile.path.toLowerCase().contains('.mov')) {
+        success = await MediaDownloadService.saveVideoToGallery(mediaFile);
+      } else {
+        success = await MediaDownloadService.saveImageToGallery(mediaFile);
+      }
+
+      _showSnackBar(success ? 'Saved to gallery' : 'Failed to save to gallery');
+    } catch (e) {
+      _showSnackBar('Error saving file');
+    }
+  }
+
+  Future<void> _shareFile(File mediaFile) async {
+    try {
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(mediaFile.path)]),
+      );
+    } catch (e) {
+      _showSnackBar('Error sharing file');
+    }
+  }
+
+  Future<void> _downloadToFolder(File mediaFile) async {
+    try {
+      final success = await MediaDownloadService.saveToDownloads(mediaFile);
+      _showSnackBar(success ? 'Saved to Downloads' : 'Failed to save');
+    } catch (e) {
+      _showSnackBar('Error saving file');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildAudioMessage() {
