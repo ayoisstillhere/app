@@ -85,6 +85,12 @@ flutter_icons:
   adaptive_icon_foreground: "assets/appstore-fore.png"
   adaptive_icon_background: "#FFFFFF"
 
+dependency_overrides:
+  image_gallery_saver:
+    git:
+      url: https://github.com/knottx/image_gallery_saver.git
+      ref: knottx-latest
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter packages.
