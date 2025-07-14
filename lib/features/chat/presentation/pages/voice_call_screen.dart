@@ -132,7 +132,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               const Icon(Icons.lock, color: Colors.white, size: 16),
               const SizedBox(width: 8),
               Text(
-                'This session is encrypted and private. Only you and\nyour therapist are connected.',
+                'This session is encrypted and private. Only you and\n${widget.name} are connected.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,

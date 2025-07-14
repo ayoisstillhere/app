@@ -608,7 +608,8 @@ class _ChatScreenState extends State<ChatScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => VideoCallScreen(call: call),
+              builder: (context) =>
+                  VideoCallScreen(call: call, name: widget.name),
             ),
           );
         } else {
@@ -837,7 +838,7 @@ class _ChatScreenState extends State<ChatScreen> {
               width: getProportionateScreenWidth(24),
               child: InkWell(
                 onTap: () {
-                  _initiateCall(false);
+                  _initiateCall(true);
                 },
                 child: SvgPicture.asset(
                   "assets/icons/chat_video.svg",
