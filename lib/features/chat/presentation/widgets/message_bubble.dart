@@ -639,7 +639,6 @@ class _MessageBubbleState extends State<MessageBubble> {
       decoration: BoxDecoration(
         color: Colors.grey.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border(left: BorderSide(color: Colors.blue, width: 3)),
       ),
       child: Text(
         repliedMessage.content,
