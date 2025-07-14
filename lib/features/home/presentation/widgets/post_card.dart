@@ -38,7 +38,7 @@ class PostCard extends StatefulWidget {
     required this.isReposted,
     required this.isSaved,
     this.onCommentAdded,
-    // New parameters for reply functionality
+    // Make sure these are properly set
     this.isReply = false,
     this.replyingToHandle,
   });
@@ -72,6 +72,8 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> {
+  // Add this computed property to your PostCard class
+  bool get isReply => widget.isReply || (widget.replyingToHandle != null);
   late PageController _pageController;
   int _currentPage = 0;
   List<VideoPlayerController?> _videoControllers = [];
@@ -410,7 +412,7 @@ class _PostCardState extends State<PostCard> {
                 ),
                 SizedBox(width: getProportionateScreenWidth(10)),
                 // Modified section to handle both regular posts and replies
-                widget.isReply
+                widget.isReply || (widget.replyingToHandle != null)
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
