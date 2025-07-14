@@ -91,6 +91,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _recordingPath;
   VideoPlayerController? _videoController;
 
+  // Add reply state
+  TextMessageEntity? _replyToMessage;
+
   @override
   void initState() {
     super.initState();
@@ -245,6 +248,11 @@ class _ChatScreenState extends State<ChatScreen> {
       request.fields['deleteAfter24Hours'] = 'false';
       request.fields['isForwarded'] = 'false';
 
+      // Add reply field if replying to a message
+      if (_replyToMessage != null) {
+        request.fields['replyToId'] = _replyToMessage!.id;
+      }
+
       if (type == MessageType.TEXT) {
         // Handle text messages
         if (_messageController.text.trim().isEmpty) return;
@@ -255,7 +263,7 @@ class _ChatScreenState extends State<ChatScreen> {
         );
         request.fields['content'] = encryptedContent;
       } else {
-        // Handle file messages
+        // Handle file messages - existing code remains the same
         if (_selectedFile == null) return;
 
         File fileToSend = _selectedFile!.file;
@@ -268,7 +276,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
         final encryptedFile = await FileEncryptor.encryptFile(fileToSend);
 
-        // Add encrypted file to request
         request.files.add(
           await http.MultipartFile.fromPath(
             'file',
@@ -291,6 +298,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         _messageController.clear();
         _clearSelectedFile();
+        _clearReply(); // Clear reply state
         _scrollToBottom();
 
         // Refresh messages to show the new one
@@ -308,6 +316,108 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _isSending = false;
       });
+    }
+  }
+
+  // Add method to set reply
+  void _setReply(TextMessageEntity message) {
+    setState(() {
+      _replyToMessage = message;
+    });
+  }
+
+  // Add method to clear reply
+  void _clearReply() {
+    setState(() {
+      _replyToMessage = null;
+    });
+  }
+
+  // Add method to build reply preview
+  Widget _buildReplyPreview() {
+    if (_replyToMessage == null) return SizedBox.shrink();
+
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final backgroundColor = isDark ? Colors.grey[800] : Colors.grey[200];
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    return Container(
+      margin: EdgeInsets.only(
+        left: getProportionateScreenWidth(15),
+        right: getProportionateScreenWidth(15),
+        top: getProportionateScreenHeight(8),
+      ),
+      padding: EdgeInsets.all(getProportionateScreenWidth(12)),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
+        border: Border(
+          left: BorderSide(
+            color: Colors.blue,
+            width: getProportionateScreenWidth(3),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _replyToMessage!.senderId == widget.currentUser.id
+                      ? 'You'
+                      : _getMessageSenderName(_replyToMessage!),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: getProportionateScreenHeight(12),
+                    color: Colors.blue,
+                  ),
+                ),
+                SizedBox(height: getProportionateScreenHeight(4)),
+                Text(
+                  _getReplyPreviewText(_replyToMessage!),
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(14),
+                    color: textColor.withOpacity(0.8),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _clearReply,
+            icon: Icon(
+              Icons.close,
+              size: getProportionateScreenWidth(20),
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to get sender name
+  String _getMessageSenderName(TextMessageEntity message) {
+    if (widget.isGroup) {
+      final participant = widget.participants.firstWhere(
+        (participant) => participant.userId == message.senderId,
+        orElse: () => throw Exception("Participant not found"),
+      );
+      return participant.user.username;
+    }
+    return widget.name;
+  }
+
+  // Helper method to get reply preview text
+  String _getReplyPreviewText(TextMessageEntity message) {
+    if (message.type == MessageType.TEXT.name) {
+      return message.content;
+    } else {
+      return '${message.type.toLowerCase()} message';
     }
   }
 
@@ -969,10 +1079,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         imageUrl: image,
                         currentUser: widget.currentUser,
                         username: username,
+                        onReply: () => _setReply(message), // Add reply callback
+                        allMessages:
+                            requiredMessages, // Pass all messages for reply context
                       );
                     },
                   ),
                 ),
+
+                // Reply Preview
+                _buildReplyPreview(),
 
                 // File Preview
                 _buildSelectedFilePreview(),

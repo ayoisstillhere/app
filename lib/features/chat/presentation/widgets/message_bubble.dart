@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:crypto/crypto.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:open_file/open_file.dart';
 
 import '../../../../components/full_screen_file_image_viewer.dart';
 import '../../../../constants.dart';
@@ -28,6 +28,8 @@ class MessageBubble extends StatefulWidget {
   final String imageUrl;
   final UserEntity currentUser;
   final String? username;
+  final VoidCallback? onReply; // Add this
+  final List<TextMessageEntity>? allMessages; // Add this for reply context
 
   const MessageBubble({
     super.key,
@@ -36,6 +38,8 @@ class MessageBubble extends StatefulWidget {
     required this.imageUrl,
     required this.currentUser,
     this.username = '',
+    this.onReply,
+    this.allMessages,
   });
 
   @override
@@ -515,7 +519,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  // Add this method to wrap your message content with long press detection
+  // Updated method to handle both reactions and replies
   Widget _buildMessageWithReactions({
     required Widget messageContent,
     required bool isMe,
@@ -524,12 +528,13 @@ class _MessageBubbleState extends State<MessageBubble> {
     return CompositedTransformTarget(
       link: _layerLink,
       child: GestureDetector(
-        onLongPress: _showReactionPickerOverlay,
+        onLongPress: () => _showMessageActions(context),
         child: Column(
           crossAxisAlignment: isMe
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
+            if (widget.message.replyToId != null) _buildReplyContext(),
             messageContent,
             // Add reactions display
             if (widget.message.reactions.isNotEmpty)
@@ -546,6 +551,101 @@ class _MessageBubbleState extends State<MessageBubble> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  // New method to show message actions (reactions and reply)
+  void _showMessageActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: widget.isDark ? kBlackBg : kWhite,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Container(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Reply option
+            if (widget.onReply != null)
+              ListTile(
+                leading: Icon(
+                  Icons.reply,
+                  color: widget.isDark ? kWhite : kBlack,
+                ),
+                title: Text(
+                  'Reply',
+                  style: TextStyle(color: widget.isDark ? kWhite : kBlack),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.onReply!();
+                },
+              ),
+
+            // Reactions option
+            ListTile(
+              leading: Icon(
+                Icons.add_reaction,
+                color: widget.isDark ? kWhite : kBlack,
+              ),
+              title: Text(
+                'Add Reaction',
+                style: TextStyle(color: widget.isDark ? kWhite : kBlack),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showReactionPickerOverlay();
+              },
+            ),
+
+            // Add other message actions here if needed
+            // For example: Copy, Forward, Delete, etc.
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyContext() {
+    if (widget.allMessages == null || widget.message.replyToId == null) {
+      return SizedBox.shrink();
+    }
+
+    final repliedMessage = widget.allMessages!.firstWhere(
+      (msg) => msg.id == widget.message.replyToId,
+      orElse: () => TextMessageEntity(
+        '[Message not found]',
+        widget.message.conversationId,
+        widget.message.createdAt,
+        widget.message.expiredAt,
+        '',
+        false,
+        false,
+        null,
+        <String, dynamic>{},
+        null,
+        '',
+        'TEXT',
+        null,
+      ),
+    );
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: Colors.blue, width: 3)),
+      ),
+      child: Text(
+        repliedMessage.content,
+        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
