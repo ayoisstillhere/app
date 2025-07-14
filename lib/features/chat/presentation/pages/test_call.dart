@@ -17,10 +17,7 @@ class _TestCallState extends State<TestCall> {
   final client = StreamVideo(
     getStreamKey,
     user: const User(
-      info: UserInfo(
-        name: 'Ayodele Fagbami',
-        id: 'ayoisstillhere',
-      ),
+      info: UserInfo(name: 'Ayodele Fagbami', id: 'ayoisstillhere'),
     ),
     userToken:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYXlvaXNzdGlsbGhlcmUifQ.G4B_u7XNOV-jThatS2MklGnW885CZpZE5hDdNx0ahlw',
@@ -68,7 +65,10 @@ class _TestCallState extends State<TestCall> {
       // Created ahead
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => CallScreen(call: call)),
+        MaterialPageRoute(
+          builder: (context) =>
+              VoiceCallScreen(call: call, image: '', name: 'Ayo'),
+        ),
       );
     } catch (e) {
       debugPrint('Error joining or creating call: $e');

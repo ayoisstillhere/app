@@ -614,7 +614,13 @@ class _ChatScreenState extends State<ChatScreen> {
         } else {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => CallScreen(call: call)),
+            MaterialPageRoute(
+              builder: (context) => VoiceCallScreen(
+                call: call,
+                image: widget.imageUrl,
+                name: widget.name,
+              ),
+            ),
           );
         }
       } catch (e) {

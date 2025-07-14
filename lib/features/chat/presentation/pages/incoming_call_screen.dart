@@ -190,7 +190,13 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         // Created ahead
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => CallScreen(call: call)),
+          MaterialPageRoute(
+            builder: (context) => VoiceCallScreen(
+              call: call,
+              image: widget.imageUrl,
+              name: widget.callerName,
+            ),
+          ),
         );
       } catch (e) {
         debugPrint('Error joining or creating call: $e');
