@@ -2,6 +2,7 @@ import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'dart:async';
 
 class VoiceCallScreen extends StatefulWidget {
   final Call call;
@@ -22,12 +23,38 @@ class VoiceCallScreen extends StatefulWidget {
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _isMicrophoneEnabled = true;
   bool _isSpeakerEnabled = true;
+  bool _isCameraEnabled = false;
+
+  // Timer for call duration
+  Timer? _callTimer;
+  Duration _callDuration = Duration.zero;
+  DateTime? _callStartTime;
 
   @override
   void initState() {
     super.initState();
     // Join the call when the screen is initialized
     widget.call.join();
+    _startCallTimer();
+  }
+
+  void _startCallTimer() {
+    _callStartTime = DateTime.now();
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _callDuration = DateTime.now().difference(_callStartTime!);
+        });
+      }
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String hours = twoDigits(duration.inHours);
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$hours:$minutes:$seconds';
   }
 
   @override
@@ -109,7 +136,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: getProportionateScreenHeight(12),
                   height: 1.3,
                 ),
               ),
@@ -152,19 +179,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
               const SizedBox(height: 8),
 
-              // Call duration
-              StreamBuilder<CallState>(
-                stream: call.state.valueStream,
-                builder: (context, snapshot) {
-                  final callState = snapshot.data;
-                  if (callState == null) return const SizedBox();
-
-                  // You might want to implement a timer for call duration
-                  return const Text(
-                    '2:03:56',
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
-                  );
-                },
+              // Call duration - now with working timer
+              Text(
+                _formatDuration(_callDuration),
+                style: TextStyle(color: Colors.white70, fontSize: 16),
               ),
 
               const SizedBox(height: 40),
@@ -224,6 +242,22 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             },
           ),
 
+          // Camera toggle
+          _buildControlButton(
+            icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
+            isEnabled: _isCameraEnabled,
+            onPressed: () {
+              setState(() {
+                _isCameraEnabled = !_isCameraEnabled;
+              });
+              if (_isCameraEnabled) {
+                call.setCameraEnabled(enabled: true);
+              } else {
+                call.setCameraEnabled(enabled: false);
+              }
+            },
+          ),
+
           // Add contact or notes (optional)
           _buildControlButton(
             icon: Icons.person_add,
@@ -279,6 +313,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   @override
   void dispose() {
+    _callTimer?.cancel();
     widget.call.end();
     super.dispose();
   }
