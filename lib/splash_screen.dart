@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
             SizedBox(height: getProportionateScreenHeight(25)),
             Text(
-              "Connect. Share. Grow.",
+              "...be heard",
               style: TextStyle(
                 fontSize: getProportionateScreenHeight(18),
                 fontWeight: FontWeight.normal,
