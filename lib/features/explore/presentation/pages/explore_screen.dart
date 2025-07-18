@@ -627,6 +627,14 @@ class _ExploreScreenState extends State<ExploreScreen>
                             postNumber: exploreResponse!
                                 .popularKeywords[index]
                                 .postsCount,
+                            onTap: () {
+                              _searchController.text = exploreResponse!
+                                  .popularKeywords[index]
+                                  .keyword;
+                              _onSearchSubmitted(
+                                exploreResponse!.popularKeywords[index].keyword,
+                              );
+                            },
                           ),
                           SizedBox(height: getProportionateScreenWidth(16)),
                         ],
