@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
               height: getProportionateScreenHeight(83),
               width: getProportionateScreenWidth(83),
             ),
-            SizedBox(height: getProportionateScreenHeight(18)),
+            SizedBox(height: getProportionateScreenHeight(6)),
             Text(
               "HIRA",
               style: TextStyle(

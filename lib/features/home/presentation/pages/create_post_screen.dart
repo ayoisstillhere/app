@@ -214,6 +214,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       setState(() {
         isLoading = false;
       });
+      debugPrint(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,

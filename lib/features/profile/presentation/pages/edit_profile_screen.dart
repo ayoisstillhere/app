@@ -220,7 +220,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               InkWell(
                 onTap: onChangeTap,
                 child: Text(
-                  "change",
+                  "edit",
                   style: TextStyle(
                     color: kAccentColor,
                     fontSize: getProportionateScreenHeight(12),

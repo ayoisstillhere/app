@@ -72,7 +72,17 @@ Future<void> _requestNotificationPermission() async {
 }
 
 Future<void> getFcmToken() async {
-  final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+  const FlutterSecureStorage secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+      // This prevents data loss on app updates
+      sharedPreferencesName: 'FlutterSecureStorage',
+      preferencesKeyPrefix: 'flutter_secure_storage_',
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   String? token = await messaging.getToken();
 
@@ -86,7 +96,17 @@ Future<void> getFcmToken() async {
 
 void listenForTokenRefresh() {
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+    const FlutterSecureStorage secureStorage = FlutterSecureStorage(
+      aOptions: AndroidOptions(
+        encryptedSharedPreferences: true,
+        // This prevents data loss on app updates
+        sharedPreferencesName: 'FlutterSecureStorage',
+        preferencesKeyPrefix: 'flutter_secure_storage_',
+      ),
+      iOptions: IOSOptions(
+        accessibility: KeychainAccessibility.first_unlock_this_device,
+      ),
+    );
     debugPrint('🔄 FCM token refreshed: $newToken');
 
     secureStorage.write(key: 'fcm_token', value: newToken);

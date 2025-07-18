@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:app/features/auth/data/models/user_model.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -9,9 +10,37 @@ import '../constants.dart';
 import '../features/auth/domain/entities/user_entity.dart';
 
 class AuthManager {
+  static const String _storageTestKey = 'storage_test';
+
+  // Test if secure storage is working
+  static Future<bool> _isSecureStorageWorking() async {
+    try {
+      // Write a test value
+      await _secureStorage.write(key: _storageTestKey, value: 'test');
+
+      // Read it back
+      final value = await _secureStorage.read(key: _storageTestKey);
+
+      return value == 'test';
+    } catch (e) {
+      print('Secure storage test failed: $e');
+      return false;
+    }
+  }
+
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
-  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+      // This prevents data loss on app updates
+      sharedPreferencesName: 'FlutterSecureStorage',
+      preferencesKeyPrefix: 'flutter_secure_storage_',
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
 
   // Cache variables for performance
   static String? _cachedToken;
@@ -19,6 +48,14 @@ class AuthManager {
 
   // Get token (with caching for performance)
   static Future<String?> getToken() async {
+    // Check if secure storage is working
+    if (!await _isSecureStorageWorking()) {
+      debugPrint('Secure storage not working, clearing cached tokens');
+      _cachedToken = null;
+      _cachedRefreshToken = null;
+      return null;
+    }
+
     if (_cachedToken != null) return _cachedToken;
 
     _cachedToken = await _secureStorage.read(key: _tokenKey);
