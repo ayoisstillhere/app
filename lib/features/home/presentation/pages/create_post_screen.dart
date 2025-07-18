@@ -599,15 +599,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 width: getProportionateScreenWidth(18),
                               ),
                             ),
-                            SizedBox(width: getProportionateScreenWidth(26)),
-                            InkWell(
-                              onTap: () {},
-                              child: SvgPicture.asset(
-                                "assets/icons/post_link.svg",
-                                height: getProportionateScreenHeight(18),
-                                width: getProportionateScreenWidth(18),
-                              ),
-                            ),
+                            // SizedBox(width: getProportionateScreenWidth(26)),
+                            // InkWell(
+                            //   onTap: () {},
+                            //   child: SvgPicture.asset(
+                            //     "assets/icons/post_link.svg",
+                            //     height: getProportionateScreenHeight(18),
+                            //     width: getProportionateScreenWidth(18),
+                            //   ),
+                            // ),
                             Spacer(),
                             InkWell(
                               onTap: _createPost,
