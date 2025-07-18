@@ -552,7 +552,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      for (var image in exploreResponse!.trending[0].media)
+                      for (var item in exploreResponse!.trending)
                         Container(
                           width: getProportionateScreenWidth(159),
                           height: getProportionateScreenHeight(161),
@@ -564,9 +564,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                               getProportionateScreenWidth(10),
                             ),
                             image: DecorationImage(
-                              image: image.isEmpty
+                              image: item.media.isEmpty
                                   ? NetworkImage(defaultAvatar)
-                                  : NetworkImage(image),
+                                  : NetworkImage(item.media[0]),
                               fit: BoxFit.cover,
                             ),
                           ),
