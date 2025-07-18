@@ -871,9 +871,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
 
     final bool isMe = widget.message.senderId == widget.currentUser.id;
-    final bubbleColor = widget.isDark
-        ? kGreyInputFillDark
-        : kGreyInputBorder.withValues(alpha: 0.3);
     final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
     return Padding(
@@ -1015,9 +1012,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
 
     final bool isMe = widget.message.senderId == widget.currentUser.id;
-    final bubbleColor = widget.isDark
-        ? kGreyInputFillDark
-        : kGreyInputBorder.withValues(alpha: 0.3);
     final textColor = isMe ? kWhite : (widget.isDark ? kWhite : kBlack);
 
     return Padding(

@@ -26,7 +26,7 @@ class ReactionPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: getProportionateScreenWidth(16),
+        horizontal: getProportionateScreenWidth(12),
         vertical: getProportionateScreenHeight(8),
       ),
       decoration: BoxDecoration(
@@ -47,7 +47,7 @@ class ReactionPicker extends StatelessWidget {
             (emoji) => GestureDetector(
               onTap: () => onReactionSelected(emoji),
               child: Container(
-                padding: EdgeInsets.all(getProportionateScreenWidth(8)),
+                padding: EdgeInsets.all(getProportionateScreenWidth(6)),
                 margin: EdgeInsets.symmetric(
                   horizontal: getProportionateScreenWidth(2),
                 ),
@@ -58,7 +58,7 @@ class ReactionPicker extends StatelessWidget {
                 ),
                 child: Text(
                   emoji,
-                  style: TextStyle(fontSize: getProportionateScreenHeight(20)),
+                  style: TextStyle(fontSize: getProportionateScreenHeight(18)),
                 ),
               ),
             ),
@@ -70,7 +70,7 @@ class ReactionPicker extends StatelessWidget {
               padding: EdgeInsets.all(getProportionateScreenWidth(4)),
               child: Icon(
                 Icons.close,
-                size: getProportionateScreenHeight(16),
+                size: getProportionateScreenHeight(14),
                 color: Colors.grey,
               ),
             ),
