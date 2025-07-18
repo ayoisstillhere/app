@@ -77,6 +77,7 @@ class _PostCardState extends State<PostCard> {
   late PageController _pageController;
   int _currentPage = 0;
   List<VideoPlayerController?> _videoControllers = [];
+  bool get myPost => widget.currentUser.username == widget.authorHandle;
 
   // Check if URL is a video based on file extension
   bool _isVideoUrl(String url) {
@@ -537,8 +538,25 @@ class _PostCardState extends State<PostCard> {
                         ],
                       ),
                 Spacer(),
-                InkWell(
-                  onTap: () {},
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'Delete Post') {
+                      // await _deletePost();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      value: 'Delete Post',
+                      child: Text(
+                        'Delete Post',
+                        style: TextStyle(
+                          fontSize: getProportionateScreenWidth(15),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ],
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   child: SvgPicture.asset(
                     "assets/icons/more-vertical.svg",
                     height: getProportionateScreenHeight(17),
