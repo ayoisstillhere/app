@@ -1203,23 +1203,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                 onTap: _isSending
                                     ? null
                                     : () => _sendMessage(_selectedFile!.type),
-                                child: Container(
-                                  width: getProportionateScreenWidth(55),
-                                  height: getProportionateScreenHeight(34),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: getProportionateScreenHeight(5),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: kChatBubbleGradient,
-                                    borderRadius: BorderRadius.circular(
-                                      getProportionateScreenWidth(20),
-                                    ),
-                                  ),
-                                  child: SvgPicture.asset(
-                                    "assets/icons/send.svg",
-                                    height: getProportionateScreenHeight(21.27),
-                                    width: getProportionateScreenWidth(21.27),
-                                  ),
+                                child: SvgPicture.asset(
+                                  "assets/icons/send.svg",
+                                  height: getProportionateScreenHeight(21.27),
+                                  width: getProportionateScreenWidth(21.27),
                                 ),
                               )
                             else
@@ -1238,39 +1225,14 @@ class _ChatScreenState extends State<ChatScreen> {
                                               : () => _sendMessage(
                                                   MessageType.TEXT,
                                                 ),
-                                          child: Container(
-                                            width: getProportionateScreenWidth(
-                                              55,
-                                            ),
+                                          child: SvgPicture.asset(
+                                            "assets/icons/send.svg",
                                             height:
                                                 getProportionateScreenHeight(
-                                                  34,
+                                                  21.27,
                                                 ),
-                                            padding: EdgeInsets.symmetric(
-                                              vertical:
-                                                  getProportionateScreenHeight(
-                                                    5,
-                                                  ),
-                                            ),
-                                            decoration: BoxDecoration(
-                                              gradient: kChatBubbleGradient,
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                    getProportionateScreenWidth(
-                                                      20,
-                                                    ),
-                                                  ),
-                                            ),
-                                            child: SvgPicture.asset(
-                                              "assets/icons/send.svg",
-                                              height:
-                                                  getProportionateScreenHeight(
-                                                    21.27,
-                                                  ),
-                                              width:
-                                                  getProportionateScreenWidth(
-                                                    21.27,
-                                                  ),
+                                            width: getProportionateScreenWidth(
+                                              21.27,
                                             ),
                                           ),
                                         ),
