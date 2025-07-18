@@ -50,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool hasMoreFollowing = true;
   int followingPage = 1;
   final int followingLimit = 10;
+  String currentToken = '';
 
   // Scroll controllers
   late ScrollController recommendedScrollController;
@@ -69,9 +70,28 @@ class _HomeScreenState extends State<HomeScreen>
     followingScrollController.addListener(_onFollowingScroll);
 
     if (mounted) {
-      _getFollowingPosts();
-      _getRecommendedPosts();
+      _loadBothPostTypes();
     }
+  }
+
+  Future<void> _loadBothPostTypes() async {
+    final token = await AuthManager.getToken();
+    currentToken = token!;
+
+    // if (token == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       backgroundColor: Colors.red,
+    //       content: Text('Authentication required'),
+    //     ),
+    //   );
+    //   return;
+    // }
+
+    await Future.wait([
+      _getFollowingPosts(token: token),
+      _getRecommendedPosts(token: token),
+    ]);
   }
 
   @override
@@ -96,14 +116,16 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _getFollowingPosts({bool isRefresh = false}) async {
+  Future<void> _getFollowingPosts({
+    bool isRefresh = false,
+    required String token,
+  }) async {
     if (isRefresh) {
       followingPage = 1;
       followingPosts.clear();
       hasMoreFollowing = true;
     }
 
-    final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
         "$baseUrl/api/v1/posts/feed/timeline?page=$followingPage&limit=$followingLimit",
@@ -140,14 +162,16 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _getRecommendedPosts({bool isRefresh = false}) async {
+  Future<void> _getRecommendedPosts({
+    bool isRefresh = false,
+    required String token,
+  }) async {
     if (isRefresh) {
       recommendedPage = 1;
       recommendedPosts.clear();
       hasMoreRecommended = true;
     }
 
-    final token = await AuthManager.getToken();
     final response = await http.get(
       Uri.parse(
         "$baseUrl/api/v1/posts/feed/recommended?page=$recommendedPage&limit=$recommendedLimit",
@@ -549,7 +573,8 @@ class _HomeScreenState extends State<HomeScreen>
             scrollController: recommendedScrollController,
             dividerColor: dividerColor,
             iconColor: iconColor,
-            onRefresh: () => _getRecommendedPosts(isRefresh: true),
+            onRefresh: () =>
+                _getRecommendedPosts(isRefresh: true, token: currentToken),
           ),
           _buildPostsList(
             posts: followingPosts,
@@ -558,7 +583,8 @@ class _HomeScreenState extends State<HomeScreen>
             scrollController: followingScrollController,
             dividerColor: dividerColor,
             iconColor: iconColor,
-            onRefresh: () => _getFollowingPosts(isRefresh: true),
+            onRefresh: () =>
+                _getFollowingPosts(isRefresh: true, token: currentToken),
           ),
         ],
       ),

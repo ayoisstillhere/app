@@ -54,11 +54,6 @@ List<Map<String, dynamic>> settingsDetails = [
     ],
   },
   {
-    "title": "App Preferences",
-    "icon": "assets/icons/settings_preferences.svg",
-    "subItems": ["Theme", "Language & Region", "Push Notifications"],
-  },
-  {
     "title": "Support & Feedback",
     "icon": "assets/icons/settings_support.svg",
     "subItems": ["Terms & Privacy Policy", "Report a Problem", "Rate Us"],

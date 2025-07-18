@@ -6,6 +6,7 @@ import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../../onboarding/presentation/pages/onboarding_screen.dart';
 import '../widgets/settings_tile.dart';
+import 'edit_profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -50,10 +51,25 @@ class SettingsScreen extends StatelessWidget {
               settingsDetails.length,
               (index) => Column(
                 children: [
-                  SettingsTile(
-                    dividerColor: dividerColor,
-                    iconColor: iconColor,
-                    settings: settingsDetails[index],
+                  InkWell(
+                    onTap: () {
+                      if (index == 0) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return EditProfileScreen();
+                            },
+                          ),
+                        );
+                      } else if (index == 1) {
+                      } else if (index == 2) {}
+                    },
+                    child: SettingsTile(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      settings: settingsDetails[index],
+                    ),
                   ),
                   SizedBox(height: getProportionateScreenHeight(16)),
                 ],

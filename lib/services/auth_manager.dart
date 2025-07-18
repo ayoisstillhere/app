@@ -1,9 +1,11 @@
 // lib/services/auth_manager.dart
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants.dart';
@@ -11,32 +13,13 @@ import '../features/auth/domain/entities/user_entity.dart';
 
 class AuthManager {
   static const String _storageTestKey = 'storage_test';
-
-  // Test if secure storage is working
-  static Future<bool> _isSecureStorageWorking() async {
-    try {
-      // Write a test value
-      await _secureStorage.write(key: _storageTestKey, value: 'test');
-
-      // Read it back
-      final value = await _secureStorage.read(key: _storageTestKey);
-
-      return value == 'test';
-    } catch (e) {
-      print('Secure storage test failed: $e');
-      return false;
-    }
-  }
-
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const String _currentUserKey = 'currentUser';
+  static const String _fcmTokenKey = 'fcm_token';
+
+  // iOS secure storage configuration
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-      // This prevents data loss on app updates
-      sharedPreferencesName: 'FlutterSecureStorage',
-      preferencesKeyPrefix: 'flutter_secure_storage_',
-    ),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
@@ -45,12 +28,69 @@ class AuthManager {
   // Cache variables for performance
   static String? _cachedToken;
   static String? _cachedRefreshToken;
+  static SharedPreferences? _prefs;
+
+  // Initialize SharedPreferences for Android
+  static Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
+
+  // Platform-specific storage methods
+  static Future<String?> _readSecure(String key) async {
+    if (Platform.isIOS) {
+      return await _secureStorage.read(key: key);
+    } else {
+      // Android - use SharedPreferences
+      final prefs = await _getPrefs();
+      return prefs.getString(key);
+    }
+  }
+
+  static Future<void> _writeSecure(String key, String value) async {
+    if (Platform.isIOS) {
+      await _secureStorage.write(key: key, value: value);
+    } else {
+      // Android - use SharedPreferences
+      final prefs = await _getPrefs();
+      await prefs.setString(key, value);
+    }
+  }
+
+  static Future<void> _deleteSecure(String key) async {
+    if (Platform.isIOS) {
+      await _secureStorage.delete(key: key);
+    } else {
+      // Android - use SharedPreferences
+      final prefs = await _getPrefs();
+      await prefs.remove(key);
+    }
+  }
+
+  // Test if storage is working
+  static Future<bool> _isStorageWorking() async {
+    try {
+      // Write a test value
+      await _writeSecure(_storageTestKey, 'test');
+
+      // Read it back
+      final value = await _readSecure(_storageTestKey);
+
+      // Clean up test value
+      await _deleteSecure(_storageTestKey);
+
+      return value == 'test';
+    } catch (e) {
+      debugPrint('Storage test failed: $e');
+      return false;
+    }
+  }
 
   // Get token (with caching for performance)
   static Future<String?> getToken() async {
-    // Check if secure storage is working
-    if (!await _isSecureStorageWorking()) {
-      debugPrint('Secure storage not working, clearing cached tokens');
+    // Check if storage is working
+    if (!await _isStorageWorking()) {
+      debugPrint('Storage not working, clearing cached tokens');
       _cachedToken = null;
       _cachedRefreshToken = null;
       return null;
@@ -58,20 +98,20 @@ class AuthManager {
 
     if (_cachedToken != null) return _cachedToken;
 
-    _cachedToken = await _secureStorage.read(key: _tokenKey);
+    _cachedToken = await _readSecure(_tokenKey);
     return _cachedToken;
   }
 
   // Set token
   static Future<void> setToken(String token) async {
     _cachedToken = token;
-    await _secureStorage.write(key: _tokenKey, value: token);
+    await _writeSecure(_tokenKey, token);
   }
 
   // Clear token (for logout)
   static Future<void> clearToken() async {
     _cachedToken = null;
-    await _secureStorage.delete(key: _tokenKey);
+    await _deleteSecure(_tokenKey);
   }
 
   // Check if user is logged in
@@ -95,43 +135,56 @@ class AuthManager {
 
         // Log response for debugging if needed
         if (response.statusCode != 200) {
-          print('Logout API failed with status: ${response.statusCode}');
+          debugPrint('Logout API failed with status: ${response.statusCode}');
         }
       }
     } catch (e) {
       // Log the error but continue with local logout
-      print('Error during logout: $e');
+      debugPrint('Error during logout: $e');
     } finally {
       // Always clear tokens locally
       await clearToken();
       await clearRefreshToken();
       await clearSecretKeys();
+      await clearCurrentUser();
     }
   }
 
   // Store refresh token securely
   static Future<void> setRefreshToken(String refreshToken) async {
     _cachedRefreshToken = refreshToken;
-    await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
+    await _writeSecure(_refreshTokenKey, refreshToken);
   }
 
   // Get refresh token securely
   static Future<String?> getRefreshToken() async {
     if (_cachedRefreshToken != null) return _cachedRefreshToken;
 
-    _cachedRefreshToken = await _secureStorage.read(key: _refreshTokenKey);
+    _cachedRefreshToken = await _readSecure(_refreshTokenKey);
     return _cachedRefreshToken;
   }
 
   // Clear refresh token securely
   static Future<void> clearRefreshToken() async {
     _cachedRefreshToken = null;
-    await _secureStorage.delete(key: _refreshTokenKey);
+    await _deleteSecure(_refreshTokenKey);
+  }
+
+  // Store FCM token
+  static Future<void> setFCMToken(String fcmToken) async {
+    await _writeSecure(_fcmTokenKey, fcmToken);
+  }
+
+  // Get FCM token
+  static Future<String?> getFCMToken() async {
+    return await _readSecure(_fcmTokenKey);
   }
 
   static Future<void> clearSecretKeys() async {
     UserEntity? user = await AuthManager.getCurrentUser();
-    await _secureStorage.delete(key: '${user!.id}_private_key');
+    if (user != null) {
+      await _deleteSecure('${user.id}_private_key');
+    }
   }
 
   // Refresh token method
@@ -142,13 +195,11 @@ class AuthManager {
         return false;
       }
 
+      final fcmToken = await getFCMToken();
       final response = await http.post(
         Uri.parse("$baseUrl/api/v1/auth/refresh"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "refreshToken": refreshToken,
-          "deviceId": await _secureStorage.read(key: "fcm_token"),
-        }),
+        body: jsonEncode({"refreshToken": refreshToken, "deviceId": fcmToken}),
       );
 
       if (response.statusCode == 200) {
@@ -161,7 +212,7 @@ class AuthManager {
         if (data['refresh_token'] != null) {
           await setRefreshToken(data['refresh_token']);
         }
-        _fetchCurrentUser();
+        await _fetchCurrentUser();
 
         return true;
       } else {
@@ -171,7 +222,7 @@ class AuthManager {
       }
     } catch (e) {
       // Error handling
-      print('Error refreshing token: $e');
+      debugPrint('Error refreshing token: $e');
       await clearAllTokens();
       return false;
     }
@@ -212,32 +263,74 @@ class AuthManager {
   }
 
   static Future<UserEntity?> getCurrentUser() async {
-    final secureStorage = FlutterSecureStorage();
-    final userJson = await secureStorage.read(key: 'currentUser');
+    final userJson = await _readSecure(_currentUserKey);
 
     if (userJson != null) {
-      // Convert the JSON string back to a UserEntity object
-      return UserModel.fromJson(jsonDecode(userJson));
+      try {
+        // Convert the JSON string back to a UserEntity object
+        return UserModel.fromJson(jsonDecode(userJson));
+      } catch (e) {
+        debugPrint('Error parsing stored user data: $e');
+        // Clear corrupted data
+        await clearCurrentUser();
+        return null;
+      }
     }
 
     return null;
   }
 
+  static Future<void> clearCurrentUser() async {
+    await _deleteSecure(_currentUserKey);
+  }
+
   static Future<void> _fetchCurrentUser() async {
-    final token = await AuthManager.getToken();
-    final response = await http.get(
-      Uri.parse("$baseUrl/api/v1/user/profile"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      final UserEntity user = UserModel.fromJson(jsonDecode(response.body));
-      final secureStorage = FlutterSecureStorage();
-      await secureStorage.write(key: 'currentUser', value: jsonEncode(user));
-    } else {
-      if (response.statusCode == 401) {
-        await AuthManager.logout();
+    try {
+      final token = await AuthManager.getToken();
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse("$baseUrl/api/v1/user/profile"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final UserEntity user = UserModel.fromJson(jsonDecode(response.body));
+        await _writeSecure(_currentUserKey, jsonEncode(user));
+      } else {
+        if (response.statusCode == 401) {
+          await AuthManager.logout();
+        }
+        throw Exception('Failed to fetch current user: ${response.statusCode}');
       }
-      throw Exception('Failed to fetch current user');
+    } catch (e) {
+      debugPrint('Error fetching current user: $e');
+      rethrow;
     }
+  }
+
+  // Store user private key
+  static Future<void> setUserPrivateKey(
+    String userId,
+    String privateKey,
+  ) async {
+    await _writeSecure('${userId}_private_key', privateKey);
+  }
+
+  // Get user private key
+  static Future<String?> getUserPrivateKey(String userId) async {
+    return await _readSecure('${userId}_private_key');
+  }
+
+  // Clear all user data (useful for complete logout/reset)
+  static Future<void> clearAllUserData() async {
+    await clearToken();
+    await clearRefreshToken();
+    await clearCurrentUser();
+    await clearSecretKeys();
+
+    // Clear cache
+    _cachedToken = null;
+    _cachedRefreshToken = null;
   }
 }
