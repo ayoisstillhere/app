@@ -9,6 +9,7 @@ import 'package:app/components/social_text.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/profile_screen.dart';
 
+import '../../../../components/nav_page.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
@@ -180,6 +181,30 @@ class _PostCardState extends State<PostCard> {
       await http.post(
         Uri.parse("$baseUrl/api/v1/posts/${widget.postId}/save"),
         headers: {"Authorization": "Bearer $token"},
+      );
+    }
+  }
+
+  Future<void> _deletePost() async {
+    final token = await AuthManager.getToken();
+    final response = await http.delete(
+      Uri.parse("$baseUrl/api/v1/posts/${widget.postId}"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 204) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => NavPage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Failed to delete post. Please try again.",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       );
     }
   }
@@ -538,35 +563,45 @@ class _PostCardState extends State<PostCard> {
                         ],
                       ),
                 Spacer(),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'Delete Post') {
-                      // await _deletePost();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      value: 'Delete Post',
-                      child: Text(
-                        'Delete Post',
-                        style: TextStyle(
-                          fontSize: getProportionateScreenWidth(15),
-                          fontWeight: FontWeight.normal,
+                myPost
+                    ? PopupMenuButton<String>(
+                        onSelected: (value) async {
+                          if (value == 'Delete Post') {
+                            await _deletePost();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<String>(
+                            value: 'Delete Post',
+                            child: Text(
+                              'Delete Post',
+                              style: TextStyle(
+                                fontSize: getProportionateScreenWidth(15),
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: SvgPicture.asset(
+                          "assets/icons/more-vertical.svg",
+                          height: getProportionateScreenHeight(17),
+                          width: getProportionateScreenWidth(17),
+                          colorFilter: ColorFilter.mode(
+                            widget.iconColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      )
+                    : SvgPicture.asset(
+                        "assets/icons/more-vertical.svg",
+                        height: getProportionateScreenHeight(17),
+                        width: getProportionateScreenWidth(17),
+                        colorFilter: ColorFilter.mode(
+                          widget.iconColor,
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ),
-                  ],
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: SvgPicture.asset(
-                    "assets/icons/more-vertical.svg",
-                    height: getProportionateScreenHeight(17),
-                    width: getProportionateScreenWidth(17),
-                    colorFilter: ColorFilter.mode(
-                      widget.iconColor,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
               ],
             ),
             SizedBox(height: getProportionateScreenHeight(5)),
