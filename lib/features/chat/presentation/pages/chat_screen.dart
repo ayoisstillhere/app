@@ -1119,24 +1119,33 @@ class _ChatScreenState extends State<ChatScreen> {
                           right: getProportionateScreenWidth(15),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment
+                              .end, // Align everything to bottom
                           children: [
-                            // Camera button
-                            InkWell(
-                              onTap: _takePicture,
-                              child: Container(
-                                padding: EdgeInsets.all(
-                                  getProportionateScreenWidth(8),
-                                ),
-                                height: getProportionateScreenHeight(39),
-                                width: getProportionateScreenWidth(39),
-                                decoration: BoxDecoration(
-                                  gradient: kChatBubbleGradient,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: SvgPicture.asset(
-                                  "assets/icons/chat_camera.svg",
-                                  height: getProportionateScreenHeight(21.27),
-                                  width: getProportionateScreenWidth(21.27),
+                            // Camera button with padding to center it when single line
+                            Padding(
+                              padding: EdgeInsets.only(
+                                bottom: getProportionateScreenHeight(
+                                  5,
+                                ), // Offset to appear centered with single line text
+                              ),
+                              child: InkWell(
+                                onTap: _takePicture,
+                                child: Container(
+                                  padding: EdgeInsets.all(
+                                    getProportionateScreenWidth(8),
+                                  ),
+                                  height: getProportionateScreenHeight(39),
+                                  width: getProportionateScreenWidth(39),
+                                  decoration: BoxDecoration(
+                                    gradient: kChatBubbleGradient,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: SvgPicture.asset(
+                                    "assets/icons/chat_camera.svg",
+                                    height: getProportionateScreenHeight(21.27),
+                                    width: getProportionateScreenWidth(21.27),
+                                  ),
                                 ),
                               ),
                             ),
@@ -1145,12 +1154,16 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: TextField(
                                   controller: _messageController,
+                                  maxLines: null, // Allow unlimited lines
+                                  minLines: 1, // Start with one line
+                                  textAlignVertical: TextAlignVertical
+                                      .center, // Center align text vertically
                                   decoration: InputDecoration(
                                     hintText: "Message...",
                                     hintStyle: TextStyle(
                                       fontSize: getProportionateScreenHeight(
-                                        14,
-                                      ),
+                                        16,
+                                      ), // Increased from 14
                                     ),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
@@ -1170,7 +1183,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                                   style: TextStyle(
                                     color: iconColor,
-                                    fontSize: getProportionateScreenHeight(14),
+                                    fontSize: getProportionateScreenHeight(
+                                      16,
+                                    ), // Increased from 14
                                   ),
                                   onSubmitted: (_) =>
                                       _sendMessage(MessageType.TEXT),
@@ -1189,8 +1204,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                     style: TextStyle(
                                       color: iconColor,
                                       fontSize: getProportionateScreenHeight(
-                                        14,
-                                      ),
+                                        16,
+                                      ), // Increased from 14
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -1215,63 +1230,22 @@ class _ChatScreenState extends State<ChatScreen> {
                                 valueListenable: _messageController,
                                 builder: (context, value, child) {
                                   final hasText = value.text.trim().isNotEmpty;
-                                  return Row(
-                                    children: [
-                                      // Send button for text
-                                      if (hasText)
-                                        InkWell(
-                                          onTap: _isSending
-                                              ? null
-                                              : () => _sendMessage(
-                                                  MessageType.TEXT,
-                                                ),
-                                          child: SvgPicture.asset(
-                                            "assets/icons/send.svg",
-                                            height:
-                                                getProportionateScreenHeight(
-                                                  21.27,
-                                                ),
-                                            width: getProportionateScreenWidth(
-                                              21.27,
-                                            ),
-                                          ),
-                                        ),
-                                      // Attachment icons
-                                      if (!hasText) ...[
-                                        InkWell(
-                                          onTap: _pickFile,
-                                          child: SvgPicture.asset(
-                                            "assets/icons/chat_paperclip.svg",
-                                            height:
-                                                getProportionateScreenHeight(
-                                                  21.27,
-                                                ),
-                                            width: getProportionateScreenWidth(
-                                              21.27,
-                                            ),
-                                            colorFilter: ColorFilter.mode(
-                                              iconColor,
-                                              BlendMode.srcIn,
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: getProportionateScreenWidth(8),
-                                        ),
-                                        InkWell(
-                                          onTap: _toggleRecording,
-                                          child: Container(
-                                            padding: _isRecording
-                                                ? EdgeInsets.all(2)
-                                                : EdgeInsets.zero,
-                                            decoration: _isRecording
-                                                ? BoxDecoration(
-                                                    color: Colors.red,
-                                                    shape: BoxShape.circle,
-                                                  )
-                                                : null,
+                                  return Padding(
+                                    padding: EdgeInsetsGeometry.only(
+                                      bottom: getProportionateScreenHeight(14),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Send button for text
+                                        if (hasText)
+                                          InkWell(
+                                            onTap: _isSending
+                                                ? null
+                                                : () => _sendMessage(
+                                                    MessageType.TEXT,
+                                                  ),
                                             child: SvgPicture.asset(
-                                              "assets/icons/chat_mic.svg",
+                                              "assets/icons/send.svg",
                                               height:
                                                   getProportionateScreenHeight(
                                                     21.27,
@@ -1280,40 +1254,93 @@ class _ChatScreenState extends State<ChatScreen> {
                                                   getProportionateScreenWidth(
                                                     21.27,
                                                   ),
-                                              colorFilter: _isRecording
-                                                  ? ColorFilter.mode(
-                                                      Colors.white,
-                                                      BlendMode.srcIn,
-                                                    )
-                                                  : ColorFilter.mode(
-                                                      iconColor,
-                                                      BlendMode.srcIn,
-                                                    ),
                                             ),
                                           ),
-                                        ),
-                                        SizedBox(
-                                          width: getProportionateScreenWidth(8),
-                                        ),
-                                        InkWell(
-                                          onTap: _pickMediaFromGallery,
-                                          child: SvgPicture.asset(
-                                            "assets/icons/chat_image.svg",
-                                            height:
-                                                getProportionateScreenHeight(
-                                                  21.27,
-                                                ),
+                                        // Attachment icons
+                                        if (!hasText) ...[
+                                          InkWell(
+                                            onTap: _pickFile,
+                                            child: SvgPicture.asset(
+                                              "assets/icons/chat_paperclip.svg",
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    21.27,
+                                                  ),
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    21.27,
+                                                  ),
+                                              colorFilter: ColorFilter.mode(
+                                                iconColor,
+                                                BlendMode.srcIn,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
                                             width: getProportionateScreenWidth(
-                                              21.27,
-                                            ),
-                                            colorFilter: ColorFilter.mode(
-                                              iconColor,
-                                              BlendMode.srcIn,
+                                              8,
                                             ),
                                           ),
-                                        ),
+                                          InkWell(
+                                            onTap: _toggleRecording,
+                                            child: Container(
+                                              padding: _isRecording
+                                                  ? EdgeInsets.all(2)
+                                                  : EdgeInsets.zero,
+                                              decoration: _isRecording
+                                                  ? BoxDecoration(
+                                                      color: Colors.red,
+                                                      shape: BoxShape.circle,
+                                                    )
+                                                  : null,
+                                              child: SvgPicture.asset(
+                                                "assets/icons/chat_mic.svg",
+                                                height:
+                                                    getProportionateScreenHeight(
+                                                      21.27,
+                                                    ),
+                                                width:
+                                                    getProportionateScreenWidth(
+                                                      21.27,
+                                                    ),
+                                                colorFilter: _isRecording
+                                                    ? ColorFilter.mode(
+                                                        Colors.white,
+                                                        BlendMode.srcIn,
+                                                      )
+                                                    : ColorFilter.mode(
+                                                        iconColor,
+                                                        BlendMode.srcIn,
+                                                      ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: getProportionateScreenWidth(
+                                              8,
+                                            ),
+                                          ),
+                                          InkWell(
+                                            onTap: _pickMediaFromGallery,
+                                            child: SvgPicture.asset(
+                                              "assets/icons/chat_image.svg",
+                                              height:
+                                                  getProportionateScreenHeight(
+                                                    21.27,
+                                                  ),
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    21.27,
+                                                  ),
+                                              colorFilter: ColorFilter.mode(
+                                                iconColor,
+                                                BlendMode.srcIn,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ],
-                                    ],
+                                    ),
                                   );
                                 },
                               ),
