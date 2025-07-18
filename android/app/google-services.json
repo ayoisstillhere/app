@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:966329839831:android:5b514c2bf42b942a6dc092",
+        "mobilesdk_app_id": "1:966329839831:android:75824ba7b4558f806dc092",
         "android_client_info": {
-          "package_name": "com.hira.app"
+          "package_name": "com.hiraofficial.hira"
         }
       },
       "oauth_client": [],
@@ -26,9 +26,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:966329839831:android:75824ba7b4558f806dc092",
+        "mobilesdk_app_id": "1:966329839831:android:d4a99b24c673031c6dc092",
         "android_client_info": {
-          "package_name": "com.hiraofficial.hira"
+          "package_name": "com.hirasocial.app"
         }
       },
       "oauth_client": [],
