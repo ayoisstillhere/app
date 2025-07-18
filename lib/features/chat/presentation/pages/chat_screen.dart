@@ -1184,7 +1184,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   style: TextStyle(
                                     color: iconColor,
                                     fontSize: getProportionateScreenHeight(
-                                      16,
+                                      18,
                                     ), // Increased from 14
                                   ),
                                   onSubmitted: (_) =>
