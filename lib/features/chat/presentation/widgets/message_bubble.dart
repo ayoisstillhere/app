@@ -905,16 +905,13 @@ class _MessageBubbleState extends State<MessageBubble> {
                 maxWidth: getProportionateScreenWidth(250),
               ),
               child: Container(
-                padding: EdgeInsets.all(getProportionateScreenWidth(4)),
                 decoration: isMe
                     ? BoxDecoration(
                         borderRadius: BorderRadius.circular(
                           getProportionateScreenWidth(10),
                         ),
-                        gradient: kChatBubbleGradient,
                       )
                     : BoxDecoration(
-                        color: bubbleColor,
                         borderRadius: BorderRadius.circular(
                           getProportionateScreenWidth(10),
                         ),
@@ -1052,16 +1049,13 @@ class _MessageBubbleState extends State<MessageBubble> {
                 maxWidth: getProportionateScreenWidth(250),
               ),
               child: Container(
-                padding: EdgeInsets.all(getProportionateScreenWidth(4)),
                 decoration: isMe
                     ? BoxDecoration(
                         borderRadius: BorderRadius.circular(
                           getProportionateScreenWidth(10),
                         ),
-                        gradient: kChatBubbleGradient,
                       )
                     : BoxDecoration(
-                        color: bubbleColor,
                         borderRadius: BorderRadius.circular(
                           getProportionateScreenWidth(10),
                         ),
