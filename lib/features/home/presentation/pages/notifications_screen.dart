@@ -186,10 +186,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             children: [
                               NotificationTile(
                                 iconColor: iconColor,
-                                username: notifications[index].sender.username,
+                                username: notifications[index].sender?.username,
                                 action: notifications[index].message,
                                 time: notifications[index].createdAt,
-                                image: notifications[index].sender.profileImage,
+                                image: notifications[index].sender?.profileImage,
                                 isClickable: notifications[index].post != null,
                                 buttonText: "View",
                                 currentUser: widget.currentUser,

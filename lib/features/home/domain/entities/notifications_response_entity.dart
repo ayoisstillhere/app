@@ -38,7 +38,7 @@ class Notification {
   final String type;
   final String message;
   final bool isRead;
-  final Sender sender;
+  final Sender? sender;
   final Post? post;
   final DateTime createdAt;
 
@@ -57,7 +57,7 @@ class Notification {
     type: json["type"],
     message: json["message"],
     isRead: json["isRead"],
-    sender: Sender.fromJson(json["sender"]),
+    sender: json["sender"] == null ? null : Sender.fromJson(json["sender"]),
     post: json["post"] == null ? null : Post.fromJson(json["post"]),
     createdAt: DateTime.parse(json["createdAt"]),
   );
@@ -67,7 +67,7 @@ class Notification {
     "type": type,
     "message": message,
     "isRead": isRead,
-    "sender": sender.toJson(),
+    "sender": sender?.toJson(),
     "post": post?.toJson(),
     "createdAt": createdAt.toIso8601String(),
   };
