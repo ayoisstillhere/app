@@ -574,13 +574,11 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ],
                   ),
                 ),
-                exploreResponse!.trending[0].media.isEmpty
-                    ? Container()
-                    : SizedBox(height: getProportionateScreenHeight(52)),
-                SizedBox(height: getProportionateScreenHeight(23)),
+                SizedBox(height: getProportionateScreenHeight(8)),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: List.generate(
                       exploreResponse!.trending.length,
                       (index) => PostCard(
@@ -612,7 +610,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ),
                   ),
                 ),
-                SizedBox(height: getProportionateScreenHeight(54)),
+                SizedBox(height: getProportionateScreenHeight(8)),
                 Padding(
                   padding: EdgeInsets.only(
                     left: getProportionateScreenWidth(19),
