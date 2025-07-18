@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: getProportionateScreenHeight(25)),
+            // SizedBox(height: getProportionateScreenHeight(4)),
             Text(
               "...be heard",
               style: TextStyle(
