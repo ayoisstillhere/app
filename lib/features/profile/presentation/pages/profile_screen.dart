@@ -470,37 +470,67 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Posts")),
+                                child: Center(
+                                  child: Text(
+                                    "Posts",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Reposts")),
+                                child: Center(
+                                  child: Text(
+                                    "Reposts",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Media")),
+                                child: Center(
+                                  child: Text(
+                                    "Media",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Comments")),
+                                child: Center(
+                                  child: Text(
+                                    "Comments",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Saved")),
+                                child: Center(
+                                  child: Text(
+                                    "Saved",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Liked")),
+                                child: Center(
+                                  child: Text(
+                                    "Liked",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
