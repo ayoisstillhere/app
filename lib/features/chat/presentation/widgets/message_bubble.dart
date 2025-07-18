@@ -837,7 +837,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                       widget.message.content,
                       style: TextStyle(
                         color: textColor,
-                        fontSize: getProportionateScreenHeight(14),
+                        fontSize: getProportionateScreenHeight(16),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
