@@ -848,7 +848,14 @@ class _ChatScreenState extends State<ChatScreen> {
         return ClipRRect(
           borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
           child: _player != null && _videoController != null
-              ? Video(controller: _videoController!, fit: BoxFit.cover)
+              ? AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Video(
+                    controller: _videoController!,
+                    fit: BoxFit.cover,
+                    aspectRatio: 16 / 9,
+                  ),
+                )
               : Container(
                   color: Colors.black,
                   child: Icon(Icons.video_library, color: Colors.white),

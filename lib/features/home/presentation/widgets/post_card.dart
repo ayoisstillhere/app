@@ -11,6 +11,7 @@ import '../../../../components/nav_page.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
+import '../../../chat/presentation/widgets/full_screen_url_video_player.dart';
 import '../pages/image_viewer_screen.dart';
 import '../pages/write_comment_screen.dart';
 import 'package:media_kit/media_kit.dart';
@@ -278,8 +279,16 @@ class _PostCardState extends State<PostCard> {
 
       return GestureDetector(
         onTap: () {
-          player?.playOrPause();
-          setState(() {});
+          // Navigate to full screen URL video player
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FullScreenUrlVideoPlayer(
+                videoUrl: url,
+                title: widget.content,
+              ),
+            ),
+          );
         },
         child: Container(
           decoration: BoxDecoration(
@@ -291,45 +300,28 @@ class _PostCardState extends State<PostCard> {
           child: Stack(
             alignment: Alignment.center,
             children: [
+              // Video thumbnail
               ClipRRect(
                 borderRadius: BorderRadius.circular(
                   getProportionateScreenWidth(10),
                 ),
                 child: AspectRatio(
-                  aspectRatio:
-                      16 / 9, // Default aspect ratio, will adjust to video
-                  child: Video(
-                    controller: controller!,
-                    fit: BoxFit.contain,
-                    controls: NoVideoControls,
-                  ),
+                  aspectRatio: 16 / 9,
+                  child: controller != null
+                      ? Video(
+                          controller: controller,
+                          fit: BoxFit.contain,
+                          controls: NoVideoControls,
+                        )
+                      : Center(child: CircularProgressIndicator()),
                 ),
               ),
-              // Play/Pause button overlay
-              Positioned.fill(
-                child: Center(
-                  child: StreamBuilder<bool>(
-                    stream: player?.stream.playing,
-                    builder: (context, snapshot) {
-                      final isPlaying = snapshot.data ?? false;
-                      return AnimatedOpacity(
-                        opacity: isPlaying ? 0.0 : 0.7,
-                        duration: Duration(milliseconds: 300),
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white,
-                            size: getProportionateScreenWidth(30),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+              // Play button indicator
+              Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  size: 64,
+                  color: Colors.white.withOpacity(0.7),
                 ),
               ),
             ],
