@@ -34,6 +34,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _getNotifications();
     _scrollController.addListener(_onScroll);
+    _markAllNotificationsRead();
   }
 
   @override
@@ -115,6 +116,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await _getNotifications(refresh: true);
   }
 
+  Future<void> _markAllNotificationsRead() async {
+    final token = await AuthManager.getToken();
+    final uri = Uri.parse('$baseUrl/api/v1/notifications/read-all');
+
+    final response = await http.put(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      // Successfully marked all notifications as read
+    } else {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final dividerColor =
@@ -189,7 +204,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 username: notifications[index].sender?.username,
                                 action: notifications[index].message,
                                 time: notifications[index].createdAt,
-                                image: notifications[index].sender?.profileImage,
+                                image:
+                                    notifications[index].sender?.profileImage,
                                 isClickable: notifications[index].post != null,
                                 buttonText: "View",
                                 currentUser: widget.currentUser,

@@ -55,6 +55,8 @@ class _HomeScreenState extends State<HomeScreen>
   late ScrollController recommendedScrollController;
   late ScrollController followingScrollController;
 
+  int notificationsCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen>
     followingScrollController.addListener(_onFollowingScroll);
 
     if (mounted) {
+      _getNotificationsCount();
       _getFollowingPosts();
       _getRecommendedPosts();
     }
@@ -181,6 +184,20 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _getNotificationsCount() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/notifications/count"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        notificationsCount = jsonDecode(response.body)["count"];
+      });
     }
   }
 
@@ -653,9 +670,43 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     );
                   },
-                  child: SvgPicture.asset(
-                    "assets/icons/bell.svg",
-                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  child: Stack(
+                    children: [
+                      SvgPicture.asset(
+                        "assets/icons/bell.svg",
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      if (notificationsCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: getProportionateScreenWidth(16),
+                              minHeight: getProportionateScreenHeight(16),
+                            ),
+                            child: Text(
+                              notificationsCount > 99
+                                  ? '99+'
+                                  : notificationsCount.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: getProportionateScreenWidth(10),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
