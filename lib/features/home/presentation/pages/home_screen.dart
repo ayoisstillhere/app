@@ -660,8 +660,8 @@ class _HomeScreenState extends State<HomeScreen>
                 height: getProportionateScreenHeight(24),
                 width: getProportionateScreenWidth(24),
                 child: InkWell(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => NotificationsScreen(
@@ -669,6 +669,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     );
+                    // Refresh notifications count when returning from notifications screen
+                    _getNotificationsCount();
                   },
                   child: Stack(
                     children: [
