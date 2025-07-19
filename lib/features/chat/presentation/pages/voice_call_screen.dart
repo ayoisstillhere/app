@@ -35,7 +35,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     super.initState();
     // Join the call when the screen is initialized
     widget.call.join();
-    _startCallTimer();
+
+    // Listen for call state changes instead of starting timer immediately
+    widget.call.state.listen((callState) {
+      // Check if there are other participants (at least 2 including yourself)
+      if (callState.callParticipants.length > 1 && _callTimer == null) {
+        _startCallTimer();
+      }
+    });
   }
 
   void _startCallTimer() {
@@ -210,7 +217,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Widget _buildBottomControls(Call call) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
