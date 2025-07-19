@@ -1,3 +1,4 @@
+import 'package:app/features/profile/presentation/pages/privacy_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -63,6 +64,14 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         );
                       } else if (index == 1) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return PrivacyScreen();
+                            },
+                          ),
+                        );
                       } else if (index == 2) {}
                     },
                     child: SettingsTile(
