@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:app/features/chat/data/models/get_messages_response_model.dart';
 import 'package:app/features/chat/presentation/pages/video_call_screen.dart';
 import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -351,12 +352,12 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
-        border: Border(
-          left: BorderSide(
-            color: Colors.blue,
-            width: getProportionateScreenWidth(3),
-          ),
-        ),
+        // border: Border(
+        //   left: BorderSide(
+        //     color: Colors.blue,
+        //     width: getProportionateScreenWidth(3),
+        //   ),
+        // ),
       ),
       child: Row(
         children: [
@@ -1082,6 +1083,25 @@ class _ChatScreenState extends State<ChatScreen> {
                         onReply: () => _setReply(message), // Add reply callback
                         allMessages:
                             requiredMessages, // Pass all messages for reply context
+                        getSenderName: (String userId) {
+                          // Create a wrapper function that takes just a userId
+                          final dummyMessage = TextMessageEntity(
+                            '', // content
+                            '', // conversationId
+                            Timestamp.now(), // createdAt
+                            null, // expiredAt
+                            '', // id
+                            false, // isForwarded
+                            false, // isViewOnce
+                            '', // mediaUrl
+                            {}, // reactions
+                            null, // replyToId
+                            userId, // senderId - this is what we need
+                            'TEXT', // type
+                            null, // encryptionMetadata
+                          );
+                          return _getMessageSenderName(dummyMessage);
+                        },
                       );
                     },
                   ),

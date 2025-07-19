@@ -30,6 +30,7 @@ class MessageBubble extends StatefulWidget {
   final String? username;
   final VoidCallback? onReply; // Add this
   final List<TextMessageEntity>? allMessages; // Add this for reply context
+  final String Function(String userId)? getSenderName; // Add this callback
 
   const MessageBubble({
     super.key,
@@ -40,6 +41,7 @@ class MessageBubble extends StatefulWidget {
     this.username = '',
     this.onReply,
     this.allMessages,
+    this.getSenderName,
   });
 
   @override
@@ -633,19 +635,57 @@ class _MessageBubbleState extends State<MessageBubble> {
       ),
     );
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        repliedMessage.content,
-        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+    // Determine who replied to whom
+    final isMyMessage = widget.message.senderId == widget.currentUser.id;
+    final isReplyToMyMessage = repliedMessage.senderId == widget.currentUser.id;
+
+    String replyContext;
+    if (isMyMessage) {
+      // I replied to someone else or myself
+      replyContext = isReplyToMyMessage
+          ? "You replied to yourself"
+          : "You replied to ${widget.getSenderName != null ? widget.getSenderName!(repliedMessage.senderId) : 'User'}";
+    } else {
+      // Someone else replied to me or someone else
+      final senderName = widget.getSenderName != null
+          ? widget.getSenderName!(widget.message.senderId)
+          : 'User';
+      replyContext = isReplyToMyMessage
+          ? "$senderName replied to you"
+          : "$senderName replied to ${widget.getSenderName != null ? widget.getSenderName!(repliedMessage.senderId) : 'User'}";
+    }
+
+    return Column(
+      crossAxisAlignment: widget.message.senderId == widget.currentUser.id
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: 4),
+          child: Text(
+            replyContext,
+            style: TextStyle(
+              fontSize: 10,
+              color: widget.isDark ? Colors.grey[400] : Colors.grey[700],
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            repliedMessage.content,
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 
