@@ -8,13 +8,14 @@ import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_player/video_player.dart';
 import 'package:video_compress/video_compress.dart';
 
 import 'package:app/size_config.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key, required this.profileImage});
@@ -30,7 +31,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool isLoading = false;
   List<File> selectedImages = [];
   List<File> selectedVideos = [];
-  Map<String, VideoPlayerController> videoControllers = {};
+  Map<String, Player> videoPlayers = {};
+  Map<String, VideoController> videoControllers = {};
 
   @override
   void initState() {
@@ -44,9 +46,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void dispose() {
     _postController.removeListener(() {});
     _postController.dispose();
-    // Dispose video controllers
-    for (var controller in videoControllers.values) {
-      controller.dispose();
+    // Dispose media_kit players
+    for (var player in videoPlayers.values) {
+      player.dispose();
     }
     super.dispose();
   }
@@ -65,7 +67,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<File> compressVideo(File file) async {
     final compressedVideo = await VideoCompress.compressVideo(
       file.path,
-      quality: VideoQuality.MediumQuality,
+      quality: VideoQuality.LowQuality,
       deleteOrigin: false,
       includeAudio: true,
     );
@@ -125,14 +127,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         // Compress video
         File compressedVideoFile = await compressVideo(originalVideoFile);
 
-        // Initialize video controller for preview
-        VideoPlayerController controller = VideoPlayerController.file(
-          compressedVideoFile,
-        );
-        await controller.initialize();
+        // Initialize media_kit player for preview
+        final player = Player();
+        final controller = VideoController(player);
+        await player.open(Media('file://${compressedVideoFile.path}'));
 
         setState(() {
           selectedVideos.add(compressedVideoFile);
+          videoPlayers[compressedVideoFile.path] = player;
           videoControllers[compressedVideoFile.path] = controller;
           isLoading = false;
         });
@@ -198,14 +200,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         // Compress video
         File compressedVideoFile = await compressVideo(originalVideoFile);
 
-        // Initialize video controller for preview
-        VideoPlayerController controller = VideoPlayerController.file(
-          compressedVideoFile,
-        );
-        await controller.initialize();
+        // Initialize media_kit player for preview
+        final player = Player();
+        final controller = VideoController(player);
+        await player.open(Media('file://${compressedVideoFile.path}'));
 
         setState(() {
           selectedVideos.add(compressedVideoFile);
+          videoPlayers[compressedVideoFile.path] = player;
           videoControllers[compressedVideoFile.path] = controller;
           isLoading = false;
         });
@@ -235,9 +237,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   void _removeVideo(int index) {
     final videoFile = selectedVideos[index];
-    final controller = videoControllers[videoFile.path];
-    if (controller != null) {
-      controller.dispose();
+    final player = videoPlayers[videoFile.path];
+    if (player != null) {
+      player.dispose();
+      videoPlayers.remove(videoFile.path);
       videoControllers.remove(videoFile.path);
     }
     setState(() {
@@ -249,44 +252,46 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.photo_library),
-                title: Text('Gallery Images'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImageFromGallery();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.video_library),
-                title: Text('Gallery Videos'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideoFromGallery();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.camera_alt),
-                title: Text('Camera Photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImageFromCamera();
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.videocam),
-                title: Text('Camera Video'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideoFromCamera();
-                },
-              ),
-            ],
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Gallery Images'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromGallery();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.video_library),
+                  title: Text('Gallery Videos'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickVideoFromGallery();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.camera_alt),
+                  title: Text('Camera Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromCamera();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.videocam),
+                  title: Text('Camera Video'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickVideoFromCamera();
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -398,8 +403,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Widget _buildVideoPreview(File videoFile, int index) {
+    final player = videoPlayers[videoFile.path];
     final controller = videoControllers[videoFile.path];
-    if (controller == null) return Container();
+
+    if (player == null || controller == null) return Container();
 
     return Stack(
       children: [
@@ -417,53 +424,50 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: AspectRatio(
               aspectRatio: 1.0, // Force a square aspect ratio for the container
               child: Center(
-                child: controller.value.isInitialized
-                    ? AspectRatio(
-                        aspectRatio: controller.value.aspectRatio,
-                        child: VideoPlayer(controller),
-                      )
-                    : CircularProgressIndicator(),
+                child: Video(
+                  controller: controller,
+                  fit: BoxFit.contain,
+                  controls: NoVideoControls,
+                ),
               ),
             ),
           ),
         ),
-        Positioned(
-          bottom: 5,
-          left: 5,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '${(controller.value.duration.inMinutes).toString().padLeft(2, '0')}:${(controller.value.duration.inSeconds % 60).toString().padLeft(2, '0')}',
-              style: TextStyle(color: Colors.white, fontSize: 10),
-            ),
-          ),
-        ),
+        // Duration indicator and other UI elements...
         Positioned(
           top: 0,
           bottom: 0,
           left: 0,
           right: 0,
           child: Center(
-            child: Icon(
-              Icons.play_circle_fill,
-              color: Colors.white70,
-              size: 40,
+            child: IconButton(
+              icon: StreamBuilder<bool>(
+                stream: player.stream.playing,
+                builder: (context, snapshot) {
+                  final isPlaying = snapshot.data ?? false;
+                  return Icon(
+                    isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 48,
+                  );
+                },
+              ),
+              onPressed: () {
+                player.playOrPause();
+              },
             ),
           ),
         ),
+        // Add the remove button
         Positioned(
           top: 5,
           right: 5,
-          child: InkWell(
+          child: GestureDetector(
             onTap: () => _removeVideo(index),
             child: Container(
               padding: EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: Colors.black54,
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.close, color: Colors.white, size: 16),

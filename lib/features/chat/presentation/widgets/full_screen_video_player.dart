@@ -1,9 +1,10 @@
-// Full Screen Video Player Widget
+// Full Screen Video Player Widget using Media Kit
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 // Full Screen Video Player Widget
 class FullScreenVideoPlayer extends StatefulWidget {
@@ -21,7 +22,8 @@ class FullScreenVideoPlayer extends StatefulWidget {
 }
 
 class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
-  late VideoPlayerController _controller;
+  late final Player _player;
+  late final VideoController _controller;
   bool _isPlaying = false;
   bool _showControls = true;
   bool _isLoading = true;
@@ -41,16 +43,46 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
 
   Future<void> _initializeVideo() async {
     try {
-      _controller = VideoPlayerController.file(widget.videoFile);
-      await _controller.initialize();
+      _player = Player();
+      _controller = VideoController(_player);
 
-      _controller.addListener(() {
-        setState(() {
-          _position = _controller.value.position;
-          _duration = _controller.value.duration;
-          _isPlaying = _controller.value.isPlaying;
-        });
+      // Listen to player state changes
+      _player.stream.playing.listen((bool playing) {
+        if (mounted) {
+          setState(() {
+            _isPlaying = playing;
+          });
+        }
       });
+
+      _player.stream.duration.listen((Duration duration) {
+        if (mounted) {
+          setState(() {
+            _duration = duration;
+          });
+        }
+      });
+
+      _player.stream.position.listen((Duration position) {
+        if (mounted) {
+          setState(() {
+            _position = position;
+          });
+        }
+      });
+
+      // Listen for errors
+      _player.stream.error.listen((String error) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Playback error: $error';
+            _isLoading = false;
+          });
+        }
+      });
+
+      // Open the video file
+      await _player.open(Media('file://${widget.videoFile.path}'));
 
       setState(() {
         _isLoading = false;
@@ -64,11 +96,7 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   }
 
   void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
-    } else {
-      _controller.play();
-    }
+    _player.playOrPause();
   }
 
   void _showControlsTemporarily() {
@@ -93,9 +121,16 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
     return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
+  void _seekToPosition(double value) {
+    final position = Duration(
+      milliseconds: (value * _duration.inMilliseconds).round(),
+    );
+    _player.seek(position);
+  }
+
   @override
   void dispose() {
-    _controller.dispose();
+    _player.dispose();
 
     // Restore system UI and orientation
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -113,7 +148,7 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Video Player - Full Screen (IMPROVED)
+          // Video Player - Full Screen
           Positioned.fill(
             child: GestureDetector(
               onTap: _showControlsTemporarily,
@@ -141,17 +176,10 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
                         ],
                       ),
                     )
-                  : SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height,
-                      child: FittedBox(
-                        fit: _fillScreen ? BoxFit.cover : BoxFit.contain,
-                        child: SizedBox(
-                          width: _controller.value.size.width,
-                          height: _controller.value.size.height,
-                          child: VideoPlayer(_controller),
-                        ),
-                      ),
+                  : Video(
+                      controller: _controller,
+                      fit: _fillScreen ? BoxFit.cover : BoxFit.contain,
+                      controls: NoVideoControls,
                     ),
             ),
           ),
@@ -222,15 +250,27 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               // Progress bar
-                              VideoProgressIndicator(
-                                _controller,
-                                allowScrubbing: true,
-                                colors: VideoProgressColors(
-                                  playedColor: Colors.white,
-                                  bufferedColor: Colors.white.withOpacity(0.3),
-                                  backgroundColor: Colors.white.withOpacity(
-                                    0.1,
+                              SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  activeTrackColor: Colors.white,
+                                  inactiveTrackColor: Colors.white.withOpacity(
+                                    0.3,
                                   ),
+                                  thumbColor: Colors.white,
+                                  overlayColor: Colors.white.withOpacity(0.2),
+                                  trackHeight: 3.0,
+                                  thumbShape: RoundSliderThumbShape(
+                                    enabledThumbRadius: 6.0,
+                                  ),
+                                ),
+                                child: Slider(
+                                  value: _duration.inMilliseconds > 0
+                                      ? _position.inMilliseconds /
+                                            _duration.inMilliseconds
+                                      : 0.0,
+                                  onChanged: (value) {
+                                    _seekToPosition(value);
+                                  },
                                 ),
                               ),
                               SizedBox(height: 8),
@@ -270,7 +310,7 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   }
 }
 
-// Optional: Video Thumbnail Generator (if you want to show actual video thumbnails)
+// Video Thumbnail Generator using Media Kit
 class VideoThumbnailWidget extends StatefulWidget {
   final File videoFile;
   final double width;
@@ -288,8 +328,10 @@ class VideoThumbnailWidget extends StatefulWidget {
 }
 
 class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
-  late VideoPlayerController _controller;
+  late final Player _player;
+  late final VideoController _controller;
   bool _initialized = false;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -298,17 +340,38 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
   }
 
   Future<void> _initializeController() async {
-    _controller = VideoPlayerController.file(widget.videoFile);
-    await _controller.initialize();
-    await _controller.seekTo(Duration(seconds: 1)); // Get frame at 1 second
-    setState(() {
-      _initialized = true;
-    });
+    try {
+      _player = Player();
+      _controller = VideoController(_player);
+
+      _player.stream.error.listen((String error) {
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _initialized = true;
+          });
+        }
+      });
+
+      await _player.open(Media('file://${widget.videoFile.path}'));
+
+      // Seek to 1 second for thumbnail
+      await _player.seek(Duration(seconds: 1));
+
+      setState(() {
+        _initialized = true;
+      });
+    } catch (e) {
+      setState(() {
+        _hasError = true;
+        _initialized = true;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _player.dispose();
     super.dispose();
   }
 
@@ -328,10 +391,25 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
       );
     }
 
+    if (_hasError) {
+      return Container(
+        width: widget.width,
+        height: widget.height,
+        color: Colors.grey[800],
+        child: Center(
+          child: Icon(Icons.video_file, color: Colors.grey[400], size: 32),
+        ),
+      );
+    }
+
     return SizedBox(
       width: widget.width,
       height: widget.height,
-      child: VideoPlayer(_controller),
+      child: Video(
+        controller: _controller,
+        fit: BoxFit.cover,
+        controls: NoVideoControls,
+      ),
     );
   }
 }

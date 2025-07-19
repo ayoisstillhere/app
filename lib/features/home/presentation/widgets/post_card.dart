@@ -2,7 +2,6 @@ import 'package:app/features/home/presentation/pages/post_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:video_player/video_player.dart';
 
 import 'package:app/components/social_text.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
@@ -14,6 +13,8 @@ import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../pages/image_viewer_screen.dart';
 import '../pages/write_comment_screen.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class PostCard extends StatefulWidget {
   PostCard({
@@ -76,7 +77,8 @@ class _PostCardState extends State<PostCard> {
   bool get isReply => widget.isReply || (widget.replyingToHandle != null);
   late PageController _pageController;
   int _currentPage = 0;
-  List<VideoPlayerController?> _videoControllers = [];
+  final List<Player?> _videoPlayers = [];
+  final List<VideoController?> _videoControllers = [];
   bool get myPost => widget.currentUser.username == widget.authorHandle;
 
   // Check if URL is a video based on file extension
@@ -234,27 +236,35 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _initializeVideoControllers() {
-    _videoControllers = _mediaItems.map((item) {
-      if (item['type'] == 'video') {
-        return VideoPlayerController.networkUrl(Uri.parse(item['url']));
-      }
-      return null;
-    }).toList();
+    // Clear any existing players
+    _disposeVideoControllers();
 
-    // Initialize video controllers
-    for (int i = 0; i < _videoControllers.length; i++) {
-      if (_videoControllers[i] != null) {
-        _videoControllers[i]!.initialize().then((_) {
-          if (mounted) setState(() {});
-        });
+    // Create new players for each video
+    for (var item in _mediaItems) {
+      if (item['type'] == 'video') {
+        final player = Player();
+        final controller = VideoController(player);
+
+        _videoPlayers.add(player);
+        _videoControllers.add(controller);
+
+        // Initialize the player with the video URL
+        player.open(Media(item['url']));
+      } else {
+        // Add null for non-video items to maintain index alignment
+        _videoPlayers.add(null);
+        _videoControllers.add(null);
       }
     }
   }
 
   void _disposeVideoControllers() {
-    for (var controller in _videoControllers) {
-      controller?.dispose();
+    for (var player in _videoPlayers) {
+      if (player != null) {
+        player.dispose();
+      }
     }
+    _videoPlayers.clear();
     _videoControllers.clear();
   }
 
@@ -263,18 +273,13 @@ class _PostCardState extends State<PostCard> {
     final url = mediaItem['url'] as String;
 
     if (isVideo) {
+      final player = _videoPlayers[index];
       final controller = _videoControllers[index];
 
       return GestureDetector(
         onTap: () {
-          if (controller != null && controller.value.isInitialized) {
-            if (controller.value.isPlaying) {
-              controller.pause();
-            } else {
-              controller.play();
-            }
-            setState(() {});
-          }
+          player?.playOrPause();
+          setState(() {});
         },
         child: Container(
           decoration: BoxDecoration(
@@ -286,70 +291,90 @@ class _PostCardState extends State<PostCard> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (controller != null && controller.value.isInitialized)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    getProportionateScreenWidth(10),
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: controller.value.aspectRatio,
-                    child: VideoPlayer(controller),
-                  ),
-                )
-              else
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(
-                      getProportionateScreenWidth(10),
-                    ),
-                    color: Colors.grey[300],
-                  ),
-                  child: Center(child: CircularProgressIndicator()),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  getProportionateScreenWidth(10),
                 ),
-              // Play/Pause button overlay
-              if (controller != null && controller.value.isInitialized)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    shape: BoxShape.circle,
+                child: AspectRatio(
+                  aspectRatio:
+                      16 / 9, // Default aspect ratio, will adjust to video
+                  child: Video(
+                    controller: controller!,
+                    fit: BoxFit.contain,
+                    controls: NoVideoControls,
                   ),
-                  child: IconButton(
-                    icon: Icon(
-                      controller.value.isPlaying
-                          ? Icons.pause
-                          : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                    onPressed: () {
-                      if (controller.value.isPlaying) {
-                        controller.pause();
-                      } else {
-                        controller.play();
-                      }
-                      setState(() {});
+                ),
+              ),
+              // Play/Pause button overlay
+              Positioned.fill(
+                child: Center(
+                  child: StreamBuilder<bool>(
+                    stream: player?.stream.playing,
+                    builder: (context, snapshot) {
+                      final isPlaying = snapshot.data ?? false;
+                      return AnimatedOpacity(
+                        opacity: isPlaying ? 0.0 : 0.7,
+                        duration: Duration(milliseconds: 300),
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isPlaying ? Icons.pause : Icons.play_arrow,
+                            color: Colors.white,
+                            size: getProportionateScreenWidth(30),
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ),
+              ),
             ],
           ),
         ),
       );
     } else {
-      // Image handling
+      // Image handling (keep your existing code for images)
       return GestureDetector(
         onTap: () => _openImageViewer(index),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              getProportionateScreenWidth(10),
-            ),
-            image: DecorationImage(
-              image: url.isEmpty
-                  ? NetworkImage(defaultAvatar)
-                  : NetworkImage(url),
-              fit: BoxFit.cover,
-            ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(getProportionateScreenWidth(10)),
+          child: Image.network(
+            url,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(
+                    getProportionateScreenWidth(10),
+                  ),
+                ),
+                child: Icon(Icons.error, color: Colors.red),
+              );
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(
+                    getProportionateScreenWidth(10),
+                  ),
+                ),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       );

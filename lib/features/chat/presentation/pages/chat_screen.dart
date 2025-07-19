@@ -18,7 +18,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 import 'package:video_compress/video_compress.dart';
-import 'package:video_player/video_player.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart'
@@ -35,6 +34,9 @@ import '../../../profile/presentation/pages/profile_screen.dart';
 import '../cubit/chat_cubit.dart';
 import '../widgets/message_bubble.dart';
 import 'secret_chat_screen.dart';
+
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class SelectedFile {
   final File file;
@@ -90,7 +92,8 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isRecording = false;
   bool _isSending = false;
   String? _recordingPath;
-  VideoPlayerController? _videoController;
+  Player? _player;
+  VideoController? _videoController;
 
   // Add reply state
   TextMessageEntity? _replyToMessage;
@@ -602,31 +605,41 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void _setSelectedFile(File file, MessageType type) {
+  Future<void> _setSelectedFile(File file, MessageType type) async {
+    // Dispose of any existing video controller
+    if (_player != null) {
+      _player!.dispose();
+      _player = null;
+    }
+    if (_videoController != null) {
+      _videoController = null;
+    }
+
     setState(() {
       _selectedFile = SelectedFile(file: file, type: type);
     });
 
-    // Initialize video controller if it's a video file
+    // Initialize video player if it's a video file
     if (type == MessageType.VIDEO) {
-      _videoController = VideoPlayerController.file(file);
-      _videoController!.initialize().then((_) {
-        setState(() {});
-      });
+      _player = Player();
+      _videoController = VideoController(_player!);
+      await _player!.open(Media('file://${file.path}'));
     }
   }
 
   void _clearSelectedFile() {
-    if (mounted) {
-      setState(() {
-        _selectedFile = null;
-      });
+    // Dispose of any existing video controller
+    if (_player != null) {
+      _player!.dispose();
+      _player = null;
     }
-
     if (_videoController != null) {
-      _videoController!.dispose();
       _videoController = null;
     }
+
+    setState(() {
+      _selectedFile = null;
+    });
   }
 
   String _decryptMessageContent(String encryptedContent) {
@@ -806,7 +819,11 @@ class _ChatScreenState extends State<ChatScreen> {
           // Remove button
           IconButton(
             onPressed: _clearSelectedFile,
-            icon: Icon(Icons.close, size: getProportionateScreenWidth(20)),
+            icon: Icon(
+              Icons.close,
+              size: getProportionateScreenWidth(20),
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
@@ -830,12 +847,8 @@ class _ChatScreenState extends State<ChatScreen> {
       case MessageType.VIDEO:
         return ClipRRect(
           borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
-          child:
-              _videoController != null && _videoController!.value.isInitialized
-              ? AspectRatio(
-                  aspectRatio: _videoController!.value.aspectRatio,
-                  child: VideoPlayer(_videoController!),
-                )
+          child: _player != null && _videoController != null
+              ? Video(controller: _videoController!, fit: BoxFit.cover)
               : Container(
                   color: Colors.black,
                   child: Icon(Icons.video_library, color: Colors.white),
@@ -1139,8 +1152,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           right: getProportionateScreenWidth(15),
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment
-                              .end, // Align everything to bottom
+                          // crossAxisAlignment: CrossAxisAlignment
+                          //     .end, // Align everything to bottom
                           children: [
                             // Camera button with padding to center it when single line
                             Padding(
@@ -1385,10 +1398,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollController.dispose();
     _audioRecorder.closeRecorder();
 
-    // Make sure to release video resources
-    if (_videoController != null) {
-      _videoController!.dispose();
-      _videoController = null;
+    // Dispose media kit resources
+    if (_player != null) {
+      _player!.dispose();
     }
 
     super.dispose();
@@ -1408,7 +1420,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<File> compressVideo(File file) async {
     final compressedVideo = await VideoCompress.compressVideo(
       file.path,
-      quality: VideoQuality.MediumQuality,
+      quality: VideoQuality.LowQuality,
       deleteOrigin: false,
       includeAudio: true,
     );

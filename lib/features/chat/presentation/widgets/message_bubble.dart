@@ -567,45 +567,47 @@ class _MessageBubbleState extends State<MessageBubble> {
       ),
       builder: (context) => Container(
         padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Reply option
-            if (widget.onReply != null)
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Reply option
+              if (widget.onReply != null)
+                ListTile(
+                  leading: Icon(
+                    Icons.reply,
+                    color: widget.isDark ? kWhite : kBlack,
+                  ),
+                  title: Text(
+                    'Reply',
+                    style: TextStyle(color: widget.isDark ? kWhite : kBlack),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onReply!();
+                  },
+                ),
+
+              // Reactions option
               ListTile(
                 leading: Icon(
-                  Icons.reply,
+                  Icons.add_reaction,
                   color: widget.isDark ? kWhite : kBlack,
                 ),
                 title: Text(
-                  'Reply',
+                  'Add Reaction',
                   style: TextStyle(color: widget.isDark ? kWhite : kBlack),
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  widget.onReply!();
+                  _showReactionPickerOverlay();
                 },
               ),
 
-            // Reactions option
-            ListTile(
-              leading: Icon(
-                Icons.add_reaction,
-                color: widget.isDark ? kWhite : kBlack,
-              ),
-              title: Text(
-                'Add Reaction',
-                style: TextStyle(color: widget.isDark ? kWhite : kBlack),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _showReactionPickerOverlay();
-              },
-            ),
-
-            // Add other message actions here if needed
-            // For example: Copy, Forward, Delete, etc.
-          ],
+              // Add other message actions here if needed
+              // For example: Copy, Forward, Delete, etc.
+            ],
+          ),
         ),
       ),
     );
@@ -1221,37 +1223,39 @@ class _MessageBubbleState extends State<MessageBubble> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.photo_library),
-                title: Text('Save to Gallery'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _downloadToGallery(mediaFile);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.share),
-                title: Text('Share'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _shareFile(mediaFile);
-                },
-              ),
-              if (Platform.isAndroid)
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 ListTile(
-                  leading: Icon(Icons.download),
-                  title: Text('Save to Downloads'),
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Save to Gallery'),
                   onTap: () async {
                     Navigator.pop(context);
-                    await _downloadToFolder(mediaFile);
+                    await _downloadToGallery(mediaFile);
                   },
                 ),
-            ],
+                ListTile(
+                  leading: Icon(Icons.share),
+                  title: Text('Share'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _shareFile(mediaFile);
+                  },
+                ),
+                if (Platform.isAndroid)
+                  ListTile(
+                    leading: Icon(Icons.download),
+                    title: Text('Save to Downloads'),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _downloadToFolder(mediaFile);
+                    },
+                  ),
+              ],
+            ),
           ),
         );
       },

@@ -12,7 +12,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:no_screenshot/no_screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_player/video_player.dart';
 
 import 'package:app/components/default_button.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
@@ -28,6 +27,9 @@ import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
 import '../cubit/chat_cubit.dart';
 import '../widgets/message_bubble.dart';
+
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class SelectedFile {
   final File file;
@@ -82,7 +84,8 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   bool _isRecording = false;
   bool _isSending = false;
   String? _recordingPath;
-  VideoPlayerController? _videoController;
+  Player? _player;
+  VideoController? _videoController;
   bool _showSecretChatOverlay = true;
   String? _conversationKey;
 
@@ -357,31 +360,41 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     });
   }
 
-  void _setSelectedFile(File file, MessageType type) {
+  Future<void> _setSelectedFile(File file, MessageType type) async {
+    // Dispose of any existing video controller
+    if (_player != null) {
+      _player!.dispose();
+      _player = null;
+    }
+    if (_videoController != null) {
+      _videoController = null;
+    }
+
     setState(() {
       _selectedFile = SelectedFile(file: file, type: type);
     });
 
-    // Initialize video controller if it's a video file
+    // Initialize video player if it's a video file
     if (type == MessageType.VIDEO) {
-      _videoController = VideoPlayerController.file(file);
-      _videoController!.initialize().then((_) {
-        setState(() {});
-      });
+      _player = Player();
+      _videoController = VideoController(_player!);
+      await _player!.open(Media('file://${file.path}'));
     }
   }
 
   void _clearSelectedFile() {
-    if (mounted) {
-      setState(() {
-        _selectedFile = null;
-      });
+    // Dispose of any existing video controller
+    if (_player != null) {
+      _player!.dispose();
+      _player = null;
     }
-
     if (_videoController != null) {
-      _videoController!.dispose();
       _videoController = null;
     }
+
+    setState(() {
+      _selectedFile = null;
+    });
   }
 
   String _decryptMessageContent(String encryptedContent) {
@@ -513,11 +526,10 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       case MessageType.VIDEO:
         return ClipRRect(
           borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
-          child:
-              _videoController != null && _videoController!.value.isInitialized
+          child: _player != null && _videoController != null
               ? AspectRatio(
-                  aspectRatio: _videoController!.value.aspectRatio,
-                  child: VideoPlayer(_videoController!),
+                  aspectRatio: 16 / 9, // Default aspect ratio
+                  child: Video(controller: _videoController!),
                 )
               : Container(
                   color: Colors.black,
@@ -1099,13 +1111,12 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     _audioRecorder.closeRecorder();
+    enableScreenshot(); // Make sure to re-enable screenshots when leaving
 
-    // Make sure to release video resources
-    if (_videoController != null) {
-      _videoController!.dispose();
-      _videoController = null;
+    // Dispose media kit resources
+    if (_player != null) {
+      _player!.dispose();
     }
-    enableScreenshot();
 
     super.dispose();
   }
