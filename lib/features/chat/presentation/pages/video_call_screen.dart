@@ -8,7 +8,12 @@ class VideoCallScreen extends StatefulWidget {
   final String image;
   final String name;
 
-  const VideoCallScreen({super.key, required this.call, required this.name, required this.image});
+  const VideoCallScreen({
+    super.key,
+    required this.call,
+    required this.name,
+    required this.image,
+  });
 
   @override
   State<VideoCallScreen> createState() => _VideoCallScreenState();
@@ -126,6 +131,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Widget _buildRemoteParticipantView(CallParticipantState participant) {
+    // Check if the remote participant has video enabled
+    final hasVideo = participant.publishedTracks.entries.any(
+      (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
+    );
+
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
@@ -135,10 +145,118 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(17),
-          child: StreamVideoRenderer(
-            call: widget.call,
-            participant: participant,
-            videoTrackType: SfuTrackType.video,
+          child: hasVideo
+              ? StreamVideoRenderer(
+                  call: widget.call,
+                  participant: participant,
+                  videoTrackType: SfuTrackType.video,
+                )
+              : _buildParticipantAvatar(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildParticipantAvatar() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF6C5CE7).withOpacity(0.8),
+            const Color(0xFF4834d4).withOpacity(0.9),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Profile image
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: widget.image.isNotEmpty
+                    ? Image.network(
+                        widget.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildDefaultAvatar();
+                        },
+                      )
+                    : _buildDefaultAvatar(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Participant name
+            Text(
+              widget.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Camera off indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.videocam_off,
+                    color: Colors.white.withOpacity(0.8),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Camera is off',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF6C5CE7),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          widget.name.isNotEmpty ? widget.name[0].toUpperCase() : 'U',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 48,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

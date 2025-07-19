@@ -44,7 +44,13 @@ class _FullScreenUrlVideoPlayerState extends State<FullScreenUrlVideoPlayer> {
 
   Future<void> _initializeVideo() async {
     try {
-      _player = Player();
+      _player = Player(
+        configuration: PlayerConfiguration(
+          // Try different audio configurations
+          libass: false, // Disable subtitles rendering if not needed
+          bufferSize: 32 * 1024 * 1024, // Increase buffer size
+        ),
+      );
       _controller = VideoController(_player);
 
       // Listen to player state changes

@@ -743,7 +743,10 @@ class _ChatScreenState extends State<ChatScreen> {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({'type': 'AUDIO', 'conversationId': widget.chatId}),
+      body: json.encode({
+        'type': isVideo ? 'VIDEO' : 'AUDIO',
+        'conversationId': widget.chatId,
+      }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
       callToken = jsonDecode(response.body)['token'];
@@ -772,8 +775,11 @@ class _ChatScreenState extends State<ChatScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  VideoCallScreen(call: call, name: widget.name, image: widget.imageUrl),
+              builder: (context) => VideoCallScreen(
+                call: call,
+                name: widget.name,
+                image: widget.imageUrl,
+              ),
             ),
           );
         } else {
