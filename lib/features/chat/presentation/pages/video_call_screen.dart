@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'dart:async';
 
 import '../../../../size_config.dart';
 
@@ -24,6 +25,73 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   double _localVideoWidth = 120.0;
   double _localVideoHeight = 160.0;
   Offset _localVideoPosition = const Offset(20, 100);
+
+  // Call state tracking
+  bool _isConnected = false;
+  bool _isMicrophoneEnabled = true;
+  bool _isSpeakerEnabled = true;
+
+  // Timer for call duration
+  Timer? _callTimer;
+  Duration _callDuration = Duration.zero;
+  DateTime? _callStartTime;
+
+  @override
+  void initState() {
+    super.initState();
+    // Join the call when the screen is initialized
+    widget.call.join();
+
+    // Listen for call state changes
+    widget.call.state.listen((callState) {
+      // Check if there are other participants (at least 2 including yourself)
+      final hasOtherParticipants = callState.callParticipants.length > 1;
+
+      if (hasOtherParticipants && !_isConnected) {
+        // Other participant joined, start timer
+        _isConnected = true;
+        _startCallTimer();
+      } else if (!hasOtherParticipants && _isConnected) {
+        // Other participant left, stop timer and reset
+        _isConnected = false;
+        _stopCallTimer();
+      }
+
+      // Update UI state based on actual call state
+      if (mounted) {
+        setState(() {
+          _isMicrophoneEnabled =
+              callState.localParticipant?.isAudioEnabled ?? true;
+        });
+      }
+    });
+  }
+
+  void _startCallTimer() {
+    _callStartTime = DateTime.now();
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _callDuration = DateTime.now().difference(_callStartTime!);
+        });
+      }
+    });
+  }
+
+  void _stopCallTimer() {
+    _callTimer?.cancel();
+    _callTimer = null;
+    _callDuration = Duration.zero;
+    _callStartTime = null;
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String hours = twoDigits(duration.inHours);
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$hours:$minutes:$seconds';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +127,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         // Header with privacy notice
         _buildHeader(),
 
-        // Main remote participant view
-        if (remoteParticipants.isNotEmpty)
-          _buildRemoteParticipantView(remoteParticipants.first),
+        // Main remote participant view - always show avatar, video when available
+        _buildRemoteParticipantView(
+          remoteParticipants.isNotEmpty ? remoteParticipants.first : null,
+        ),
 
         // Local participant view (draggable and resizable)
         if (localParticipant != null)
@@ -112,15 +181,17 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
+                  decoration: BoxDecoration(
+                    color: _isConnected ? Colors.green : Colors.orange,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Secure & Connected',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+                Text(
+                  _isConnected
+                      ? 'Connected • ${_formatDuration(_callDuration)}'
+                      : 'Connecting...',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ],
             ),
@@ -130,11 +201,14 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _buildRemoteParticipantView(CallParticipantState participant) {
+  Widget _buildRemoteParticipantView(CallParticipantState? participant) {
     // Check if the remote participant has video enabled
-    final hasVideo = participant.publishedTracks.entries.any(
-      (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
-    );
+    final hasVideo =
+        participant != null &&
+        participant.publishedTracks.entries.any(
+          (entry) =>
+              entry.key == SfuTrackType.video && participant.isVideoEnabled,
+        );
 
     return Positioned.fill(
       child: Container(
@@ -151,13 +225,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                   participant: participant,
                   videoTrackType: SfuTrackType.video,
                 )
-              : _buildParticipantAvatar(),
+              : _buildParticipantAvatar(participant != null),
         ),
       ),
     );
   }
 
-  Widget _buildParticipantAvatar() {
+  Widget _buildParticipantAvatar(bool isParticipantJoined) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -212,7 +286,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            // Camera off indicator
+            // Status indicator
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -223,13 +297,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.videocam_off,
+                    isParticipantJoined ? Icons.videocam_off : Icons.phone,
                     color: Colors.white.withOpacity(0.8),
                     size: 18,
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Camera is off',
+                    isParticipantJoined
+                        ? 'Camera is off'
+                        : 'Waiting to join...',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
@@ -246,8 +322,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Widget _buildDefaultAvatar() {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF6C5CE7),
+      decoration: const BoxDecoration(
+        color: Color(0xFF6C5CE7),
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -328,56 +404,139 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // Microphone toggle
           _buildControlButton(
-            icon: Icons.mic,
-            onPressed: () {
-              call.setMicrophoneEnabled(
-                enabled:
-                    !(call
-                            .state
-                            .valueOrNull
-                            ?.localParticipant
-                            ?.publishedTracks
-                            .entries
-                            .any((entry) => entry.key == SfuTrackType.audio) ??
-                        false),
-              );
+            icon: _isMicrophoneEnabled ? Icons.mic : Icons.mic_off,
+            isEnabled: _isMicrophoneEnabled,
+            onPressed: () async {
+              try {
+                if (_isMicrophoneEnabled) {
+                  await call.setMicrophoneEnabled(enabled: false);
+                } else {
+                  await call.setMicrophoneEnabled(enabled: true);
+                }
+                // State will be updated through the call state listener
+              } catch (e) {
+                debugPrint('Failed to toggle microphone: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to toggle microphone'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
           ),
+
+          // Speaker toggle
           _buildControlButton(
-            icon: Icons.volume_up,
-            onPressed: () {
-              // Toggle speaker
+            icon: _isSpeakerEnabled ? Icons.volume_up : Icons.volume_off,
+            isEnabled: _isSpeakerEnabled,
+            onPressed: () async {
+              try {
+                // For iOS, trigger the native audio route picker
+                if (Theme.of(context).platform == TargetPlatform.iOS) {
+                  await RtcMediaDeviceNotifier.instance
+                      .triggeriOSAudioRouteSelectionUI();
+                } else {
+                  // For Android, toggle speaker phone
+                  final audioOutputsResult = await RtcMediaDeviceNotifier
+                      .instance
+                      .audioOutputs();
+                  audioOutputsResult.fold(
+                    success: (audioOutputsSuccess) {
+                      final audioOutputs = audioOutputsSuccess.data;
+                      if (audioOutputs.isNotEmpty) {
+                        final currentOutput =
+                            call.state.value.audioOutputDevice;
+                        final nextDevice = audioOutputs.firstWhere(
+                          (device) => device.id != currentOutput?.id,
+                          orElse: () => audioOutputs.first,
+                        );
+                        call.setAudioOutputDevice(nextDevice).then((result) {
+                          result.fold(
+                            success: (success) {
+                              setState(() {
+                                _isSpeakerEnabled = !_isSpeakerEnabled;
+                              });
+                            },
+                            failure: (failure) {
+                              debugPrint(
+                                'Failed to set audio output: ${failure.error.message}',
+                              );
+                            },
+                          );
+                        });
+                      }
+                    },
+                    failure: (failure) {
+                      debugPrint(
+                        'Failed to get audio outputs: ${failure.error.message}',
+                      );
+                    },
+                  );
+                }
+              } catch (e) {
+                debugPrint('Error toggling speaker: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to toggle speaker'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
           ),
+
+          // Camera toggle
           _buildControlButton(
-            icon: Icons.videocam_off,
-            onPressed: () {
-              call.setCameraEnabled(
-                enabled:
-                    !(call
-                            .state
-                            .valueOrNull
-                            ?.localParticipant
-                            ?.publishedTracks
-                            .entries
-                            .any((entry) => entry.key == SfuTrackType.video) ??
-                        false),
-              );
+            icon: Icons.videocam,
+            onPressed: () async {
+              try {
+                final isVideoEnabled =
+                    call.state.valueOrNull?.localParticipant?.isVideoEnabled ??
+                    false;
+
+                if (isVideoEnabled) {
+                  await call.setCameraEnabled(enabled: false);
+                } else {
+                  await call.setCameraEnabled(enabled: true);
+                }
+              } catch (e) {
+                debugPrint('Failed to toggle camera: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to toggle camera'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
           ),
+
+          // Screen share
           _buildControlButton(
             icon: Icons.screen_share,
             onPressed: () {
-              // Toggle screen share
+              // Toggle screen share - implement as needed
             },
           ),
+
+          // End call
           _buildControlButton(
             icon: Icons.call_end,
             backgroundColor: Colors.red,
-            onPressed: () {
-              call.end();
-              Navigator.of(context).pop();
+            onPressed: () async {
+              await call.end();
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
             },
           ),
         ],
@@ -389,18 +548,34 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     required IconData icon,
     required VoidCallback onPressed,
     Color? backgroundColor,
+    bool? isEnabled,
   }) {
     return Container(
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.grey.withOpacity(0.3),
+        color:
+            backgroundColor ??
+            (isEnabled == true
+                ? Colors.white24
+                : isEnabled == false
+                ? Colors.white10
+                : Colors.grey.withOpacity(0.3)),
         shape: BoxShape.circle,
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.white),
+        icon: Icon(
+          icon,
+          color: isEnabled == false ? Colors.white54 : Colors.white,
+        ),
         onPressed: onPressed,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _callTimer?.cancel();
+    super.dispose();
   }
 }
