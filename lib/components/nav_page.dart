@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
-import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_call_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_livestream_screen.dart';
@@ -104,13 +104,107 @@ class _NavPageState extends State<NavPage> {
       case 'LIVE_STREAM_NOTIFICATION':
       case 'CHAT_NOTIFICATION':
       case 'GENERAL_NOTIFICATION':
-        // For foreground messages, just let the system notification show
-        // Navigation will happen when user taps the notification (onMessageOpenedApp)
-        debugPrint('Received $type in foreground - will navigate on tap');
+        // Show custom in-app notification banner
+        _showCustomNotificationBanner(message);
         break;
       default:
         debugPrint('Unknown notification type: $type');
     }
+  }
+
+  void _showCustomNotificationBanner(RemoteMessage message) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 10,
+        right: 10,
+        child: Dismissible(
+          key: Key('notification_${DateTime.now().millisecondsSinceEpoch}'),
+          direction: DismissDirection.up,
+          onDismissed: (direction) {
+            overlayEntry.remove();
+          },
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: kBlackBg,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: () {
+                  overlayEntry.remove();
+                  // Navigate based on notification type
+                  final type = message.data['type'];
+                  switch (type) {
+                    case 'LIVE_STREAM_NOTIFICATION':
+                      _navigateToLiveStreamScreen(message.data);
+                      break;
+                    case 'CHAT_NOTIFICATION':
+                      _navigateToChatScreen(message.data);
+                      break;
+                    case 'GENERAL_NOTIFICATION':
+                      _handleGeneralNotification(message.data);
+                      break;
+                  }
+                },
+                child: Row(
+                  children: [
+                    Icon(Icons.notifications, color: kLightPurple),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            message.data['notificationMessage'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => overlayEntry.remove(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    // Auto-remove after 5 seconds
+    Timer(const Duration(seconds: 5), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   void _handleBackgroundMessage(RemoteMessage message) {
@@ -235,7 +329,7 @@ class _NavPageState extends State<NavPage> {
     pageController.jumpToPage(2);
   }
 
-  Future<void> _navigateToPost(Map<String, dynamic> data) async{
+  Future<void> _navigateToPost(Map<String, dynamic> data) async {
     final postId = data['postId'];
     if (postId == null) {
       debugPrint('Post ID missing in notification data');
