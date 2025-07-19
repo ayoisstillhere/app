@@ -595,6 +595,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Start the timer
     _recordingDuration = Duration.zero;
     _recordingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (!mounted) return;
       setState(() {
         _recordingDuration = Duration(seconds: timer.tick);
       });
@@ -620,6 +621,18 @@ class _ChatScreenState extends State<ChatScreen> {
       _isRecording = false;
       _recordingDuration = Duration.zero;
     });
+  }
+
+  void _cancelRecording() {
+    if (_isRecording) {
+      setState(() {
+        _isRecording = false;
+        _recordingDuration = Duration.zero;
+      });
+      // Stop any recording processes
+      // Add your recording cancellation logic here
+      print("Recording cancelled");
+    }
   }
 
   // Add this method to format recording duration
@@ -1175,7 +1188,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         borderRadius: BorderRadius.circular(
                           getProportionateScreenWidth(40),
                         ),
-                        color: _isRecording ? Colors.grey[100] : inputFillColor,
+                        color: inputFillColor,
                       ),
                       child: Padding(
                         padding: EdgeInsets.only(
@@ -1190,7 +1203,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             if (!_isRecording)
                               Padding(
                                 padding: EdgeInsets.only(
-                                  bottom: getProportionateScreenHeight(5),
+                                  bottom: getProportionateScreenHeight(0),
                                 ),
                                 child: InkWell(
                                   onTap: _takePicture,
@@ -1215,7 +1228,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                               ),
 
-                            // Recording UI
+                            // Recording UI with slide to cancel
                             if (_isRecording) ...[
                               // Recording indicator with pulsing animation
                               Padding(
@@ -1244,39 +1257,86 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                               ),
 
-                              // Recording text and duration
+                              // Recording text and duration with slide to cancel functionality
                               Expanded(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: getProportionateScreenWidth(12),
-                                    vertical: getProportionateScreenHeight(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      // Slide to cancel text
-                                      Text(
-                                        "◀ Slide to cancel",
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize:
-                                              getProportionateScreenHeight(14),
-                                        ),
+                                child: GestureDetector(
+                                  onPanUpdate: (details) {
+                                    // Check if sliding left (negative delta)
+                                    if (details.delta.dx < -5) {
+                                      _cancelRecording();
+                                    }
+                                  },
+                                  onTap: () {
+                                    // Optional: cancel on tap as well
+                                    _cancelRecording();
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: getProportionateScreenWidth(
+                                        12,
                                       ),
-                                      Spacer(),
-                                      // Recording duration
-                                      Text(
-                                        _formatDuration(_recordingDuration),
-                                        style: TextStyle(
-                                          color: iconColor,
-                                          fontSize:
-                                              getProportionateScreenHeight(16),
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                      vertical: getProportionateScreenHeight(
+                                        12,
                                       ),
-                                    ],
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: inputFillColor,
+                                      borderRadius: BorderRadius.circular(
+                                        getProportionateScreenWidth(20),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Slide to cancel text with animation
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.chevron_left,
+                                                color: Colors.grey[600],
+                                                size:
+                                                    getProportionateScreenWidth(
+                                                      18,
+                                                    ),
+                                              ),
+                                              SizedBox(
+                                                width:
+                                                    getProportionateScreenWidth(
+                                                      4,
+                                                    ),
+                                              ),
+                                              Text(
+                                                "Slide to cancel",
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        14,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        // Recording duration
+                                        Text(
+                                          _formatDuration(_recordingDuration),
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize:
+                                                getProportionateScreenHeight(
+                                                  16,
+                                                ),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
+
+                              SizedBox(width: getProportionateScreenWidth(8)),
 
                               // Stop recording button
                               InkWell(
@@ -1391,9 +1451,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                         .isNotEmpty;
                                     return Padding(
                                       padding: EdgeInsets.only(
-                                        bottom: getProportionateScreenHeight(
-                                          14,
-                                        ),
+                                        bottom: getProportionateScreenHeight(0),
                                       ),
                                       child: Row(
                                         children: [
