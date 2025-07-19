@@ -590,6 +590,8 @@ class _ChatScreenState extends State<ChatScreen> {
     await _audioRecorder.startRecorder(
       toFile: _recordingPath,
       codec: Codec.aacADTS,
+      bitRate: 128000, // Higher bit rate for better quality
+      sampleRate: 44100, // Standard high-quality sample rate
     );
 
     // Start the timer
