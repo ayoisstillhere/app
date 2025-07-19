@@ -14,6 +14,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../constants.dart';
 import '../features/home/presentation/pages/post_details_screen.dart';
@@ -277,6 +278,7 @@ class _NavPageState extends State<NavPage> {
           roomId: data['callId'] ?? data['roomId'] ?? '',
           currentUser: user,
           imageUrl: data['initiatorImage'] ?? data['callerImage'] ?? '',
+          callType: data['callType'] ?? "AUDIO",
         ),
       ),
     );

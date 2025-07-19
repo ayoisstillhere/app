@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
+import 'package:app/features/chat/presentation/pages/video_call_screen.dart'; // Add this import
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:stream_video_flutter/stream_video_flutter.dart';
@@ -16,6 +17,7 @@ class IncomingCallScreen extends StatefulWidget {
   final String roomId;
   final UserEntity currentUser;
   final String imageUrl;
+  final String callType;
 
   const IncomingCallScreen({
     super.key,
@@ -23,6 +25,7 @@ class IncomingCallScreen extends StatefulWidget {
     required this.roomId,
     required this.currentUser,
     required this.imageUrl,
+    required this.callType,
   });
 
   @override
@@ -32,7 +35,7 @@ class IncomingCallScreen extends StatefulWidget {
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
   late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
-  bool _isVibrating = false; // Add this to track vibration state
+  bool _isVibrating = false;
 
   @override
   void initState() {
@@ -44,18 +47,15 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   @override
   void dispose() {
     _stopRingtone();
-    _stopVibration(); // Stop vibration when disposing
+    _stopVibration();
     _audioPlayer.dispose();
     super.dispose();
   }
 
   Future<void> _playRingtone() async {
     try {
-      // Check if file exists and can be loaded
       await _audioPlayer.setSource(AssetSource('sounds/ringtone.mp3'));
       await _audioPlayer.resume();
-
-      // Set to loop the ringtone
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.setVolume(0.8);
 
@@ -64,7 +64,6 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
       });
     } catch (e) {
       debugPrint('Error playing ringtone: $e');
-      // Try fallback sound or show error
     }
   }
 
@@ -79,18 +78,19 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
   Future<void> _stopVibration() async {
     if (_isVibrating) {
-      await Vibration.cancel(); // Stop vibration
+      await Vibration.cancel();
       setState(() {
         _isVibrating = false;
       });
     }
   }
 
-  // Combined method to stop both ringtone and vibration
   Future<void> _stopRingtoneAndVibration() async {
     await _stopRingtone();
     await _stopVibration();
   }
+
+  bool get _isVideoCall => widget.callType.toUpperCase() == 'VIDEO';
 
   @override
   Widget build(BuildContext context) {
@@ -100,17 +100,50 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Incoming Call',
-              style: TextStyle(color: Colors.white, fontSize: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _isVideoCall ? Icons.videocam : Icons.call,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Incoming ${_isVideoCall ? 'Video' : 'Audio'} Call',
+                  style: TextStyle(color: Colors.white, fontSize: 24),
+                ),
+              ],
             ),
             SizedBox(height: 20),
             // Animated avatar with pulsing effect
             AnimatedContainer(
               duration: Duration(milliseconds: 1000),
-              child: CircleAvatar(
-                radius: 50,
-                backgroundImage: NetworkImage(widget.imageUrl),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundImage: NetworkImage(widget.imageUrl),
+                  ),
+                  if (_isVideoCall)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.videocam,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             SizedBox(height: 20),
@@ -128,7 +161,11 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     shape: CircleBorder(),
                     padding: EdgeInsets.all(20),
                   ),
-                  icon: Icon(Icons.call, size: 30),
+                  icon: Icon(
+                    _isVideoCall ? Icons.videocam : Icons.call,
+                    size: 30,
+                    color: Colors.white,
+                  ),
                   label: Text(''),
                   onPressed: () {
                     _acceptCall();
@@ -140,7 +177,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     shape: CircleBorder(),
                     padding: EdgeInsets.all(20),
                   ),
-                  icon: Icon(Icons.call_end, size: 30),
+                  icon: Icon(Icons.call_end, size: 30, color: Colors.white),
                   label: Text(''),
                   onPressed: () {
                     _declineCall();
@@ -155,7 +192,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   }
 
   Future<void> _acceptCall() async {
-    await _stopRingtoneAndVibration(); // Stop both ringtone and vibration when accepting call
+    await _stopRingtoneAndVibration();
 
     final token = await AuthManager.getToken();
     String callToken;
@@ -166,6 +203,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         'Authorization': 'Bearer $token',
       },
     );
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       callToken = jsonDecode(response.body)['token'];
       StreamVideo.reset();
@@ -179,6 +217,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         ),
         userToken: callToken,
       );
+
       try {
         var call = StreamVideo.instance.makeCall(
           callType: StreamCallType.defaultType(),
@@ -187,15 +226,21 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
         await call.getOrCreate();
 
-        // Created ahead
+        // Navigate to appropriate call screen based on call type
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => VoiceCallScreen(
-              call: call,
-              image: widget.imageUrl,
-              name: widget.callerName,
-            ),
+            builder: (context) => _isVideoCall
+                ? VideoCallScreen(
+                    call: call,
+                    image: widget.imageUrl,
+                    name: widget.callerName,
+                  )
+                : VoiceCallScreen(
+                    call: call,
+                    image: widget.imageUrl,
+                    name: widget.callerName,
+                  ),
           ),
         );
       } catch (e) {
@@ -206,7 +251,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   }
 
   Future<void> _declineCall() async {
-    await _stopRingtoneAndVibration(); // Stop both ringtone and vibration when declining call
+    await _stopRingtoneAndVibration();
     Navigator.pop(context);
   }
 }

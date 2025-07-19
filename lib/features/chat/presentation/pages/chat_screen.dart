@@ -773,7 +773,7 @@ class _ChatScreenState extends State<ChatScreen> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  VideoCallScreen(call: call, name: widget.name),
+                  VideoCallScreen(call: call, name: widget.name, image: widget.imageUrl),
             ),
           );
         } else {

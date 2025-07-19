@@ -5,9 +5,10 @@ import '../../../../size_config.dart';
 
 class VideoCallScreen extends StatefulWidget {
   final Call call;
+  final String image;
   final String name;
 
-  const VideoCallScreen({super.key, required this.call, required this.name});
+  const VideoCallScreen({super.key, required this.call, required this.name, required this.image});
 
   @override
   State<VideoCallScreen> createState() => _VideoCallScreenState();
