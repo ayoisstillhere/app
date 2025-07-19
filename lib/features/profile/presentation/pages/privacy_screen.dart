@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
+import 'blocked_users_screen.dart';
 
 class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
@@ -86,7 +87,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   title: "Blocked Users",
                   onTap: () {
                     // Navigate to blocked users screen
-                    // Navigator.push(context, MaterialPageRoute(builder: (context) => BlockedUsersScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BlockedUsersScreen(),
+                      ),
+                    );
                   },
                 ),
 
