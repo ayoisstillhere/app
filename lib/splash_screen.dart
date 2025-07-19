@@ -128,9 +128,11 @@ class _SplashScreenState extends State<SplashScreen>
     _hasNavigated = true;
 
     // Navigate to main app
-    Navigator.of(
+    Navigator.pushAndRemoveUntil(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (context) => const NavPage()));
+      MaterialPageRoute(builder: (context) => const NavPage()),
+      (route) => false, // This removes all previous routes
+    );
 
     // Handle initial deep link after navigation is complete
     // Add a small delay to ensure the navigation is complete

@@ -45,9 +45,10 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
         await uploadImage(compressedFile, '/api/v1/user/upload-banner-image');
       }
 
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => NavPage()),
+        MaterialPageRoute(builder: (context) => const NavPage()),
+        (route) => false, // This removes all previous routes
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -244,11 +245,13 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                       : SkipButon(
                           text: 'Skip',
                           press: () {
-                            Navigator.push(
+                            Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => NavPage(),
+                                builder: (context) => const NavPage(),
                               ),
+                              (route) =>
+                                  false, // This removes all previous routes
                             );
                           },
                         ),

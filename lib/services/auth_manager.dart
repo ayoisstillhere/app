@@ -12,7 +12,6 @@ import '../constants.dart';
 import '../features/auth/domain/entities/user_entity.dart';
 
 class AuthManager {
-  static const String _storageTestKey = 'storage_test';
   static const String _tokenKey = 'auth_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _currentUserKey = 'currentUser';

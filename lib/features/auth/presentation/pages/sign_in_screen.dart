@@ -239,11 +239,14 @@ class _SignInScreenState extends State<SignInScreen> {
                                           refreshToken,
                                         );
 
-                                        Navigator.of(context).pushReplacement(
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 const NavPage(),
                                           ),
+                                          (route) =>
+                                              false, // This removes all previous routes
                                         );
                                       } else {
                                         ScaffoldMessenger.of(
