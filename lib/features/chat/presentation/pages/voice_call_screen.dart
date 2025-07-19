@@ -24,6 +24,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _isMicrophoneEnabled = true;
   bool _isSpeakerEnabled = true;
   bool _isCameraEnabled = false;
+  bool _isConnected = false; // Track connection status
 
   // Timer for call duration
   Timer? _callTimer;
@@ -36,11 +37,19 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     // Join the call when the screen is initialized
     widget.call.join();
 
-    // Listen for call state changes instead of starting timer immediately
+    // Listen for call state changes
     widget.call.state.listen((callState) {
       // Check if there are other participants (at least 2 including yourself)
-      if (callState.callParticipants.length > 1 && _callTimer == null) {
+      final hasOtherParticipants = callState.callParticipants.length > 1;
+
+      if (hasOtherParticipants && !_isConnected) {
+        // Other participant joined, start timer
+        _isConnected = true;
         _startCallTimer();
+      } else if (!hasOtherParticipants && _isConnected) {
+        // Other participant left, stop timer and reset
+        _isConnected = false;
+        _stopCallTimer();
       }
 
       // Update UI state based on actual call state
@@ -64,6 +73,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         });
       }
     });
+  }
+
+  void _stopCallTimer() {
+    _callTimer?.cancel();
+    _callTimer = null;
+    _callDuration = Duration.zero;
+    _callStartTime = null;
   }
 
   String _formatDuration(Duration duration) {
@@ -196,9 +212,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
               const SizedBox(height: 8),
 
-              // Call duration - now with working timer
+              // Call status - show "Connecting..." when not connected, timer when connected
               Text(
-                _formatDuration(_callDuration),
+                _isConnected ? _formatDuration(_callDuration) : 'Connecting...',
                 style: TextStyle(color: Colors.white70, fontSize: 16),
               ),
 
@@ -236,31 +252,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             icon: _isMicrophoneEnabled ? Icons.mic : Icons.mic_off,
             isEnabled: _isMicrophoneEnabled,
             onPressed: () async {
-              final result = await call.setMicrophoneEnabled(
-                enabled: !_isMicrophoneEnabled,
-              );
-              result.fold(
-                success: (success) {
-                  setState(() {
-                    _isMicrophoneEnabled = !_isMicrophoneEnabled;
-                  });
-                },
-                failure: (failure) {
-                  debugPrint(
-                    'Failed to toggle microphone: ${failure.error.message}',
+              try {
+                if (_isMicrophoneEnabled) {
+                  await call.setMicrophoneEnabled(enabled: false);
+                } else {
+                  await call.setMicrophoneEnabled(enabled: true);
+                }
+                // State will be updated through the call state listener
+              } catch (e) {
+                debugPrint('Failed to toggle microphone: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Unable to toggle microphone'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Unable to toggle microphone: ${failure.error.message}',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-              );
+                }
+              }
             },
           ),
 
@@ -329,36 +338,29 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             },
           ),
 
-          // Camera toggle
+          // Camera toggle - Fixed implementation
           _buildControlButton(
             icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
             isEnabled: _isCameraEnabled,
             onPressed: () async {
-              final result = await call.setCameraEnabled(
-                enabled: !_isCameraEnabled,
-              );
-              result.fold(
-                success: (success) {
-                  setState(() {
-                    _isCameraEnabled = !_isCameraEnabled;
-                  });
-                },
-                failure: (failure) {
-                  debugPrint(
-                    'Failed to toggle camera: ${failure.error.message}',
+              try {
+                if (_isCameraEnabled) {
+                  await call.setCameraEnabled(enabled: false);
+                } else {
+                  await call.setCameraEnabled(enabled: true);
+                }
+                // State will be updated through the call state listener
+              } catch (e) {
+                debugPrint('Failed to toggle camera: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Unable to toggle camera'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Unable to toggle camera: ${failure.error.message}',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-              );
+                }
+              }
             },
           ),
 
