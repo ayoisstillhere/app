@@ -18,6 +18,7 @@ import 'package:flutter_svg/svg.dart';
 import '../constants.dart';
 import '../features/onboarding/presentation/pages/onboarding_screen.dart'
     show OnboardingScreen;
+import '../services/secret_chat_encryption_service.dart';
 import '../size_config.dart';
 import 'package:http/http.dart' as http;
 
@@ -141,8 +142,7 @@ class _NavPageState extends State<NavPage> {
         isUserLoaded = true;
         currentUser = user;
       });
-      final secureStorage = FlutterSecureStorage();
-      await secureStorage.write(key: 'currentUser', value: jsonEncode(user));
+      await SecretChatEncryptionService.storeCurrentUser(user);
     } else {
       if (response.statusCode == 401) {
         await AuthManager.logout();

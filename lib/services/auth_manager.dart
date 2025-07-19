@@ -67,35 +67,8 @@ class AuthManager {
     }
   }
 
-  // Test if storage is working
-  static Future<bool> _isStorageWorking() async {
-    try {
-      // Write a test value
-      await _writeSecure(_storageTestKey, 'test');
-
-      // Read it back
-      final value = await _readSecure(_storageTestKey);
-
-      // Clean up test value
-      await _deleteSecure(_storageTestKey);
-
-      return value == 'test';
-    } catch (e) {
-      debugPrint('Storage test failed: $e');
-      return false;
-    }
-  }
-
   // Get token (with caching for performance)
   static Future<String?> getToken() async {
-    // Check if storage is working
-    if (!await _isStorageWorking()) {
-      debugPrint('Storage not working, clearing cached tokens');
-      _cachedToken = null;
-      _cachedRefreshToken = null;
-      return null;
-    }
-
     if (_cachedToken != null) return _cachedToken;
 
     _cachedToken = await _readSecure(_tokenKey);
