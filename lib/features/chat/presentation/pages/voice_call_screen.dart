@@ -42,6 +42,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       if (callState.callParticipants.length > 1 && _callTimer == null) {
         _startCallTimer();
       }
+
+      // Update UI state based on actual call state
+      if (mounted) {
+        setState(() {
+          _isMicrophoneEnabled =
+              callState.localParticipant?.isAudioEnabled ?? true;
+          _isCameraEnabled =
+              callState.localParticipant?.isVideoEnabled ?? false;
+        });
+      }
     });
   }
 
@@ -225,15 +235,32 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           _buildControlButton(
             icon: _isMicrophoneEnabled ? Icons.mic : Icons.mic_off,
             isEnabled: _isMicrophoneEnabled,
-            onPressed: () {
-              setState(() {
-                _isMicrophoneEnabled = !_isMicrophoneEnabled;
-              });
-              if (_isMicrophoneEnabled) {
-                call.setMicrophoneEnabled(enabled: true);
-              } else {
-                call.setMicrophoneEnabled(enabled: false);
-              }
+            onPressed: () async {
+              final result = await call.setMicrophoneEnabled(
+                enabled: !_isMicrophoneEnabled,
+              );
+              result.fold(
+                success: (success) {
+                  setState(() {
+                    _isMicrophoneEnabled = !_isMicrophoneEnabled;
+                  });
+                },
+                failure: (failure) {
+                  debugPrint(
+                    'Failed to toggle microphone: ${failure.error.message}',
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Unable to toggle microphone: ${failure.error.message}',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+              );
             },
           ),
 
@@ -241,11 +268,64 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           _buildControlButton(
             icon: _isSpeakerEnabled ? Icons.volume_up : Icons.volume_off,
             isEnabled: _isSpeakerEnabled,
-            onPressed: () {
-              setState(() {
-                _isSpeakerEnabled = !_isSpeakerEnabled;
-              });
-              // Handle speaker toggle
+            onPressed: () async {
+              try {
+                // For iOS, trigger the native audio route picker
+                if (Theme.of(context).platform == TargetPlatform.iOS) {
+                  await RtcMediaDeviceNotifier.instance
+                      .triggeriOSAudioRouteSelectionUI();
+                } else {
+                  // For Android, you can toggle speaker phone or manage audio output devices
+                  // This is a simplified toggle - you might want to implement more sophisticated logic
+                  final audioOutputsResult = await RtcMediaDeviceNotifier
+                      .instance
+                      .audioOutputs();
+                  audioOutputsResult.fold(
+                    success: (audioOutputsSuccess) {
+                      final audioOutputs = audioOutputsSuccess.data;
+                      if (audioOutputs.isNotEmpty) {
+                        // Find speaker or earpiece device and toggle
+                        final currentOutput =
+                            call.state.value.audioOutputDevice;
+                        // Toggle between available audio outputs
+                        final nextDevice = audioOutputs.firstWhere(
+                          (device) => device.id != currentOutput?.id,
+                          orElse: () => audioOutputs.first,
+                        );
+                        call.setAudioOutputDevice(nextDevice).then((result) {
+                          result.fold(
+                            success: (success) {
+                              setState(() {
+                                _isSpeakerEnabled = !_isSpeakerEnabled;
+                              });
+                            },
+                            failure: (failure) {
+                              print(
+                                'Failed to set audio output: ${failure.error.message}',
+                              );
+                            },
+                          );
+                        });
+                      }
+                    },
+                    failure: (failure) {
+                      print(
+                        'Failed to get audio outputs: ${failure.error.message}',
+                      );
+                    },
+                  );
+                }
+              } catch (e) {
+                print('Error toggling speaker: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Unable to toggle speaker'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
           ),
 
@@ -253,15 +333,32 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           _buildControlButton(
             icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
             isEnabled: _isCameraEnabled,
-            onPressed: () {
-              setState(() {
-                _isCameraEnabled = !_isCameraEnabled;
-              });
-              if (_isCameraEnabled) {
-                call.setCameraEnabled(enabled: true);
-              } else {
-                call.setCameraEnabled(enabled: false);
-              }
+            onPressed: () async {
+              final result = await call.setCameraEnabled(
+                enabled: !_isCameraEnabled,
+              );
+              result.fold(
+                success: (success) {
+                  setState(() {
+                    _isCameraEnabled = !_isCameraEnabled;
+                  });
+                },
+                failure: (failure) {
+                  debugPrint(
+                    'Failed to toggle camera: ${failure.error.message}',
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Unable to toggle camera: ${failure.error.message}',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+              );
             },
           ),
 
@@ -283,9 +380,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: () {
-                call.end();
-                Navigator.of(context).pop();
+              onPressed: () async {
+                await call.end();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
               },
               icon: const Icon(Icons.call_end, color: Colors.white, size: 28),
             ),
@@ -321,7 +420,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void dispose() {
     _callTimer?.cancel();
-    widget.call.end();
+    // Don't call end() here as it might interfere with navigation
+    // The call will be ended when the user presses the end call button
     super.dispose();
   }
 }
