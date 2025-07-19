@@ -562,10 +562,17 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
           (participant) => participant.userId != widget.currentUser.id,
         )
         .userId;
-    await http.delete(
-      Uri.parse('$baseUrl/api/v1/user/block/$userId'),
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/user/unblock/$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const NavPage()),
+      );
+    }
   }
 
   void _onDelete() async {
