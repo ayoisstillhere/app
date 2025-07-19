@@ -1,3 +1,4 @@
+import 'package:app/features/profile/presentation/pages/two_step_verification_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../constants.dart';
@@ -13,7 +14,7 @@ class PrivacyScreen extends StatefulWidget {
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
   bool _isPrivateAccount = false;
-  bool _isTwoStepVerification = false;
+  final bool _isTwoStepVerification = false;
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +22,6 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kGreyInputFillDark
         : kGreyInputBorder;
-
-    final textColor =
-        MediaQuery.of(context).platformBrightness == Brightness.dark
-        ? Colors.white
-        : Colors.black;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,20 +63,21 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   },
                 ),
 
-                // SizedBox(height: getProportionateScreenHeight(23)),
+                SizedBox(height: getProportionateScreenHeight(8)),
 
-                // Two-Step Verification Toggle
-                _buildToggleItem(
+                _buildMenuItem(
                   title: "Two-Step Verification",
-                  value: _isTwoStepVerification,
-                  onChanged: (value) {
-                    setState(() {
-                      _isTwoStepVerification = value;
-                    });
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TwoStepVerificationScreen(),
+                      ),
+                    );
                   },
                 ),
 
-                SizedBox(height: getProportionateScreenHeight(8)),
+                SizedBox(height: getProportionateScreenHeight(23)),
 
                 // Blocked Users Menu Item
                 _buildMenuItem(
