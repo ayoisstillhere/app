@@ -36,6 +36,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Duration _callDuration = Duration.zero;
   DateTime? _callStartTime;
 
+  // New: Track which participant is in the main view (true = local, false = remote)
+  bool _isLocalInMainView = false;
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +96,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     return '$hours:$minutes:$seconds';
   }
 
+  // New: Function to switch the main view
+  void _switchMainView() {
+    setState(() {
+      _isLocalInMainView = !_isLocalInMainView;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,14 +137,21 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         // Header with privacy notice
         _buildHeader(),
 
-        // Main remote participant view - always show avatar, video when available
-        _buildRemoteParticipantView(
-          remoteParticipants.isNotEmpty ? remoteParticipants.first : null,
-        ),
+        // Main view - shows either local or remote participant based on _isLocalInMainView
+        if (_isLocalInMainView)
+          _buildMainLocalParticipantView(localParticipant)
+        else
+          _buildMainRemoteParticipantView(
+            remoteParticipants.isNotEmpty ? remoteParticipants.first : null,
+          ),
 
-        // Local participant view (draggable and resizable)
-        if (localParticipant != null)
-          _buildLocalParticipantView(localParticipant),
+        // Small participant view - shows the opposite of main view
+        if (_isLocalInMainView)
+          _buildSmallRemoteParticipantView(
+            remoteParticipants.isNotEmpty ? remoteParticipants.first : null,
+          )
+        else
+          _buildSmallLocalParticipantView(localParticipant),
 
         // Control buttons
         _buildControlButtons(call),
@@ -201,8 +218,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _buildRemoteParticipantView(CallParticipantState? participant) {
-    // Check if the remote participant has video enabled
+  // Main view for remote participant
+  Widget _buildMainRemoteParticipantView(CallParticipantState? participant) {
     final hasVideo =
         participant != null &&
         participant.publishedTracks.entries.any(
@@ -211,27 +228,199 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         );
 
     return Positioned.fill(
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF6C5CE7), width: 3),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(17),
-          child: hasVideo
-              ? StreamVideoRenderer(
-                  call: widget.call,
-                  participant: participant,
-                  videoTrackType: SfuTrackType.video,
-                )
-              : _buildParticipantAvatar(participant != null),
+      child: GestureDetector(
+        onTap: _switchMainView,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF6C5CE7), width: 3),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: hasVideo
+                ? StreamVideoRenderer(
+                    call: widget.call,
+                    participant: participant,
+                    videoTrackType: SfuTrackType.video,
+                  )
+                : _buildRemoteParticipantAvatar(participant != null),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildParticipantAvatar(bool isParticipantJoined) {
+  // Main view for local participant
+  Widget _buildMainLocalParticipantView(CallParticipantState? participant) {
+    final hasVideo =
+        participant != null &&
+        participant.publishedTracks.entries.any(
+          (entry) =>
+              entry.key == SfuTrackType.video && participant.isVideoEnabled,
+        );
+
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: _switchMainView,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF6C5CE7), width: 3),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: hasVideo
+                ? StreamVideoRenderer(
+                    call: widget.call,
+                    participant: participant,
+                    videoTrackType: SfuTrackType.video,
+                  )
+                : _buildLocalParticipantAvatar(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Small draggable remote participant view
+  Widget _buildSmallRemoteParticipantView(CallParticipantState? participant) {
+    final hasVideo =
+        participant != null &&
+        participant.publishedTracks.entries.any(
+          (entry) =>
+              entry.key == SfuTrackType.video && participant.isVideoEnabled,
+        );
+
+    return Positioned(
+      left: _localVideoPosition.dx,
+      top: _localVideoPosition.dy,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _isLocalVideoExpanded = !_isLocalVideoExpanded;
+            if (_isLocalVideoExpanded) {
+              _localVideoWidth = 200.0;
+              _localVideoHeight = 267.0;
+            } else {
+              _localVideoWidth = 120.0;
+              _localVideoHeight = 160.0;
+            }
+          });
+          _switchMainView();
+        },
+        onPanUpdate: (details) {
+          setState(() {
+            _localVideoPosition = Offset(
+              (_localVideoPosition.dx + details.delta.dx).clamp(
+                0.0,
+                MediaQuery.of(context).size.width - _localVideoWidth,
+              ),
+              (_localVideoPosition.dy + details.delta.dy).clamp(
+                0.0,
+                MediaQuery.of(context).size.height - _localVideoHeight,
+              ),
+            );
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: _localVideoWidth,
+          height: _localVideoHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isLocalVideoExpanded
+                  ? const Color(0xFF6C5CE7)
+                  : Colors.white.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: hasVideo
+                ? StreamVideoRenderer(
+                    call: widget.call,
+                    participant: participant,
+                    videoTrackType: SfuTrackType.video,
+                  )
+                : _buildSmallRemoteParticipantAvatar(participant != null),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Small draggable local participant view
+  Widget _buildSmallLocalParticipantView(CallParticipantState? participant) {
+    final hasVideo =
+        participant != null &&
+        participant.publishedTracks.entries.any(
+          (entry) =>
+              entry.key == SfuTrackType.video && participant.isVideoEnabled,
+        );
+
+    return Positioned(
+      left: _localVideoPosition.dx,
+      top: _localVideoPosition.dy,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _isLocalVideoExpanded = !_isLocalVideoExpanded;
+            if (_isLocalVideoExpanded) {
+              _localVideoWidth = 200.0;
+              _localVideoHeight = 267.0;
+            } else {
+              _localVideoWidth = 120.0;
+              _localVideoHeight = 160.0;
+            }
+          });
+          _switchMainView();
+        },
+        onPanUpdate: (details) {
+          setState(() {
+            _localVideoPosition = Offset(
+              (_localVideoPosition.dx + details.delta.dx).clamp(
+                0.0,
+                MediaQuery.of(context).size.width - _localVideoWidth,
+              ),
+              (_localVideoPosition.dy + details.delta.dy).clamp(
+                0.0,
+                MediaQuery.of(context).size.height - _localVideoHeight,
+              ),
+            );
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: _localVideoWidth,
+          height: _localVideoHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isLocalVideoExpanded
+                  ? const Color(0xFF6C5CE7)
+                  : Colors.white.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: hasVideo
+                ? StreamVideoRenderer(
+                    call: widget.call,
+                    participant: participant,
+                    videoTrackType: SfuTrackType.video,
+                  )
+                : _buildSmallLocalParticipantAvatar(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRemoteParticipantAvatar(bool isParticipantJoined) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -268,10 +457,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                         widget.image,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultAvatar();
+                          return _buildDefaultRemoteAvatar();
                         },
                       )
-                    : _buildDefaultAvatar(),
+                    : _buildDefaultRemoteAvatar(),
               ),
             ),
             const SizedBox(height: 20),
@@ -320,7 +509,170 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _buildDefaultAvatar() {
+  // New: Avatar for local participant when camera is off (main view)
+  Widget _buildLocalParticipantAvatar() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF2ECC71).withOpacity(0.8),
+            const Color(0xFF27AE60).withOpacity(0.9),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Profile image or default avatar
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipOval(child: _buildDefaultLocalAvatar()),
+            ),
+            const SizedBox(height: 20),
+            // "You" label
+            const Text(
+              'You',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Status indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.videocam_off,
+                    color: Colors.white.withOpacity(0.8),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Camera is off',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // New: Small avatar for remote participant when in small view
+  Widget _buildSmallRemoteParticipantAvatar(bool isParticipantJoined) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF6C5CE7).withOpacity(0.8),
+            const Color(0xFF4834d4).withOpacity(0.9),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: ClipOval(
+                child: widget.image.isNotEmpty
+                    ? Image.network(
+                        widget.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildDefaultRemoteAvatar();
+                        },
+                      )
+                    : _buildDefaultRemoteAvatar(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // New: Small avatar for local participant when in small view
+  Widget _buildSmallLocalParticipantAvatar() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF2ECC71).withOpacity(0.8),
+            const Color(0xFF27AE60).withOpacity(0.9),
+          ],
+        ),
+      ),
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.videocam_off, color: Colors.white, size: 32),
+            SizedBox(height: 8),
+            Text(
+              'You',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultRemoteAvatar() {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF6C5CE7),
@@ -339,59 +691,14 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _buildLocalParticipantView(CallParticipantState participant) {
-    return Positioned(
-      left: _localVideoPosition.dx,
-      top: _localVideoPosition.dy,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _isLocalVideoExpanded = !_isLocalVideoExpanded;
-            if (_isLocalVideoExpanded) {
-              _localVideoWidth = 200.0;
-              _localVideoHeight = 267.0;
-            } else {
-              _localVideoWidth = 120.0;
-              _localVideoHeight = 160.0;
-            }
-          });
-        },
-        onPanUpdate: (details) {
-          setState(() {
-            _localVideoPosition = Offset(
-              (_localVideoPosition.dx + details.delta.dx).clamp(
-                0.0,
-                MediaQuery.of(context).size.width - _localVideoWidth,
-              ),
-              (_localVideoPosition.dy + details.delta.dy).clamp(
-                0.0,
-                MediaQuery.of(context).size.height - _localVideoHeight,
-              ),
-            );
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: _localVideoWidth,
-          height: _localVideoHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isLocalVideoExpanded
-                  ? const Color(0xFF6C5CE7)
-                  : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: StreamVideoRenderer(
-              call: widget.call,
-              participant: participant,
-              videoTrackType: SfuTrackType.video,
-            ),
-          ),
-        ),
+  Widget _buildDefaultLocalAvatar() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF2ECC71),
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Icon(Icons.person, color: Colors.white, size: 48),
       ),
     );
   }
