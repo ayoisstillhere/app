@@ -339,30 +339,30 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           ),
 
           // Camera toggle - Fixed implementation
-          _buildControlButton(
-            icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
-            isEnabled: _isCameraEnabled,
-            onPressed: () async {
-              try {
-                if (_isCameraEnabled) {
-                  await call.setCameraEnabled(enabled: false);
-                } else {
-                  await call.setCameraEnabled(enabled: true);
-                }
-                // State will be updated through the call state listener
-              } catch (e) {
-                debugPrint('Failed to toggle camera: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Unable to toggle camera'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
+          // _buildControlButton(
+          //   icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
+          //   isEnabled: _isCameraEnabled,
+          //   onPressed: () async {
+          //     try {
+          //       if (_isCameraEnabled) {
+          //         await call.setCameraEnabled(enabled: false);
+          //       } else {
+          //         await call.setCameraEnabled(enabled: true);
+          //       }
+          //       // State will be updated through the call state listener
+          //     } catch (e) {
+          //       debugPrint('Failed to toggle camera: $e');
+          //       if (mounted) {
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           SnackBar(
+          //             content: Text('Unable to toggle camera'),
+          //             backgroundColor: Colors.red,
+          //           ),
+          //         );
+          //       }
+          //     }
+          //   },
+          // ),
 
           // Add contact or notes (optional)
           _buildControlButton(
