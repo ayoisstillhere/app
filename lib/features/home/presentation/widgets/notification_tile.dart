@@ -1,7 +1,6 @@
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -82,7 +81,7 @@ class NotificationTile extends StatelessWidget {
           ),
         ),
         Text(
-          timeago.format(time),
+          _formatTime(time),
           style: TextStyle(
             fontWeight: FontWeight.normal,
             fontSize: getProportionateScreenWidth(12),
@@ -135,5 +134,18 @@ class NotificationTile extends StatelessWidget {
               ),
       ],
     );
+  }
+}
+
+String _formatTime(DateTime timestamp) {
+  final now = DateTime.now();
+  final difference = now.difference(timestamp);
+
+  if (difference.inMinutes < 60) {
+    return '${difference.inMinutes}m';
+  } else if (difference.inHours < 24) {
+    return '${difference.inHours}h';
+  } else {
+    return '${difference.inDays}d';
   }
 }

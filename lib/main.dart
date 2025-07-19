@@ -43,9 +43,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // This runs when app is in background or terminated
   await Firebase.initializeApp();
   debugPrint("Handling background message: ${message.messageId}");
-  if (message.data['type'] == 'CALL_NOTIFICATION') {
-    // Handle background notification logic here
+
+  final type = message.data['type'];
+
+  // For call notifications, you might want to show a heads-up notification
+  // or trigger a local notification that can wake the app
+  if (type == 'CALL_NOTIFICATION') {
+    // Handle call notification in background
+    // You could show a local notification here if needed
+    debugPrint('Call notification received in background');
   }
+
+  // Other notifications are handled when the app opens
+  debugPrint('Background notification type: $type');
 }
 
 Future<void> initFCM() async {

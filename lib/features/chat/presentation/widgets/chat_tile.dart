@@ -5,7 +5,6 @@ import 'package:app/features/chat/presentation/pages/secret_chat_screen.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
@@ -184,7 +183,7 @@ class _ChatTileState extends State<ChatTile> {
                             widget.showCheckbox
                                 ? Container()
                                 : Text(
-                                    timeago.format(widget.time),
+                                    _formatTime(widget.time),
                                     style: TextStyle(
                                       fontWeight: FontWeight.w500,
                                       fontSize: getProportionateScreenHeight(
@@ -328,6 +327,19 @@ class _ChatTileState extends State<ChatTile> {
           content: Text(e.toString(), style: TextStyle(color: Colors.white)),
         ),
       );
+    }
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else {
+      return '${difference.inDays}d';
     }
   }
 }

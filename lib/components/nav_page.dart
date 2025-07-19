@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_call_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_livestream_screen.dart';
@@ -15,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../constants.dart';
+import '../features/home/presentation/pages/post_details_screen.dart';
 import '../features/onboarding/presentation/pages/onboarding_screen.dart'
     show OnboardingScreen;
 import '../services/secret_chat_encryption_service.dart';
@@ -41,42 +43,146 @@ class _NavPageState extends State<NavPage> {
     super.initState();
     _getProfile();
     navPages = [];
+    _setupNotificationHandling();
+  }
+
+  void _setupNotificationHandling() {
+    // Handle notification when app is launched from terminated state
     FirebaseMessaging.instance.getInitialMessage().then((message) {
-      if (message?.data['type'] == 'CALL_NOTIFICATION') {
-        debugPrint('Got a call notification');
-        _navigateToCallScreen(message!.data);
+      if (message != null) {
+        _handleInitialMessage(message);
       }
     });
 
+    // Handle notifications when app is in foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (message.data['type'] == 'CALL_NOTIFICATION') {
-        debugPrint('Got a call notification');
-        _navigateToCallScreen(message.data);
-      }
-      if (message.data['type'] == 'LIVE_STREAM_NOTIFICATION') {
-        debugPrint('Got a live stream notification');
-        _navigateToLiveStreamScreen(message.data);
-      }
+      _handleForegroundMessage(message);
     });
 
+    // Handle notifications when app is opened from background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (message.data['type'] == 'CALL_NOTIFICATION') {
-        debugPrint('Got a call notification');
-        _navigateToCallScreen(message.data);
-      }
+      _handleBackgroundMessage(message);
     });
+  }
+
+  void _handleInitialMessage(RemoteMessage message) {
+    debugPrint(
+      'App opened from terminated state with message: ${message.data}',
+    );
+
+    final type = message.data['type'];
+
+    switch (type) {
+      case 'CALL_NOTIFICATION':
+        // Always show call screen immediately for calls, even from terminated state
+        _navigateToCallScreen(message.data);
+        break;
+      case 'LIVE_STREAM_NOTIFICATION':
+        _navigateToLiveStreamScreen(message.data);
+        break;
+      case 'CHAT_NOTIFICATION':
+        _navigateToChatScreen(message.data);
+        break;
+      case 'GENERAL_NOTIFICATION':
+        _handleGeneralNotification(message.data);
+        break;
+      default:
+        debugPrint('Unknown notification type: $type');
+    }
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint('Foreground message received: ${message.data}');
+
+    final type = message.data['type'];
+
+    switch (type) {
+      case 'CALL_NOTIFICATION':
+        // Show incoming call UI immediately when app is open
+        _navigateToCallScreen(message.data);
+        break;
+      case 'LIVE_STREAM_NOTIFICATION':
+      case 'CHAT_NOTIFICATION':
+      case 'GENERAL_NOTIFICATION':
+        // For foreground messages, just let the system notification show
+        // Navigation will happen when user taps the notification (onMessageOpenedApp)
+        debugPrint('Received $type in foreground - will navigate on tap');
+        break;
+      default:
+        debugPrint('Unknown notification type: $type');
+    }
+  }
+
+  void _handleBackgroundMessage(RemoteMessage message) {
+    debugPrint('App opened from background with message: ${message.data}');
+
+    final type = message.data['type'];
+
+    switch (type) {
+      case 'CALL_NOTIFICATION':
+        _navigateToCallScreen(message.data);
+        break;
+      case 'LIVE_STREAM_NOTIFICATION':
+        _navigateToLiveStreamScreen(message.data);
+        break;
+      case 'CHAT_NOTIFICATION':
+        _navigateToChatScreen(message.data);
+        break;
+      case 'GENERAL_NOTIFICATION':
+        _handleGeneralNotification(message.data);
+        break;
+      default:
+        debugPrint('Unknown notification type: $type');
+    }
+  }
+
+  void _handleGeneralNotification(Map<String, dynamic> data) async {
+    final notificationTypeStr = data['notificationType'];
+    if (notificationTypeStr == null) {
+      debugPrint('General notification missing notificationType');
+      return;
+    }
+
+    try {
+      final notificationType = NotificationType.values.firstWhere(
+        (e) => e.name == notificationTypeStr,
+      );
+
+      switch (notificationType) {
+        case NotificationType.LIKE:
+        case NotificationType.COMMENT:
+        case NotificationType.REPLY:
+        case NotificationType.REPOST:
+        case NotificationType.MENTION:
+          // Navigate to the specific post
+          await _navigateToPost(data);
+          break;
+        case NotificationType.FOLLOW:
+          // Navigate to the follower's profile
+          _navigateToProfile(data);
+          break;
+        case NotificationType.LIVE:
+          // Navigate to live stream
+          _navigateToLiveStreamScreen(data);
+          break;
+      }
+    } catch (e) {
+      debugPrint('Unknown notification type: $notificationTypeStr');
+    }
   }
 
   void _navigateToCallScreen(Map<String, dynamic> data) async {
     final UserEntity? user = await AuthManager.getCurrentUser();
+    if (user == null) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => IncomingCallScreen(
-          callerName: data['initiatorName'],
-          roomId: data['callId'],
-          currentUser: user!,
-          imageUrl: data['initiatorImage'],
+          callerName: data['initiatorName'] ?? data['callerName'] ?? 'Unknown',
+          roomId: data['callId'] ?? data['roomId'] ?? '',
+          currentUser: user,
+          imageUrl: data['initiatorImage'] ?? data['callerImage'] ?? '',
         ),
       ),
     );
@@ -84,15 +190,88 @@ class _NavPageState extends State<NavPage> {
 
   void _navigateToLiveStreamScreen(Map<String, dynamic> data) async {
     final UserEntity? user = await AuthManager.getCurrentUser();
+    if (user == null) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => IncomingLivestreamScreen(
-          streamerName: data['initiatorFullName'],
-          streamTitle: "${data['initiatorName']} Live Stream",
-          roomId: data['liveStreamId'],
-          currentUser: user!,
-          imageUrl: data['initiatorProfileImage'],
+          streamerName:
+              data['initiatorFullName'] ?? data['streamerName'] ?? 'Unknown',
+          streamTitle:
+              data['streamTitle'] ??
+              "${data['initiatorName'] ?? 'Unknown'} Live Stream",
+          roomId: data['liveStreamId'] ?? data['streamId'] ?? '',
+          currentUser: user,
+          imageUrl:
+              data['initiatorProfileImage'] ?? data['streamerImage'] ?? '',
+        ),
+      ),
+    );
+  }
+
+  void _navigateToChatScreen(Map<String, dynamic> data) async {
+    final UserEntity? user = await AuthManager.getCurrentUser();
+    if (user == null) return;
+
+    // Navigate to specific chat or chat list
+    final conversationId = data['conversationId'];
+    final senderId = data['senderId'];
+
+    if (conversationId != null && senderId != null) {
+      // Navigate to specific chat - you'll need to implement this screen
+      // For now, navigate to chat list
+      _navigateToChatList();
+    } else {
+      _navigateToChatList();
+    }
+  }
+
+  void _navigateToChatList() {
+    // Navigate to chat tab
+    setState(() {
+      _page = 2;
+    });
+    pageController.jumpToPage(2);
+  }
+
+  Future<void> _navigateToPost(Map<String, dynamic> data) async{
+    final postId = data['postId'];
+    if (postId == null) {
+      debugPrint('Post ID missing in notification data');
+      return;
+    }
+    UserEntity? user = await AuthManager.getCurrentUser();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            PostDetailsScreen(postId: postId!, currentUser: user!),
+      ),
+    );
+  }
+
+  void _navigateToProfile(Map<String, dynamic> data) {
+    final userId = data['userId'];
+    final userName = data['userName'];
+
+    if (userId == null && userName == null) {
+      debugPrint('User information missing in notification data');
+      return;
+    }
+
+    // Navigate to the follower's profile
+    // You'll need to implement profile navigation with user ID/username
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          isVerified: false,
+          isFromNav: false,
+          userName: userName ?? '',
+          currentUser: currentUser!,
+          // Add userId parameter if your ProfileScreen supports it
         ),
       ),
     );

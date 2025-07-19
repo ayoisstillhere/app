@@ -2,7 +2,6 @@ import 'package:app/features/home/presentation/pages/post_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:timeago/timeago.dart' as timeago;
 import 'package:video_player/video_player.dart';
 
 import 'package:app/components/social_text.dart';
@@ -481,7 +480,7 @@ class _PostCardState extends State<PostCard> {
                               ),
                               SizedBox(width: getProportionateScreenWidth(2)),
                               Text(
-                                timeago.format(widget.postTime),
+                                _formatTime(widget.postTime),
                                 style: Theme.of(context).textTheme.bodyMedium!
                                     .copyWith(
                                       fontWeight: FontWeight.w500,
@@ -552,7 +551,7 @@ class _PostCardState extends State<PostCard> {
                           ),
                           SizedBox(width: getProportionateScreenWidth(2)),
                           Text(
-                            timeago.format(widget.postTime),
+                            _formatTime(widget.postTime),
                             style: Theme.of(context).textTheme.bodyMedium!
                                 .copyWith(
                                   fontWeight: FontWeight.w500,
@@ -843,5 +842,18 @@ class _PostCardState extends State<PostCard> {
         ),
       ),
     );
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else {
+      return '${difference.inDays}d';
+    }
   }
 }

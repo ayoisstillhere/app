@@ -92,12 +92,13 @@ const String getStreamKey = "q25hn6c2zjg3";
 const String getStreamSecret =
     "dsj4r4dcddeeakzqgnrdj8sdnsuqjz3c5m594ub9qugeekq7wbr8tr965qb7fbsp";
 
-
-// ayodelefagbami@Ayodeles-MacBook-Air android % ./gradlew --stop           
+// ayodelefagbami@Ayodeles-MacBook-Air android % ./gradlew --stop
 
 // Stopping Daemon(s)
 // 1 Daemon stopped
-// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf android/.gradle     
+// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf android/.gradle
 
-// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf ~/.gradle/caches/  
+// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf ~/.gradle/caches/
 // 8461
+
+enum NotificationType { LIKE, COMMENT, REPLY, REPOST, MENTION, FOLLOW, LIVE }
