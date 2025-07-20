@@ -293,7 +293,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
     final token = await AuthManager.getToken();
     String streamToken;
     final response = await http.post(
-      Uri.parse('$baseUrl/api/v1/live-streams/${widget.roomId}/join'),
+      Uri.parse('$baseUrl/api/v1/calls/live-stream/${widget.roomId}/join'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -317,7 +317,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
       try {
         final call = StreamVideo.instance.makeCall(
           callType: StreamCallType.liveStream(),
-          id: jsonDecode(response.body)['livestream']['roomId'],
+          id: jsonDecode(response.body)['liveStream']['roomId'],
         );
 
         final result = await call.getOrCreate();
