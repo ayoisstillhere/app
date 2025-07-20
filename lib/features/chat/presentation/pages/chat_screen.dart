@@ -108,6 +108,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _initializeServices();
     BlocProvider.of<ChatCubit>(context).getTextMessages();
     _markAllAssRead();
+    _scrollToBottom();
   }
 
   void _initializeServices() {
