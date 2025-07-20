@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -56,6 +57,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   final double _localVideoHeight = 160.0;
   Offset _localVideoPosition = const Offset(20, 100);
 
+  //Screen Share
+  bool _isScreenSharingEnabled = false;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +86,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         setState(() {
           _isMicrophoneEnabled =
               callState.localParticipant?.isAudioEnabled ?? true;
+          _isScreenSharingEnabled =
+              callState.localParticipant?.isScreenShareEnabled ?? false;
         });
       }
     });
@@ -415,6 +421,12 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
     );
 
+    final hasScreenShare = participant.publishedTracks.entries.any(
+      (entry) =>
+          entry.key == SfuTrackType.screenShare &&
+          participant.isScreenShareEnabled,
+    );
+
     return GestureDetector(
       onTap: () => _focusParticipant(participant.userId),
       child: Container(
@@ -433,7 +445,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             children: [
               // Video or avatar
               Positioned.fill(
-                child: hasVideo
+                child: hasScreenShare
+                    ? StreamVideoRenderer(
+                        call: widget.call,
+                        participant: participant,
+                        videoTrackType: SfuTrackType.screenShare,
+                      )
+                    : hasVideo
                     ? StreamVideoRenderer(
                         call: widget.call,
                         participant: participant,
@@ -441,6 +459,25 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                       )
                     : _buildParticipantAvatar(participant, isSmall: true),
               ),
+
+              // Screen share indicator
+              if (hasScreenShare)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Icon(
+                      Icons.screen_share,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  ),
+                ),
 
               // Participant info overlay
               Positioned(
@@ -523,6 +560,12 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
     );
 
+    final hasScreenShare = participant.publishedTracks.entries.any(
+      (entry) =>
+          entry.key == SfuTrackType.screenShare &&
+          participant.isScreenShareEnabled,
+    );
+
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
@@ -537,13 +580,58 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(17),
-          child: hasVideo
-              ? StreamVideoRenderer(
-                  call: widget.call,
-                  participant: participant,
-                  videoTrackType: SfuTrackType.video,
-                )
-              : _buildParticipantAvatar(participant, isSmall: false),
+          child: Stack(
+            children: [
+              // Screen share takes priority over video
+              Positioned.fill(
+                child: hasScreenShare
+                    ? StreamVideoRenderer(
+                        call: widget.call,
+                        participant: participant,
+                        videoTrackType: SfuTrackType.screenShare,
+                      )
+                    : hasVideo
+                    ? StreamVideoRenderer(
+                        call: widget.call,
+                        participant: participant,
+                        videoTrackType: SfuTrackType.video,
+                      )
+                    : _buildParticipantAvatar(participant, isSmall: false),
+              ),
+
+              // Screen share indicator
+              if (hasScreenShare)
+                Positioned(
+                  top: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.screen_share, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Screen sharing',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -603,6 +691,12 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
     );
 
+    final hasScreenShare = participant.publishedTracks.entries.any(
+      (entry) =>
+          entry.key == SfuTrackType.screenShare &&
+          participant.isScreenShareEnabled,
+    );
+
     return Container(
       width: 80,
       height: 100,
@@ -620,7 +714,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: hasVideo
+              child: hasScreenShare
+                  ? StreamVideoRenderer(
+                      call: widget.call,
+                      participant: participant,
+                      videoTrackType: SfuTrackType.screenShare,
+                    )
+                  : hasVideo
                   ? StreamVideoRenderer(
                       call: widget.call,
                       participant: participant,
@@ -628,6 +728,25 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                     )
                   : _buildParticipantAvatar(participant, isSmall: true),
             ),
+
+            // Screen share indicator
+            if (hasScreenShare)
+              Positioned(
+                top: 2,
+                right: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.screen_share,
+                    color: Colors.white,
+                    size: 8,
+                  ),
+                ),
+              ),
 
             // Name overlay
             Positioned(
@@ -947,9 +1066,49 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
           // Screen share
           _buildControlButton(
-            icon: Icons.screen_share,
-            onPressed: () {
-              // Toggle screen share - implement as needed
+            icon: _isScreenSharingEnabled
+                ? Icons.stop_screen_share
+                : Icons.screen_share,
+            isEnabled: _isScreenSharingEnabled,
+            onPressed: () async {
+              try {
+                if (_isScreenSharingEnabled) {
+                  // Stop screen sharing
+                  await call.setScreenShareEnabled(enabled: false);
+                  if (CurrentPlatform.isAndroid) {
+                    await StreamBackgroundService()
+                        .stopScreenSharingNotificationService(call.id);
+                  } else {
+                    // TODO: IOS Stop screen sharing
+                  }
+                } else {
+                  // Start screen sharing
+                  if (CurrentPlatform.isAndroid) {
+                    // Check if the user has granted permission to share their screen
+                    if (!await call.requestScreenSharePermission()) {
+                      return;
+                    }
+                    // Start the screen sharing notification service
+                    await StreamBackgroundService()
+                        .startScreenSharingNotificationService(call);
+
+                    await call.setScreenShareEnabled(enabled: true);
+                  } else {
+                    // TODO: IOS Start screen sharing
+                    await widget.call.setScreenShareEnabled(enabled: true);
+                  }
+                }
+              } catch (e) {
+                debugPrint('Failed to toggle screen share: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to toggle screen share'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
           ),
 
