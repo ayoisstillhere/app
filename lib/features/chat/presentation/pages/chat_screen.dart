@@ -194,11 +194,7 @@ class _ChatScreenState extends State<ChatScreen> {
               )['isConversationBlockedForMe'],
             ),
           ),
-        ).then((result) {
-          if (result != null && result['recreateSecretChat'] == true) {
-            _createSecretChat(deleteFormerChat: true);
-          }
-        });
+        );
       }
     } catch (e) {
       debugPrint(e.toString());

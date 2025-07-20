@@ -96,12 +96,7 @@ class _ChatTileState extends State<ChatTile> {
                 isConversationBlockedForMe: widget.isConversationBlockedForMe,
               ),
             ),
-          ).then((result) {
-            if (result != null && result['recreateSecretChat'] == true) {
-              // Call a method to recreate the secret chat
-              _recreateSecretChat(deleteFormerChat: true);
-            }
-          });
+          );
         } else {
           Navigator.push(
             context,

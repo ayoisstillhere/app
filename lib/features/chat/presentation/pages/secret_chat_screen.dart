@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:app/features/chat/presentation/pages/video_call_screen.dart';
 import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fast_rsa/fast_rsa.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -116,6 +117,77 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     disableScreenshot();
   }
 
+  Future<void> _recreateSecretChat({bool deleteFormerChat = true}) async {
+    try {
+      if (widget.isGroup) {
+        return;
+      }
+      final token = await AuthManager.getToken();
+      final uri = Uri.parse('$baseUrl/api/v1/chat/secret-conversations');
+
+      // Generate a conversation key for end-to-end encryption
+      final conversationKey = _encryptionService.generateConversationKey();
+
+      // Get the current user's participant data
+      final myParticipant = widget.participants.firstWhere(
+        (participant) => participant.userId == widget.currentUser.id,
+        orElse: () => throw Exception("Current user not found in participants"),
+      );
+
+      // Get the other participant's data
+      final otherParticipant = widget.participants.firstWhere(
+        (participant) => participant.userId != widget.currentUser.id,
+        orElse: () => throw Exception("Other participant not found"),
+      );
+
+      // Get both public keys
+      final myPublicKey = myParticipant.user.publicKey;
+      final otherPublicKey = otherParticipant.user.publicKey;
+
+      // Use RSA to encrypt the conversation key with both public keys
+      final myEncryptedKey = await RSA.encryptPKCS1v15(
+        conversationKey,
+        myPublicKey!,
+      );
+      final otherEncryptedKey = await RSA.encryptPKCS1v15(
+        conversationKey,
+        otherPublicKey!,
+      );
+
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
+
+      final body = jsonEncode({
+        "participantUserIds": widget.participants.map((e) => e.userId).toList(),
+        "myConversationKey": myEncryptedKey,
+        "otherParticipantConversationKey": otherEncryptedKey,
+        "deleteFormerChat": deleteFormerChat,
+      });
+
+      final response = await http.post(uri, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Successfully recreated the chat
+        final responseData = jsonDecode(response.body);
+
+        // Update the current conversation key
+        _conversationKey = conversationKey;
+
+        // Refresh messages
+        BlocProvider.of<ChatCubit>(context).getTextMessages();
+
+        // _showErrorSnackBar("Secret chat recreated successfully");
+      } else {
+        _showErrorSnackBar("Failed to recreate secret chat");
+      }
+    } catch (e) {
+      print('Error recreating secret chat: $e');
+      _showErrorSnackBar("Error recreating secret chat");
+    }
+  }
+
   void disableScreenshot() async {
     bool result = await _noScreenshot.screenshotOff();
     debugPrint('Screenshot Off: $result');
@@ -140,11 +212,9 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     } catch (e) {
       print('Error decrypting conversation key: $e');
 
-      // Navigate back to chat screen and recreate secret chat
       if (mounted) {
-        // We need to navigate back and call the _createSecretChat method
-        // with deleteFormerChat = true
-        Navigator.pop(context, {'recreateSecretChat': true});
+        // Instead of navigating back, recreate the secret chat directly
+        await _recreateSecretChat(deleteFormerChat: true);
       }
     }
   }
