@@ -3,17 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
+import '../../../chat/data/models/get_messages_response_model.dart';
+import '../../../chat/domain/entities/get_messages_response_entity.dart';
+import '../../../auth/domain/entities/user_entity.dart';
+import '../widgets/add_person_dialog.dart';
 
 class VoiceCallScreen extends StatefulWidget {
   final Call call;
   final String image;
   final String name;
+  final UserEntity currentUser;
 
   const VoiceCallScreen({
     super.key,
     required this.call,
     required this.image,
     required this.name,
+    required this.currentUser,
   });
 
   @override
@@ -30,6 +41,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   Timer? _callTimer;
   Duration _callDuration = Duration.zero;
   DateTime? _callStartTime;
+
+  // Conversations state
+  List<Conversation> _allConversations = [];
+  bool _isLoadingConversations = false;
 
   @override
   void initState() {
@@ -62,6 +77,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         });
       }
     });
+
+    // Fetch conversations when screen initializes
+    _fetchAllConversations();
   }
 
   void _startCallTimer() {
@@ -88,6 +106,109 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     String minutes = twoDigits(duration.inMinutes.remainder(60));
     String seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$hours:$minutes:$seconds';
+  }
+
+  // Fetch all conversations from the API
+  Future<void> _fetchAllConversations() async {
+    setState(() => _isLoadingConversations = true);
+
+    try {
+      final token = await AuthManager.getToken();
+      const int pageSize = 50; // Fetch more conversations for selection
+      String url =
+          '$baseUrl/api/v1/chat/conversations?page=1&limit=$pageSize&isSecret=false';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = GetMessageResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        setState(() {
+          _allConversations = responseData.conversations
+              .where(
+                (conversation) =>
+                    conversation.lastMessage != null &&
+                    !conversation.isConversationArchivedForMe,
+              )
+              .toList();
+        });
+      } else {
+        _showErrorSnackBar('Failed to load conversations: ${response.body}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load conversations: $e');
+    } finally {
+      setState(() => _isLoadingConversations = false);
+    }
+  }
+
+  // Show dialog to select a person to add to call (single selection)
+  void _showAddPersonDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AddPersonDialog(
+          conversations: _allConversations,
+          currentUser: widget.currentUser,
+          isLoading: _isLoadingConversations,
+          onAddPerson: _addPersonToCall,
+          onRefresh: _fetchAllConversations,
+        );
+      },
+    );
+  }
+
+  // API call to add a person to call (single conversation)
+  Future<void> _addPersonToCall(String conversationId) async {
+    // TODO: Implement API call to add conversation to the current call
+    // This should call your backend endpoint that adds the selected conversation to the call
+
+    try {
+      final token = await AuthManager.getToken();
+      // Example endpoint structure - adjust according to your backend API
+      // final response = await http.post(
+      //   Uri.parse('$baseUrl/api/v1/call/${widget.call.id}/add-participant'),
+      //   headers: {
+      //     'Authorization': 'Bearer $token',
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: jsonEncode({
+      //     'conversationId': conversationId,
+      //   }),
+      // );
+
+      // if (response.statusCode == 200) {
+      //   _showSuccessSnackBar('Person added to call successfully');
+      // } else {
+      //   _showErrorSnackBar('Failed to add person to call: ${response.body}');
+      // }
+
+      // For now, just show a placeholder message
+      _showSuccessSnackBar('Add person functionality will be implemented');
+    } catch (e) {
+      _showErrorSnackBar('Error adding person to call: $e');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.green),
+      );
+    }
   }
 
   @override
@@ -338,45 +459,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             },
           ),
 
-          // Camera toggle - Fixed implementation
-          // _buildControlButton(
-          //   icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
-          //   isEnabled: _isCameraEnabled,
-          //   onPressed: () async {
-          //     try {
-          //       if (_isCameraEnabled) {
-          //         await call.setCameraEnabled(enabled: false);
-          //       } else {
-          //         await call.setCameraEnabled(enabled: true);
-          //       }
-          //       // State will be updated through the call state listener
-          //     } catch (e) {
-          //       debugPrint('Failed to toggle camera: $e');
-          //       if (mounted) {
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(
-          //             content: Text('Unable to toggle camera'),
-          //             backgroundColor: Colors.red,
-          //           ),
-          //         );
-          //       }
-          //     }
-          //   },
-          // ),
-
-          // Add contact or notes (optional)
+          // Add person to call button (updated for single selection)
           _buildControlButton(
             icon: Icons.person_add,
             isEnabled: true,
-            onPressed: () {
-              // Handle add contact or notes
-            },
+            onPressed: _showAddPersonDialog,
           ),
 
           // End call
           Container(
-            width: 60,
-            height: 60,
+            width: 44,
+            height: 44,
             decoration: const BoxDecoration(
               color: Colors.red,
               shape: BoxShape.circle,
@@ -402,8 +495,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: 60,
-      height: 60,
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
         color: isEnabled ? Colors.white24 : Colors.white10,
         shape: BoxShape.circle,

@@ -1,5 +1,6 @@
 import 'package:app/constants.dart';
 import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
@@ -54,6 +55,7 @@ class _TestCallState extends State<TestCall> {
   }
 
   Future<void> _createCallRoom() async {
+    final currentUser = await AuthManager.getCurrentUser();
     try {
       var call = StreamVideo.instance.makeCall(
         callType: StreamCallType.defaultType(),
@@ -66,8 +68,12 @@ class _TestCallState extends State<TestCall> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              VoiceCallScreen(call: call, image: '', name: 'Ayo'),
+          builder: (context) => VoiceCallScreen(
+            call: call,
+            image: '',
+            name: 'Ayo',
+            currentUser: currentUser!,
+          ),
         ),
       );
     } catch (e) {

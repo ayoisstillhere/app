@@ -235,11 +235,13 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     call: call,
                     image: widget.imageUrl,
                     name: widget.callerName,
+                    currentUser: widget.currentUser,
                   )
                 : VoiceCallScreen(
                     call: call,
                     image: widget.imageUrl,
                     name: widget.callerName,
+                    currentUser: widget.currentUser,
                   ),
           ),
         );

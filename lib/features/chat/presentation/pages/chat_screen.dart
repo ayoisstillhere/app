@@ -789,6 +789,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 call: call,
                 name: widget.name,
                 image: widget.imageUrl,
+                currentUser: widget.currentUser,
               ),
             ),
           );
@@ -800,6 +801,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 call: call,
                 image: widget.imageUrl,
                 name: widget.name,
+                currentUser: widget.currentUser,
               ),
             ),
           );

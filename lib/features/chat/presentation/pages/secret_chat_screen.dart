@@ -813,6 +813,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                 call: call,
                 name: widget.name,
                 image: widget.imageUrl,
+                currentUser: widget.currentUser,
               ),
             ),
           );
@@ -824,6 +825,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                 call: call,
                 image: widget.imageUrl,
                 name: widget.name,
+                currentUser: widget.currentUser,
               ),
             ),
           );
