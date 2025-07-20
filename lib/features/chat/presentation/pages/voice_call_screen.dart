@@ -50,10 +50,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   // Participants state
   List<CallParticipantState> _participants = [];
 
+  // Call Timer
+  Timer? _noParticipantsTimer;
+
   @override
   void initState() {
     super.initState();
     widget.call.join();
+    _startNoParticipantsTimer();
 
     // Listen for call state changes
     widget.call.state.listen((callState) {
@@ -62,6 +66,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       if (hasOtherParticipants && !_isConnected) {
         _isConnected = true;
         _startCallTimer();
+        _noParticipantsTimer?.cancel(); // Cancel the timer when someone joins
       } else if (!hasOtherParticipants && _isConnected) {
         _isConnected = false;
         _stopCallTimer();
@@ -77,6 +82,15 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     });
 
     _fetchAllConversations();
+  }
+
+  void _startNoParticipantsTimer() {
+    _noParticipantsTimer = Timer(const Duration(minutes: 1), () {
+      if (_participants.length <= 1 && mounted) {
+        widget.call.end();
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   void _startCallTimer() {
@@ -788,6 +802,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void dispose() {
     _callTimer?.cancel();
+    _noParticipantsTimer?.cancel();
     super.dispose();
   }
 }

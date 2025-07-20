@@ -59,11 +59,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   //Screen Share
   bool _isScreenSharingEnabled = false;
 
+  // Call Timer
+  Timer? _noParticipantsTimer;
+
   @override
   void initState() {
     super.initState();
     // Join the call when the screen is initialized
     widget.call.join();
+    _startNoParticipantsTimer();
 
     // Listen for call state changes
     widget.call.state.listen((callState) {
@@ -74,6 +78,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         // Other participant joined, start timer
         _isConnected = true;
         _startCallTimer();
+        if (callState.callParticipants.length > 1) {
+          _noParticipantsTimer?.cancel(); // Cancel timer when someone joins
+        }
       } else if (!hasOtherParticipants && _isConnected) {
         // Other participant left, stop timer and reset
         _isConnected = false;
@@ -93,6 +100,19 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
     // Fetch conversations when screen initializes
     _fetchAllConversations();
+  }
+
+  void _startNoParticipantsTimer() {
+    _noParticipantsTimer = Timer(const Duration(minutes: 1), () {
+      if (mounted) {
+        // Check if there's only the local participant (initiator)
+        final participants = widget.call.state.value.callParticipants;
+        if (participants.length <= 1) {
+          widget.call.end();
+          Navigator.of(context).pop();
+        }
+      }
+    });
   }
 
   void _startCallTimer() {
@@ -1159,6 +1179,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   @override
   void dispose() {
     _callTimer?.cancel();
+    _noParticipantsTimer?.cancel();
     super.dispose();
   }
 }
