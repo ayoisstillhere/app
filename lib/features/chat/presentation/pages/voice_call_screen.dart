@@ -293,15 +293,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     final otherParticipants = _participants
         .where((p) => p.userId != widget.currentUser.id)
         .toList();
-    
+
     String privacyText;
     if (participantCount <= 2) {
-      final otherName = otherParticipants.isNotEmpty 
+      final otherName = otherParticipants.isNotEmpty
           ? otherParticipants.first.name ?? 'Unknown'
           : widget.name;
-      privacyText = 'This session is encrypted and private. Only you and\n$otherName are connected.';
+      privacyText =
+          'This session is encrypted and private. Only you and\n$otherName are connected.';
     } else {
-      privacyText = 'This session is encrypted and private.\n$participantCount participants connected.';
+      privacyText =
+          'This session is encrypted and private.\n$participantCount participants connected.';
     }
 
     return Column(
@@ -324,23 +326,23 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Widget _buildParticipantsSection() {
     final participantCount = _participants.length;
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Participants display
         _buildParticipantsDisplay(),
-        
+
         const SizedBox(height: 24),
-        
+
         // Call status
         Text(
           _isConnected ? _formatDuration(_callDuration) : 'Connecting...',
           style: const TextStyle(color: Colors.white70, fontSize: 16),
         ),
-        
+
         const SizedBox(height: 40),
-        
+
         // Audio visualization
         SvgPicture.asset(
           "assets/icons/voice_call_wave.svg",
@@ -355,7 +357,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     final otherParticipants = _participants
         .where((p) => p.userId != widget.currentUser.id)
         .toList();
-    
+
     if (otherParticipants.isEmpty) {
       // No other participants, show original layout
       return Column(
@@ -394,20 +396,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white24, width: 2),
-              image: participant.image != null
+              image: participant.image!.isEmpty
                   ? DecorationImage(
                       image: NetworkImage(participant.image!),
                       fit: BoxFit.cover,
                     )
                   : null,
-              color: participant.image == null ? Colors.grey[600] : null,
+              color: participant.image!.isEmpty ? Colors.grey[600] : null,
             ),
             child: participant.image == null
-                ? Icon(
-                    Icons.person,
-                    size: 60,
-                    color: Colors.white,
-                  )
+                ? Icon(Icons.person, size: 60, color: Colors.white)
                 : null,
           ),
           const SizedBox(height: 16),
@@ -458,11 +456,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
   Widget _buildParticipantGrid(List<CallParticipantState> participants) {
     final count = participants.length;
-    
+
     if (count == 2) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: participants.map((p) => _buildParticipantAvatar(p, 80)).toList(),
+        children: participants
+            .map((p) => _buildParticipantAvatar(p, 80))
+            .toList(),
       );
     } else if (count == 3) {
       return Column(
@@ -499,22 +499,25 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         ],
       );
     }
-    
+
     return Container();
   }
 
-  Widget _buildCompactParticipantLayout(List<CallParticipantState> participants) {
+  Widget _buildCompactParticipantLayout(
+    List<CallParticipantState> participants,
+  ) {
     final displayParticipants = participants.take(5).toList();
     final remainingCount = participants.length - 5;
-    
+
     return Column(
       children: [
         // First row - 3 participants
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: displayParticipants.take(3).map((p) => 
-            _buildParticipantAvatar(p, 60)
-          ).toList(),
+          children: displayParticipants
+              .take(3)
+              .map((p) => _buildParticipantAvatar(p, 60))
+              .toList(),
         ),
         const SizedBox(height: 12),
         // Second row - 2 participants + overflow indicator
@@ -525,15 +528,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               _buildParticipantAvatar(displayParticipants[3], 60),
             if (displayParticipants.length > 4)
               _buildParticipantAvatar(displayParticipants[4], 60),
-            if (remainingCount > 0)
-              _buildOverflowIndicator(remainingCount, 60),
+            if (remainingCount > 0) _buildOverflowIndicator(remainingCount, 60),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildParticipantAvatar(CallParticipantState participant, double size) {
+  Widget _buildParticipantAvatar(
+    CallParticipantState participant,
+    double size,
+  ) {
     return Column(
       children: [
         Stack(
@@ -544,20 +549,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white24, width: 1.5),
-                image: participant.image != null
+                image: participant.image!.isEmpty
                     ? DecorationImage(
                         image: NetworkImage(participant.image!),
                         fit: BoxFit.cover,
                       )
                     : null,
-                color: participant.image == null ? Colors.grey[600] : null,
+                color: participant.image!.isEmpty ? Colors.grey[600] : null,
               ),
-              child: participant.image == null
-                  ? Icon(
-                      Icons.person,
-                      size: size * 0.5,
-                      color: Colors.white,
-                    )
+              child: participant.image!.isEmpty
+                  ? Icon(Icons.person, size: size * 0.5, color: Colors.white)
                   : null,
             ),
             // Mic indicator
@@ -656,6 +657,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 } else {
                   await call.setMicrophoneEnabled(enabled: true);
                 }
+                // State will be updated through the call state listener
               } catch (e) {
                 debugPrint('Failed to toggle microphone: $e');
                 if (mounted) {
