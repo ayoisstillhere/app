@@ -171,7 +171,7 @@ class _NavPageState extends State<NavPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            message.data['notificationMessage'],
+                            message.data['notificationMessage'] ?? '',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
