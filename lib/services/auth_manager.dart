@@ -299,7 +299,7 @@ class AuthManager {
     await clearToken();
     await clearRefreshToken();
     await clearCurrentUser();
-    await clearSecretKeys();
+    // await clearSecretKeys();
 
     // Clear cache
     _cachedToken = null;

@@ -1,17 +1,11 @@
-import 'dart:convert';
-
-import 'package:app/features/chat/data/models/get_messages_response_model.dart';
 import 'package:app/features/chat/presentation/pages/secret_chat_screen.dart';
-import 'package:fast_rsa/fast_rsa.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_screen.dart';
 
 import '../../../../constants.dart';
-import '../../../../services/auth_manager.dart';
 import '../../../../services/encryption_service.dart';
 import '../../../../size_config.dart';
 
@@ -233,96 +227,6 @@ class _ChatTileState extends State<ChatTile> {
         ),
       ),
     );
-  }
-
-  Future<void> _recreateSecretChat({bool deleteFormerChat = true}) async {
-    if (widget.isGroup) {
-      return;
-    }
-    final token = await AuthManager.getToken();
-    final uri = Uri.parse('$baseUrl/api/v1/chat/secret-conversations');
-
-    // Generate a conversation key for end-to-end encryption
-    final conversationKey = _encryptionService.generateConversationKey();
-
-    // Get the current user's participant data
-    final myParticipant = widget.participants.firstWhere(
-      (participant) => participant.userId == widget.currentUser.id,
-      orElse: () => throw Exception("Current user not found in participants"),
-    );
-
-    // Get the other participant's data
-    final otherParticipant = widget.participants.firstWhere(
-      (participant) => participant.userId != widget.currentUser.id,
-      orElse: () => throw Exception("Other participant not found"),
-    );
-
-    // Get both public keys
-    final myPublicKey = myParticipant.user.publicKey;
-    final otherPublicKey = otherParticipant.user.publicKey;
-
-    // Use RSA to encrypt the conversation key with both public keys
-    final myEncryptedKey = await RSA.encryptPKCS1v15(
-      conversationKey,
-      myPublicKey!,
-    );
-    final otherEncryptedKey = await RSA.encryptPKCS1v15(
-      conversationKey,
-      otherPublicKey!,
-    );
-
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
-
-    final body = jsonEncode({
-      "participantUserIds": widget.participants.map((e) => e.userId).toList(),
-      "myConversationKey": myEncryptedKey,
-      "otherParticipantConversationKey": otherEncryptedKey,
-      "deleteFormerChat": deleteFormerChat,
-    });
-
-    try {
-      final response = await http.post(uri, headers: headers, body: body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SecretChatScreen(
-              chatId: jsonDecode(response.body)['id'],
-              name: widget.name,
-              imageUrl: widget.image,
-              currentUser: widget.currentUser,
-              chatHandle: widget.chatHandle,
-              isGroup: false,
-              participants: (jsonDecode(response.body)['participants'] as List)
-                  .map((e) => ParticipantModel.fromJson(e))
-                  .toList(),
-
-              isConversationMuted: jsonDecode(
-                response.body,
-              )['isConversationMutedForMe'],
-              isConversationBlockedForMe: jsonDecode(
-                response.body,
-              )['isConversationBlockedForMe'],
-            ),
-          ),
-        ).then((result) {
-          if (result != null && result['recreateSecretChat'] == true) {
-            _recreateSecretChat(deleteFormerChat: true);
-          }
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(e.toString(), style: TextStyle(color: Colors.white)),
-        ),
-      );
-    }
   }
 
   String _formatTime(DateTime timestamp) {
