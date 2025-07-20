@@ -18,6 +18,7 @@ class VideoCallScreen extends StatefulWidget {
   final String image;
   final String name;
   final UserEntity currentUser;
+  final String callId;
 
   const VideoCallScreen({
     super.key,
@@ -25,6 +26,7 @@ class VideoCallScreen extends StatefulWidget {
     required this.name,
     required this.image,
     required this.currentUser,
+    required this.callId,
   });
 
   @override
@@ -181,7 +183,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     try {
       final token = await AuthManager.getToken();
       final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/calls/${widget.call.id}/conversation'),
+        Uri.parse('$baseUrl/api/v1/calls/${widget.callId}/conversation'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

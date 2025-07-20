@@ -796,6 +796,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
         userToken: callToken,
       );
       String roomId = jsonDecode(response.body)['call']['roomId'];
+      String callId = jsonDecode(response.body)['call']['id'];
 
       try {
         var call = StreamVideo.instance.makeCall(
@@ -814,6 +815,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                 name: widget.name,
                 image: widget.imageUrl,
                 currentUser: widget.currentUser,
+                callId: callId,
               ),
             ),
           );
@@ -826,6 +828,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                 image: widget.imageUrl,
                 name: widget.name,
                 currentUser: widget.currentUser,
+                callId: callId,
               ),
             ),
           );

@@ -73,6 +73,7 @@ class _TestCallState extends State<TestCall> {
             image: '',
             name: 'Ayo',
             currentUser: currentUser!,
+            callId: 'default_3aad4a99-c649-406c-82e5-f72dc54fd8a5',
           ),
         ),
       );

@@ -275,7 +275,7 @@ class _NavPageState extends State<NavPage> {
       MaterialPageRoute(
         builder: (_) => IncomingCallScreen(
           callerName: data['initiatorName'] ?? data['callerName'] ?? 'Unknown',
-          roomId: data['callId'] ?? data['roomId'] ?? '',
+          callId: data['callId'] ?? '',
           currentUser: user,
           imageUrl: data['initiatorImage'] ?? data['callerImage'] ?? '',
           callType: data['callType'] ?? "AUDIO",

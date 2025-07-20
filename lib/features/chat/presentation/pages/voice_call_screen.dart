@@ -18,6 +18,7 @@ class VoiceCallScreen extends StatefulWidget {
   final String image;
   final String name;
   final UserEntity currentUser;
+  final String callId;
 
   const VoiceCallScreen({
     super.key,
@@ -25,6 +26,7 @@ class VoiceCallScreen extends StatefulWidget {
     required this.image,
     required this.name,
     required this.currentUser,
+    required this.callId,
   });
 
   @override
@@ -34,7 +36,7 @@ class VoiceCallScreen extends StatefulWidget {
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _isMicrophoneEnabled = true;
   bool _isSpeakerEnabled = true;
-  bool _isConnected = false; // Track connection status
+  bool _isConnected = false;
 
   // Timer for call duration
   Timer? _callTimer;
@@ -45,37 +47,35 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   List<Conversation> _allConversations = [];
   bool _isLoadingConversations = false;
 
+  // Participants state
+  List<CallParticipantState> _participants = [];
+
   @override
   void initState() {
     super.initState();
-    // Join the call when the screen is initialized
     widget.call.join();
 
     // Listen for call state changes
     widget.call.state.listen((callState) {
-      // Check if there are other participants (at least 2 including yourself)
       final hasOtherParticipants = callState.callParticipants.length > 1;
 
       if (hasOtherParticipants && !_isConnected) {
-        // Other participant joined, start timer
         _isConnected = true;
         _startCallTimer();
       } else if (!hasOtherParticipants && _isConnected) {
-        // Other participant left, stop timer and reset
         _isConnected = false;
         _stopCallTimer();
       }
 
-      // Update UI state based on actual call state
       if (mounted) {
         setState(() {
           _isMicrophoneEnabled =
               callState.localParticipant?.isAudioEnabled ?? true;
+          _participants = callState.callParticipants.toList();
         });
       }
     });
 
-    // Fetch conversations when screen initializes
     _fetchAllConversations();
   }
 
@@ -105,13 +105,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     return '$hours:$minutes:$seconds';
   }
 
-  // Fetch all conversations from the API
   Future<void> _fetchAllConversations() async {
     setState(() => _isLoadingConversations = true);
 
     try {
       final token = await AuthManager.getToken();
-      const int pageSize = 50; // Fetch more conversations for selection
+      const int pageSize = 50;
       String url =
           '$baseUrl/api/v1/chat/conversations?page=1&limit=$pageSize&isSecret=false';
 
@@ -144,7 +143,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     }
   }
 
-  // Show dialog to select a person to add to call (single selection)
   void _showAddPersonDialog() {
     showDialog(
       context: context,
@@ -160,12 +158,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     );
   }
 
-  // API call to add a person to call (single conversation)
   Future<void> _addPersonToCall(String conversationId) async {
     try {
       final token = await AuthManager.getToken();
       final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/calls/${widget.call.id}/conversation'),
+        Uri.parse('$baseUrl/api/v1/calls/${widget.callId}/conversation'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -268,75 +265,16 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           top: MediaQuery.of(context).padding.top + 80,
           left: 0,
           right: 0,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.lock, color: Colors.white, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                'This session is encrypted and private. Only you and\n${widget.name} are connected.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: getProportionateScreenHeight(12),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
+          child: _buildPrivacyIndicator(),
         ),
 
         // Main content area - participant info and audio visualization
         Positioned(
-          top: MediaQuery.of(context).size.height * 0.25,
+          top: MediaQuery.of(context).size.height * 0.2,
           left: 0,
           right: 0,
-          child: Column(
-            children: [
-              // Profile picture
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white24, width: 2),
-                  image: DecorationImage(
-                    image: NetworkImage(widget.image),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Participant name
-              Text(
-                widget.name,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Call status - show "Connecting..." when not connected, timer when connected
-              Text(
-                _isConnected ? _formatDuration(_callDuration) : 'Connecting...',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Audio visualization
-              SvgPicture.asset(
-                "assets/icons/voice_call_wave.svg",
-                height: getProportionateScreenHeight(26),
-                width: getProportionateScreenWidth(157),
-              ),
-            ],
-          ),
+          bottom: MediaQuery.of(context).size.height * 0.25,
+          child: _buildParticipantsSection(),
         ),
 
         // Bottom controls
@@ -345,6 +283,357 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           left: 0,
           right: 0,
           child: _buildBottomControls(call),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrivacyIndicator() {
+    final participantCount = _participants.length;
+    final otherParticipants = _participants
+        .where((p) => p.userId != widget.currentUser.id)
+        .toList();
+    
+    String privacyText;
+    if (participantCount <= 2) {
+      final otherName = otherParticipants.isNotEmpty 
+          ? otherParticipants.first.name ?? 'Unknown'
+          : widget.name;
+      privacyText = 'This session is encrypted and private. Only you and\n$otherName are connected.';
+    } else {
+      privacyText = 'This session is encrypted and private.\n$participantCount participants connected.';
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.lock, color: Colors.white, size: 16),
+        const SizedBox(height: 8),
+        Text(
+          privacyText,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: getProportionateScreenHeight(12),
+            height: 1.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildParticipantsSection() {
+    final participantCount = _participants.length;
+    
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Participants display
+        _buildParticipantsDisplay(),
+        
+        const SizedBox(height: 24),
+        
+        // Call status
+        Text(
+          _isConnected ? _formatDuration(_callDuration) : 'Connecting...',
+          style: const TextStyle(color: Colors.white70, fontSize: 16),
+        ),
+        
+        const SizedBox(height: 40),
+        
+        // Audio visualization
+        SvgPicture.asset(
+          "assets/icons/voice_call_wave.svg",
+          height: getProportionateScreenHeight(26),
+          width: getProportionateScreenWidth(157),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildParticipantsDisplay() {
+    final otherParticipants = _participants
+        .where((p) => p.userId != widget.currentUser.id)
+        .toList();
+    
+    if (otherParticipants.isEmpty) {
+      // No other participants, show original layout
+      return Column(
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white24, width: 2),
+              image: DecorationImage(
+                image: NetworkImage(widget.image),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            widget.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    } else if (otherParticipants.length == 1) {
+      // One other participant, show single large profile
+      final participant = otherParticipants.first;
+      return Column(
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white24, width: 2),
+              image: participant.image != null
+                  ? DecorationImage(
+                      image: NetworkImage(participant.image!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+              color: participant.image == null ? Colors.grey[600] : null,
+            ),
+            child: participant.image == null
+                ? Icon(
+                    Icons.person,
+                    size: 60,
+                    color: Colors.white,
+                  )
+                : null,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            participant.name ?? 'Unknown',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    } else if (otherParticipants.length <= 4) {
+      // 2-4 other participants, show grid layout
+      return Column(
+        children: [
+          _buildParticipantGrid(otherParticipants),
+          const SizedBox(height: 16),
+          Text(
+            '${otherParticipants.length + 1} participants',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    } else {
+      // 5+ other participants, show compact layout with overflow
+      return Column(
+        children: [
+          _buildCompactParticipantLayout(otherParticipants),
+          const SizedBox(height: 16),
+          Text(
+            '${otherParticipants.length + 1} participants',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildParticipantGrid(List<CallParticipantState> participants) {
+    final count = participants.length;
+    
+    if (count == 2) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: participants.map((p) => _buildParticipantAvatar(p, 80)).toList(),
+      );
+    } else if (count == 3) {
+      return Column(
+        children: [
+          _buildParticipantAvatar(participants[0], 80),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildParticipantAvatar(participants[1], 80),
+              _buildParticipantAvatar(participants[2], 80),
+            ],
+          ),
+        ],
+      );
+    } else if (count == 4) {
+      return Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildParticipantAvatar(participants[0], 70),
+              _buildParticipantAvatar(participants[1], 70),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildParticipantAvatar(participants[2], 70),
+              _buildParticipantAvatar(participants[3], 70),
+            ],
+          ),
+        ],
+      );
+    }
+    
+    return Container();
+  }
+
+  Widget _buildCompactParticipantLayout(List<CallParticipantState> participants) {
+    final displayParticipants = participants.take(5).toList();
+    final remainingCount = participants.length - 5;
+    
+    return Column(
+      children: [
+        // First row - 3 participants
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: displayParticipants.take(3).map((p) => 
+            _buildParticipantAvatar(p, 60)
+          ).toList(),
+        ),
+        const SizedBox(height: 12),
+        // Second row - 2 participants + overflow indicator
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            if (displayParticipants.length > 3)
+              _buildParticipantAvatar(displayParticipants[3], 60),
+            if (displayParticipants.length > 4)
+              _buildParticipantAvatar(displayParticipants[4], 60),
+            if (remainingCount > 0)
+              _buildOverflowIndicator(remainingCount, 60),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildParticipantAvatar(CallParticipantState participant, double size) {
+    return Column(
+      children: [
+        Stack(
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 1.5),
+                image: participant.image != null
+                    ? DecorationImage(
+                        image: NetworkImage(participant.image!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                color: participant.image == null ? Colors.grey[600] : null,
+              ),
+              child: participant.image == null
+                  ? Icon(
+                      Icons.person,
+                      size: size * 0.5,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
+            // Mic indicator
+            if (!participant.isAudioEnabled)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: size * 0.3,
+                  height: size * 0.3,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.mic_off,
+                    size: size * 0.2,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: size + 10,
+          child: Text(
+            participant.name ?? 'Unknown',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: size > 70 ? 14 : 12,
+              fontWeight: FontWeight.w400,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOverflowIndicator(int count, double size) {
+    return Column(
+      children: [
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white24, width: 1.5),
+            color: Colors.white24,
+          ),
+          child: Center(
+            child: Text(
+              '+$count',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: size * 0.25,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: size + 10,
+          child: Text(
+            'more',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: size > 70 ? 14 : 12,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ),
       ],
     );
@@ -367,12 +656,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 } else {
                   await call.setMicrophoneEnabled(enabled: true);
                 }
-                // State will be updated through the call state listener
               } catch (e) {
                 debugPrint('Failed to toggle microphone: $e');
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text('Unable to toggle microphone'),
                       backgroundColor: Colors.red,
                     ),
@@ -388,13 +676,10 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             isEnabled: _isSpeakerEnabled,
             onPressed: () async {
               try {
-                // For iOS, trigger the native audio route picker
                 if (Theme.of(context).platform == TargetPlatform.iOS) {
                   await RtcMediaDeviceNotifier.instance
                       .triggeriOSAudioRouteSelectionUI();
                 } else {
-                  // For Android, you can toggle speaker phone or manage audio output devices
-                  // This is a simplified toggle - you might want to implement more sophisticated logic
                   final audioOutputsResult = await RtcMediaDeviceNotifier
                       .instance
                       .audioOutputs();
@@ -402,10 +687,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                     success: (audioOutputsSuccess) {
                       final audioOutputs = audioOutputsSuccess.data;
                       if (audioOutputs.isNotEmpty) {
-                        // Find speaker or earpiece device and toggle
                         final currentOutput =
                             call.state.value.audioOutputDevice;
-                        // Toggle between available audio outputs
                         final nextDevice = audioOutputs.firstWhere(
                           (device) => device.id != currentOutput?.id,
                           orElse: () => audioOutputs.first,
@@ -437,7 +720,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                 print('Error toggling speaker: $e');
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text('Unable to toggle speaker'),
                       backgroundColor: Colors.red,
                     ),
@@ -447,7 +730,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             },
           ),
 
-          // Add person to call button (updated for single selection)
+          // Add person to call button
           _buildControlButton(
             icon: Icons.person_add,
             isEnabled: true,
@@ -503,8 +786,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void dispose() {
     _callTimer?.cancel();
-    // Don't call end() here as it might interfere with navigation
-    // The call will be ended when the user presses the end call button
     super.dispose();
   }
 }

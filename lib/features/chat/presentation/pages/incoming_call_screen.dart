@@ -14,7 +14,7 @@ import '../../../../services/auth_manager.dart';
 
 class IncomingCallScreen extends StatefulWidget {
   final String callerName;
-  final String roomId;
+  final String callId;
   final UserEntity currentUser;
   final String imageUrl;
   final String callType;
@@ -22,7 +22,7 @@ class IncomingCallScreen extends StatefulWidget {
   const IncomingCallScreen({
     super.key,
     required this.callerName,
-    required this.roomId,
+    required this.callId,
     required this.currentUser,
     required this.imageUrl,
     required this.callType,
@@ -197,7 +197,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     final token = await AuthManager.getToken();
     String callToken;
     final response = await http.post(
-      Uri.parse('$baseUrl/api/v1/calls/${widget.roomId}/join'),
+      Uri.parse('$baseUrl/api/v1/calls/${widget.callId}/join'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -236,12 +236,14 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                     image: widget.imageUrl,
                     name: widget.callerName,
                     currentUser: widget.currentUser,
+                    callId: widget.callId,
                   )
                 : VoiceCallScreen(
                     call: call,
                     image: widget.imageUrl,
                     name: widget.callerName,
                     currentUser: widget.currentUser,
+                    callId: widget.callId,
                   ),
           ),
         );
