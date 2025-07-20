@@ -251,6 +251,7 @@ class _PostCardState extends State<PostCard> {
 
         // Initialize the player with the video URL
         player.open(Media(item['url']));
+        player.pause();
       } else {
         // Add null for non-video items to maintain index alignment
         _videoPlayers.add(null);
