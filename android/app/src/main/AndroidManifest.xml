@@ -61,6 +61,12 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="default_channel"/>
+        <meta-data
+            android:name="com.google.android.gms.appstate.APP_ID"
+            android:value="com.hirasocial.app" />
+        <meta-data
+            android:name="com.google.android.gms.common.api.GoogleSignInOptionsExtension"
+            android:resource="@xml/auth" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

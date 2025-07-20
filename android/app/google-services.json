@@ -12,7 +12,12 @@
           "package_name": "com.hiraofficial.hira"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "966329839831-ths3pnccmet6i4sa8lbna72ehg6rrkim.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDZeeBgWLyXyYVMe_PSlZmspy7ZIjzAFQk"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966329839831-ths3pnccmet6i4sa8lbna72ehg6rrkim.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966329839831-30es8ft9ls1j5v2se83pelk81a9rcdu1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hirasocial.app"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +48,20 @@
           "package_name": "com.hirasocial.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "966329839831-f2991c50i5t9jq892307jv2btf35il3o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hirasocial.app",
+            "certificate_hash": "38a63fcedd1ab2db350f016a74637cd6f9416d1c"
+          }
+        },
+        {
+          "client_id": "966329839831-ths3pnccmet6i4sa8lbna72ehg6rrkim.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDZeeBgWLyXyYVMe_PSlZmspy7ZIjzAFQk"
@@ -39,7 +69,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966329839831-ths3pnccmet6i4sa8lbna72ehg6rrkim.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966329839831-30es8ft9ls1j5v2se83pelk81a9rcdu1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hirasocial.app"
+              }
+            }
+          ]
         }
       }
     }
