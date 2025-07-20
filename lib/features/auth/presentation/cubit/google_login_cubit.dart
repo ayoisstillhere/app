@@ -50,7 +50,9 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
         // Use AuthManager instead of SharedPreferences
         await AuthManager.setToken(token);
         await AuthManager.setRefreshToken(refreshToken);
+        emit(account);
       } else {
+        emit(null);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red,
@@ -63,7 +65,50 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
           ),
         );
       }
-      emit(account);
+    } catch (error) {
+      emit(null);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<void> signUp(BuildContext context) async {
+    try {
+      final account = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication auth = await account!.authentication;
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/register-with-google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': account.email,
+          'token': auth.idToken,
+          'platform': Platform.isAndroid ? 'ANDROID' : 'IOS',
+        }),
+      );
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final token = responseData['access_token'];
+        final refreshToken = responseData['refresh_token'];
+
+        // Use AuthManager instead of SharedPreferences
+        await AuthManager.setToken(token);
+        await AuthManager.setRefreshToken(refreshToken);
+        emit(account);
+      } else {
+        emit(null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              jsonDecode(
+                response.body,
+              )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      }
     } catch (error) {
       emit(null);
       ScaffoldMessenger.of(

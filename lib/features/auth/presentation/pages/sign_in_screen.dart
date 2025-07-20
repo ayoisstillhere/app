@@ -69,7 +69,7 @@ class _SignInScreenState extends State<SignInScreen> {
       body: BlocProvider(
         create: (context) => GoogleSignInCubit(),
         child: BlocBuilder<GoogleSignInCubit, GoogleSignInAccount?>(
-          builder: (context, account)  {
+          builder: (context, account) {
             if (account != null) {
               return Center(
                 child: Column(
@@ -377,7 +377,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                 ),
                                 GoogleButton(
                                   press: () {
-                                    context.read<GoogleSignInCubit>().signIn(context);
+                                    context.read<GoogleSignInCubit>().signIn(
+                                      context,
+                                    );
                                   },
                                   isSignin: true,
                                 ),

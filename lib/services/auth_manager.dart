@@ -4,12 +4,15 @@ import 'dart:io';
 
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants.dart';
 import '../features/auth/domain/entities/user_entity.dart';
+import '../features/auth/presentation/cubit/google_login_cubit.dart';
 
 class AuthManager {
   static const String _tokenKey = 'auth_token';
@@ -115,10 +118,7 @@ class AuthManager {
       debugPrint('Error during logout: $e');
     } finally {
       // Always clear tokens locally
-      await clearToken();
-      await clearRefreshToken();
-      await clearSecretKeys();
-      await clearCurrentUser();
+      await clearAllUserData();
     }
   }
 
@@ -300,6 +300,10 @@ class AuthManager {
     await clearRefreshToken();
     await clearCurrentUser();
     // await clearSecretKeys();
+
+    // Sign out from Google if currently signed in
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    await googleSignIn.signOut();
 
     // Clear cache
     _cachedToken = null;
