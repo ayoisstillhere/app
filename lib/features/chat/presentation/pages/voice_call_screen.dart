@@ -35,7 +35,7 @@ class VoiceCallScreen extends StatefulWidget {
 
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _isMicrophoneEnabled = true;
-  bool _isSpeakerEnabled = true;
+  bool _isSpeakerEnabled = false;
   bool _isConnected = false;
 
   // Timer for call duration

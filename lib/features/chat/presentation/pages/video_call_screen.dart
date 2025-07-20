@@ -34,11 +34,6 @@ class VideoCallScreen extends StatefulWidget {
 }
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
-  bool _isLocalVideoExpanded = false;
-  double _localVideoWidth = 120.0;
-  double _localVideoHeight = 160.0;
-  Offset _localVideoPosition = const Offset(20, 100);
-
   // Call state tracking
   bool _isConnected = false;
   bool _isMicrophoneEnabled = true;
@@ -49,12 +44,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Duration _callDuration = Duration.zero;
   DateTime? _callStartTime;
 
-  // New: Track which participant is in the main view (true = local, false = remote)
-  bool _isLocalInMainView = false;
-
   // Conversations state
   List<Conversation> _allConversations = [];
   bool _isLoadingConversations = false;
+
+  // Grid layout state
+  String? _focusedParticipantId;
+  bool _isGridView = false;
 
   @override
   void initState() {
@@ -116,10 +112,31 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     return '$hours:$minutes:$seconds';
   }
 
-  // New: Function to switch the main view
-  void _switchMainView() {
+  // Calculate grid dimensions based on participant count
+  Map<String, int> _calculateGridDimensions(int participantCount) {
+    if (participantCount <= 2) return {'rows': 1, 'columns': 2};
+    if (participantCount <= 4) return {'rows': 2, 'columns': 2};
+    if (participantCount <= 6) return {'rows': 2, 'columns': 3};
+    if (participantCount <= 9) return {'rows': 3, 'columns': 3};
+    if (participantCount <= 12) return {'rows': 3, 'columns': 4};
+    return {'rows': 4, 'columns': 4}; // Max 16 participants
+  }
+
+  // Toggle between grid view and focused view
+  void _toggleViewMode() {
     setState(() {
-      _isLocalInMainView = !_isLocalInMainView;
+      _isGridView = !_isGridView;
+      if (!_isGridView) {
+        _focusedParticipantId = null;
+      }
+    });
+  }
+
+  // Focus on a specific participant
+  void _focusParticipant(String participantId) {
+    setState(() {
+      _focusedParticipantId = participantId;
+      _isGridView = false;
     });
   }
 
@@ -243,37 +260,38 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     CallState callState,
   ) {
     final participants = callState.callParticipants;
-    final localParticipant = participants.where((p) => p.isLocal).firstOrNull;
-    final remoteParticipants = participants.where((p) => !p.isLocal).toList();
+    final participantCount = participants.length;
 
     return Stack(
       children: [
         // Header with privacy notice
-        _buildHeader(),
+        _buildHeader(participantCount),
 
-        // Main view - shows either local or remote participant based on _isLocalInMainView
-        if (_isLocalInMainView)
-          _buildMainLocalParticipantView(localParticipant)
+        // Main content area - either grid or focused view
+        if (_isGridView || participantCount > 2)
+          _buildGridView(participants)
         else
-          _buildMainRemoteParticipantView(
-            remoteParticipants.isNotEmpty ? remoteParticipants.first : null,
-          ),
-
-        // Small participant view - shows the opposite of main view
-        if (_isLocalInMainView)
-          _buildSmallRemoteParticipantView(
-            remoteParticipants.isNotEmpty ? remoteParticipants.first : null,
-          )
-        else
-          _buildSmallLocalParticipantView(localParticipant),
+          _buildFocusedView(participants),
 
         // Control buttons
         _buildControlButtons(call),
+
+        // View mode toggle button (only show when there are more than 2 participants)
+        if (participantCount > 2) _buildViewToggleButton(),
       ],
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(int participantCount) {
+    String privacyText;
+    if (participantCount <= 2) {
+      privacyText =
+          'This session is encrypted and private. Only you and\n${widget.name} are connected.';
+    } else {
+      privacyText =
+          'This session is encrypted and private.\n$participantCount participants connected.';
+    }
+
     return Positioned(
       top: 50,
       left: 0,
@@ -297,7 +315,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'This session is encrypted and private. Only you and\n${widget.name} are connected.',
+              privacyText,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
@@ -332,461 +350,415 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  // Main view for remote participant
-  Widget _buildMainRemoteParticipantView(CallParticipantState? participant) {
-    final hasVideo =
-        participant != null &&
-        participant.publishedTracks.entries.any(
-          (entry) =>
-              entry.key == SfuTrackType.video && participant.isVideoEnabled,
-        );
-
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: _switchMainView,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF6C5CE7), width: 3),
+  Widget _buildViewToggleButton() {
+    return Positioned(
+      top: 150,
+      right: 20,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: IconButton(
+          icon: Icon(
+            _isGridView ? Icons.person : Icons.grid_view,
+            color: Colors.white,
+            size: 20,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(17),
-            child: hasVideo
-                ? StreamVideoRenderer(
-                    call: widget.call,
-                    participant: participant,
-                    videoTrackType: SfuTrackType.video,
-                  )
-                : _buildRemoteParticipantAvatar(participant != null),
-          ),
+          onPressed: _toggleViewMode,
         ),
       ),
     );
   }
 
-  // Main view for local participant
-  Widget _buildMainLocalParticipantView(CallParticipantState? participant) {
-    final hasVideo =
-        participant != null &&
-        participant.publishedTracks.entries.any(
-          (entry) =>
-              entry.key == SfuTrackType.video && participant.isVideoEnabled,
-        );
-
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: _switchMainView,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF6C5CE7), width: 3),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(17),
-            child: hasVideo
-                ? StreamVideoRenderer(
-                    call: widget.call,
-                    participant: participant,
-                    videoTrackType: SfuTrackType.video,
-                  )
-                : _buildLocalParticipantAvatar(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Small draggable remote participant view
-  Widget _buildSmallRemoteParticipantView(CallParticipantState? participant) {
-    final hasVideo =
-        participant != null &&
-        participant.publishedTracks.entries.any(
-          (entry) =>
-              entry.key == SfuTrackType.video && participant.isVideoEnabled,
-        );
+  Widget _buildGridView(List<CallParticipantState> participants) {
+    final dimensions = _calculateGridDimensions(participants.length);
+    final rows = dimensions['rows']!;
+    final columns = dimensions['columns']!;
 
     return Positioned(
-      left: _localVideoPosition.dx,
-      top: _localVideoPosition.dy,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _isLocalVideoExpanded = !_isLocalVideoExpanded;
-            if (_isLocalVideoExpanded) {
-              _localVideoWidth = 200.0;
-              _localVideoHeight = 267.0;
-            } else {
-              _localVideoWidth = 120.0;
-              _localVideoHeight = 160.0;
-            }
-          });
-          _switchMainView();
-        },
-        onPanUpdate: (details) {
-          setState(() {
-            _localVideoPosition = Offset(
-              (_localVideoPosition.dx + details.delta.dx).clamp(
-                0.0,
-                MediaQuery.of(context).size.width - _localVideoWidth,
-              ),
-              (_localVideoPosition.dy + details.delta.dy).clamp(
-                0.0,
-                MediaQuery.of(context).size.height - _localVideoHeight,
-              ),
-            );
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: _localVideoWidth,
-          height: _localVideoHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isLocalVideoExpanded
-                  ? const Color(0xFF6C5CE7)
-                  : Colors.white.withOpacity(0.5),
-              width: 2,
+      top: 200,
+      left: 20,
+      right: 20,
+      bottom: 120,
+      child: Column(
+        children: List.generate(rows, (rowIndex) {
+          return Expanded(
+            child: Row(
+              children: List.generate(columns, (colIndex) {
+                final participantIndex = rowIndex * columns + colIndex;
+                if (participantIndex >= participants.length) {
+                  return Expanded(child: Container()); // Empty space
+                }
+
+                final participant = participants[participantIndex];
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(4),
+                    child: _buildGridParticipantTile(participant),
+                  ),
+                );
+              }),
             ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildGridParticipantTile(CallParticipantState participant) {
+    final hasVideo = participant.publishedTracks.entries.any(
+      (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
+    );
+
+    return GestureDetector(
+      onTap: () => _focusParticipant(participant.userId),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: participant.isLocal
+                ? const Color(0xFF2ECC71)
+                : const Color(0xFF6C5CE7),
+            width: 2,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: hasVideo
-                ? StreamVideoRenderer(
-                    call: widget.call,
-                    participant: participant,
-                    videoTrackType: SfuTrackType.video,
-                  )
-                : _buildSmallRemoteParticipantAvatar(participant != null),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Stack(
+            children: [
+              // Video or avatar
+              Positioned.fill(
+                child: hasVideo
+                    ? StreamVideoRenderer(
+                        call: widget.call,
+                        participant: participant,
+                        videoTrackType: SfuTrackType.video,
+                      )
+                    : _buildParticipantAvatar(participant, isSmall: true),
+              ),
+
+              // Participant info overlay
+              Positioned(
+                bottom: 8,
+                left: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!participant.isAudioEnabled)
+                        const Icon(
+                          Icons.mic_off,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          participant.isLocal
+                              ? 'You'
+                              : _getParticipantName(participant),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // Small draggable local participant view
-  Widget _buildSmallLocalParticipantView(CallParticipantState? participant) {
-    final hasVideo =
-        participant != null &&
-        participant.publishedTracks.entries.any(
-          (entry) =>
-              entry.key == SfuTrackType.video && participant.isVideoEnabled,
-        );
+  Widget _buildFocusedView(List<CallParticipantState> participants) {
+    final localParticipant = participants.where((p) => p.isLocal).firstOrNull;
+    final remoteParticipants = participants.where((p) => !p.isLocal).toList();
+
+    // Determine focused participant
+    CallParticipantState? focusedParticipant;
+    if (_focusedParticipantId != null) {
+      focusedParticipant = participants
+          .where((p) => p.userId == _focusedParticipantId)
+          .firstOrNull;
+    }
+    focusedParticipant ??= remoteParticipants.isNotEmpty
+        ? remoteParticipants.first
+        : localParticipant;
+
+    return Stack(
+      children: [
+        // Main focused participant
+        if (focusedParticipant != null)
+          _buildMainParticipantView(focusedParticipant),
+
+        // Thumbnail strip for other participants
+        if (participants.length > 1)
+          _buildThumbnailStrip(participants, focusedParticipant),
+      ],
+    );
+  }
+
+  Widget _buildMainParticipantView(CallParticipantState participant) {
+    final hasVideo = participant.publishedTracks.entries.any(
+      (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
+    );
+
+    return Positioned.fill(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 200, 20, 120),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: participant.isLocal
+                ? const Color(0xFF2ECC71)
+                : const Color(0xFF6C5CE7),
+            width: 3,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(17),
+          child: hasVideo
+              ? StreamVideoRenderer(
+                  call: widget.call,
+                  participant: participant,
+                  videoTrackType: SfuTrackType.video,
+                )
+              : _buildParticipantAvatar(participant, isSmall: false),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnailStrip(
+    List<CallParticipantState> participants,
+    CallParticipantState? focusedParticipant,
+  ) {
+    final otherParticipants = participants
+        .where((p) => p.userId != focusedParticipant?.userId)
+        .toList();
+
+    if (otherParticipants.isEmpty) return const SizedBox.shrink();
 
     return Positioned(
-      left: _localVideoPosition.dx,
-      top: _localVideoPosition.dy,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _isLocalVideoExpanded = !_isLocalVideoExpanded;
-            if (_isLocalVideoExpanded) {
-              _localVideoWidth = 200.0;
-              _localVideoHeight = 267.0;
-            } else {
-              _localVideoWidth = 120.0;
-              _localVideoHeight = 160.0;
-            }
-          });
-          _switchMainView();
-        },
-        onPanUpdate: (details) {
-          setState(() {
-            _localVideoPosition = Offset(
-              (_localVideoPosition.dx + details.delta.dx).clamp(
-                0.0,
-                MediaQuery.of(context).size.width - _localVideoWidth,
-              ),
-              (_localVideoPosition.dy + details.delta.dy).clamp(
-                0.0,
-                MediaQuery.of(context).size.height - _localVideoHeight,
-              ),
-            );
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: _localVideoWidth,
-          height: _localVideoHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isLocalVideoExpanded
-                  ? const Color(0xFF6C5CE7)
-                  : Colors.white.withOpacity(0.5),
-              width: 2,
+      top: 220,
+      right: 20,
+      child: Column(
+        children: otherParticipants.take(4).map((participant) {
+          // Limit to 4 thumbnails
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: GestureDetector(
+              onTap: () => _focusParticipant(participant.userId),
+              child: _buildThumbnailParticipant(participant),
             ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: hasVideo
-                ? StreamVideoRenderer(
-                    call: widget.call,
-                    participant: participant,
-                    videoTrackType: SfuTrackType.video,
-                  )
-                : _buildSmallLocalParticipantAvatar(),
-          ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildThumbnailParticipant(CallParticipantState participant) {
+    final hasVideo = participant.publishedTracks.entries.any(
+      (entry) => entry.key == SfuTrackType.video && participant.isVideoEnabled,
+    );
+
+    return Container(
+      width: 80,
+      height: 100,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: participant.isLocal
+              ? const Color(0xFF2ECC71)
+              : const Color(0xFF6C5CE7),
+          width: 2,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: hasVideo
+                  ? StreamVideoRenderer(
+                      call: widget.call,
+                      participant: participant,
+                      videoTrackType: SfuTrackType.video,
+                    )
+                  : _buildParticipantAvatar(participant, isSmall: true),
+            ),
+
+            // Name overlay
+            Positioned(
+              bottom: 4,
+              left: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  participant.isLocal
+                      ? 'You'
+                      : _getParticipantName(participant),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildRemoteParticipantAvatar(bool isParticipantJoined) {
+  Widget _buildParticipantAvatar(
+    CallParticipantState participant, {
+    required bool isSmall,
+  }) {
+    final name = participant.isLocal ? 'You' : _getParticipantName(participant);
+    final color = participant.isLocal
+        ? const Color(0xFF2ECC71)
+        : const Color(0xFF6C5CE7);
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF6C5CE7).withOpacity(0.8),
-            const Color(0xFF4834d4).withOpacity(0.9),
-          ],
+          colors: [color.withOpacity(0.8), color.withOpacity(0.9)],
         ),
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Profile image
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: widget.image.isNotEmpty
-                    ? Image.network(
-                        widget.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultRemoteAvatar();
-                        },
-                      )
-                    : _buildDefaultRemoteAvatar(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Participant name
-            Text(
-              widget.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Status indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isParticipantJoined ? Icons.videocam_off : Icons.phone,
-                    color: Colors.white.withOpacity(0.8),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isParticipantJoined
-                        ? 'Camera is off'
-                        : 'Waiting to join...',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
+            if (!isSmall) ...[
+              // Large avatar for main view
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: ClipOval(
+                  child: participant.isLocal
+                      ? _buildDefaultLocalAvatar()
+                      : _buildDefaultRemoteAvatar(name),
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // New: Avatar for local participant when camera is off (main view)
-  Widget _buildLocalParticipantAvatar() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF2ECC71).withOpacity(0.8),
-            const Color(0xFF27AE60).withOpacity(0.9),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Profile image or default avatar
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+              const SizedBox(height: 20),
+              Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
-              child: ClipOval(child: _buildDefaultLocalAvatar()),
-            ),
-            const SizedBox(height: 20),
-            // "You" label
-            const Text(
-              'You',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Status indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.videocam_off,
-                    color: Colors.white.withOpacity(0.8),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Camera is off',
-                    style: TextStyle(
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.videocam_off,
                       color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
+                      size: 18,
                     ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Camera is off',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              // Small avatar for thumbnails/grid
+              if (participant.isLocal)
+                const Icon(Icons.videocam_off, color: Colors.white, size: 24)
+              else
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
                   ),
-                ],
+                  child: ClipOval(child: _buildDefaultRemoteAvatar(name)),
+                ),
+              const SizedBox(height: 4),
+              Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  // New: Small avatar for remote participant when in small view
-  Widget _buildSmallRemoteParticipantAvatar(bool isParticipantJoined) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF6C5CE7).withOpacity(0.8),
-            const Color(0xFF4834d4).withOpacity(0.9),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: ClipOval(
-                child: widget.image.isNotEmpty
-                    ? Image.network(
-                        widget.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultRemoteAvatar();
-                        },
-                      )
-                    : _buildDefaultRemoteAvatar(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
+  String _getParticipantName(CallParticipantState participant) {
+    // Try to get name from participant data, fallback to first letter of user ID
+    return participant.name.isNotEmpty == true
+        ? participant.name
+        : (participant.userId.isNotEmpty
+              ? participant.userId[0].toUpperCase()
+              : 'U');
   }
 
-  // New: Small avatar for local participant when in small view
-  Widget _buildSmallLocalParticipantAvatar() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF2ECC71).withOpacity(0.8),
-            const Color(0xFF27AE60).withOpacity(0.9),
-          ],
-        ),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.videocam_off, color: Colors.white, size: 32),
-            SizedBox(height: 8),
-            Text(
-              'You',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDefaultRemoteAvatar() {
+  Widget _buildDefaultRemoteAvatar(String name) {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF6C5CE7),
@@ -794,10 +766,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       ),
       child: Center(
         child: Text(
-          widget.name.isNotEmpty ? widget.name[0].toUpperCase() : 'U',
+          name.isNotEmpty ? name[0].toUpperCase() : 'U',
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 48,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
