@@ -34,7 +34,6 @@ class VoiceCallScreen extends StatefulWidget {
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
   bool _isMicrophoneEnabled = true;
   bool _isSpeakerEnabled = true;
-  bool _isCameraEnabled = false;
   bool _isConnected = false; // Track connection status
 
   // Timer for call duration
@@ -72,8 +71,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         setState(() {
           _isMicrophoneEnabled =
               callState.localParticipant?.isAudioEnabled ?? true;
-          _isCameraEnabled =
-              callState.localParticipant?.isVideoEnabled ?? false;
         });
       }
     });
