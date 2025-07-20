@@ -791,6 +791,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
           info: UserInfo(
             name: widget.currentUser.fullName,
             id: widget.currentUser.id,
+            image: widget.currentUser.profileImage,
           ),
         ),
         userToken: callToken,

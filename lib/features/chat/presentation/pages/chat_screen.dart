@@ -767,6 +767,7 @@ class _ChatScreenState extends State<ChatScreen> {
           info: UserInfo(
             name: widget.currentUser.fullName,
             id: widget.currentUser.id,
+            image: widget.currentUser.profileImage,
           ),
         ),
         userToken: callToken,

@@ -309,6 +309,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
           info: UserInfo(
             name: widget.currentUser.fullName,
             id: widget.currentUser.id,
+            image: widget.currentUser.profileImage,
           ),
         ),
         userToken: streamToken,
