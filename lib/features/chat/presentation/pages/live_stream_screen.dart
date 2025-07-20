@@ -20,6 +20,9 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
   void initState() {
     super.initState();
 
+    // Check if user is host and automatically start livestream
+    _checkAndStartLivestream();
+
     _callStateSubscription = widget.livestreamCall.state.valueStream
         .distinct((previous, current) => previous.status != current.status)
         .listen((event) {
@@ -27,6 +30,20 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
             // Prompt the user to check their internet connection
           }
         });
+  }
+
+  void _checkAndStartLivestream() {
+    // Get the current call state
+    final callState = widget.livestreamCall.state.value;
+    final isHost = callState.localParticipant?.roles.contains('host') ?? false;
+
+    // If user is host and livestream is in backstage, start it immediately
+    if (isHost && callState.isBackstage) {
+      // Start the livestream after a brief delay to ensure everything is initialized
+      Future.delayed(const Duration(milliseconds: 500), () {
+        widget.livestreamCall.goLive();
+      });
+    }
   }
 
   @override
@@ -45,8 +62,34 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
         return Scaffold(
           body: Builder(
             builder: (context) {
+              // Show a loading screen while transitioning from backstage to live for hosts
               if (callState.isBackstage) {
-                return BackstageWidget(call: widget.livestreamCall);
+                final isHost =
+                    widget.livestreamCall.state.value.localParticipant?.roles
+                        .contains('host') ??
+                    false;
+
+                if (isHost) {
+                  // Show loading screen for host while livestream starts
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text(
+                          'Starting livestream...',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  // Show waiting screen for viewers
+                  return WaitingForLivestreamWidget(
+                    call: widget.livestreamCall,
+                  );
+                }
               }
 
               if (callState.endedAt != null) {
@@ -55,6 +98,56 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
 
               return CustomLivestreamWidget(call: widget.livestreamCall);
             },
+          ),
+        );
+      },
+    );
+  }
+}
+
+// New widget to show viewers that livestream hasn't started yet
+class WaitingForLivestreamWidget extends StatelessWidget {
+  const WaitingForLivestreamWidget({super.key, required this.call});
+
+  final Call call;
+
+  @override
+  Widget build(BuildContext context) {
+    return PartialCallStateBuilder(
+      call: call,
+      selector: (state) =>
+          state.callParticipants.where((p) => !p.roles.contains('host')).length,
+      builder: (context, waitingParticipantsCount) {
+        return Center(
+          child: Column(
+            spacing: 8,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              PartialCallStateBuilder(
+                call: call,
+                selector: (state) => state.startsAt,
+                builder: (context, startsAt) {
+                  return Text(
+                    startsAt != null
+                        ? 'Livestream starting at ${DateFormat('HH:mm').format(startsAt.toLocal())}'
+                        : 'Waiting for livestream to start...',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  );
+                },
+              ),
+              if (waitingParticipantsCount > 0)
+                Text('$waitingParticipantsCount participants waiting'),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  call.leave();
+                  Navigator.pop(context);
+                },
+                child: const Text('Leave'),
+              ),
+            ],
           ),
         );
       },
@@ -254,6 +347,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                         ElevatedButton(
                           onPressed: () {
                             widget.call.stopLive();
+                            Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
@@ -282,7 +376,11 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                       // Close button
                       GestureDetector(
                         onTap: () {
-                          widget.call.leave();
+                          if (isHost) {
+                            widget.call.stopLive();
+                          } else {
+                            widget.call.leave();
+                          }
                           Navigator.pop(context);
                         },
                         child: Container(
@@ -416,59 +514,6 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
           ],
         ),
       ),
-    );
-  }
-}
-
-// Keep your existing BackstageWidget and LivestreamEndedWidget classes
-class BackstageWidget extends StatelessWidget {
-  const BackstageWidget({super.key, required this.call});
-
-  final Call call;
-
-  @override
-  Widget build(BuildContext context) {
-    return PartialCallStateBuilder(
-      call: call,
-      selector: (state) =>
-          state.callParticipants.where((p) => !p.roles.contains('host')).length,
-      builder: (context, waitingParticipantsCount) {
-        return Center(
-          child: Column(
-            spacing: 8,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              PartialCallStateBuilder(
-                call: call,
-                selector: (state) => state.startsAt,
-                builder: (context, startsAt) {
-                  return Text(
-                    startsAt != null
-                        ? 'Livestream starting at ${DateFormat('HH:mm').format(startsAt.toLocal())}'
-                        : 'Livestream starting soon',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  );
-                },
-              ),
-              if (waitingParticipantsCount > 0)
-                Text('$waitingParticipantsCount participants waiting'),
-              ElevatedButton(
-                onPressed: () {
-                  call.goLive();
-                },
-                child: const Text('Go Live'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  call.leave();
-                  Navigator.pop(context);
-                },
-                child: const Text('Leave Livestream'),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
