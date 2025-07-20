@@ -178,31 +178,22 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   // API call to add a person to call (single conversation)
   Future<void> _addPersonToCall(String conversationId) async {
-    // TODO: Implement API call to add conversation to the current call
-    // This should call your backend endpoint that adds the selected conversation to the call
-
     try {
       final token = await AuthManager.getToken();
-      // Example endpoint structure - adjust according to your backend API
-      // final response = await http.post(
-      //   Uri.parse('$baseUrl/api/v1/call/${widget.call.id}/add-participant'),
-      //   headers: {
-      //     'Authorization': 'Bearer $token',
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: jsonEncode({
-      //     'conversationId': conversationId,
-      //   }),
-      // );
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/calls/${widget.call.id}/conversation'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'conversationId': conversationId}),
+      );
 
-      // if (response.statusCode == 200) {
-      //   _showSuccessSnackBar('Person added to call successfully');
-      // } else {
-      //   _showErrorSnackBar('Failed to add person to call: ${response.body}');
-      // }
-
-      // For now, just show a placeholder message
-      _showSuccessSnackBar('Add person functionality will be implemented');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _showSuccessSnackBar('Person added to call successfully');
+      } else {
+        _showErrorSnackBar('Failed to add person to call: ${response.body}');
+      }
     } catch (e) {
       _showErrorSnackBar('Error adding person to call: $e');
     }
