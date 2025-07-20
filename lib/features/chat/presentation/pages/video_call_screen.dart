@@ -52,6 +52,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   String? _focusedParticipantId;
   bool _isGridView = false;
 
+  final double _localVideoWidth = 120.0;
+  final double _localVideoHeight = 160.0;
+  Offset _localVideoPosition = const Offset(20, 100);
+
   @override
   void initState() {
     super.initState();
@@ -556,19 +560,40 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     if (otherParticipants.isEmpty) return const SizedBox.shrink();
 
     return Positioned(
-      top: 220,
-      right: 20,
-      child: Column(
-        children: otherParticipants.take(4).map((participant) {
-          // Limit to 4 thumbnails
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: GestureDetector(
-              onTap: () => _focusParticipant(participant.userId),
-              child: _buildThumbnailParticipant(participant),
-            ),
-          );
-        }).toList(),
+      left: _localVideoPosition.dx,
+      top: _localVideoPosition.dy,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            _localVideoPosition = Offset(
+              (_localVideoPosition.dx + details.delta.dx).clamp(
+                0.0,
+                MediaQuery.of(context).size.width - _localVideoWidth,
+              ),
+              (_localVideoPosition.dy + details.delta.dy).clamp(
+                0.0,
+                MediaQuery.of(context).size.height - _localVideoHeight,
+              ),
+            );
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: _localVideoWidth,
+          height: _localVideoHeight,
+          child: Column(
+            children: otherParticipants.take(4).map((participant) {
+              // Limit to 4 thumbnails
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: GestureDetector(
+                  onTap: () => _focusParticipant(participant.userId),
+                  child: _buildThumbnailParticipant(participant),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
