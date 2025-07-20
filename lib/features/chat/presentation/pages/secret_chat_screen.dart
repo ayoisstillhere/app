@@ -1828,6 +1828,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     _scrollController.dispose();
     _audioRecorder.closeRecorder();
     _recordingTimer?.cancel(); // Add this line
+    enableScreenshot();
 
     // Dispose media kit resources
     if (_player != null) {
