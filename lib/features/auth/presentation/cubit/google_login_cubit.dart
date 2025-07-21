@@ -42,7 +42,7 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
           'platform': Platform.isAndroid ? 'ANDROID' : 'IOS',
         }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         final token = responseData['access_token'];
         final refreshToken = responseData['refresh_token'];
@@ -86,7 +86,7 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
           'platform': Platform.isAndroid ? 'ANDROID' : 'IOS',
         }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         final token = responseData['access_token'];
         final refreshToken = responseData['refresh_token'];
