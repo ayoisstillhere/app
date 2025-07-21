@@ -265,7 +265,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                                     .where((e) => e.roles.contains('host'))
                                     .firstOrNull,
                                 builder: (context, host) {
-                                  if (host!.image!.isNotEmpty) {
+                                  if (host != null && host.image!.isNotEmpty) {
                                     return ClipOval(
                                       child: Image.network(
                                         host.image!,
@@ -276,7 +276,11 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                                     );
                                   }
                                   return Text(
-                                    host.name.substring(0, 1).toUpperCase(),
+                                    host != null
+                                        ? host.name
+                                              .substring(0, 1)
+                                              .toUpperCase()
+                                        : '',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
