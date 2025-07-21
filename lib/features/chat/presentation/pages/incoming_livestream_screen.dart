@@ -15,6 +15,7 @@ class IncomingLivestreamScreen extends StatefulWidget {
   final UserEntity currentUser;
   final String imageUrl;
   final String streamTitle;
+  final String streamerUsername;
 
   const IncomingLivestreamScreen({
     super.key,
@@ -23,6 +24,7 @@ class IncomingLivestreamScreen extends StatefulWidget {
     required this.currentUser,
     required this.imageUrl,
     required this.streamTitle,
+    required this.streamerUsername,
   });
 
   @override
@@ -433,7 +435,10 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => LiveStreamScreen(livestreamCall: call),
+              builder: (context) => LiveStreamScreen(
+                livestreamCall: call,
+                userName: widget.streamerUsername,
+              ),
             ),
           );
         } else {

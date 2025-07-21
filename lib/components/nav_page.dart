@@ -300,6 +300,7 @@ class _NavPageState extends State<NavPage> {
           currentUser: user,
           imageUrl:
               data['initiatorProfileImage'] ?? data['streamerImage'] ?? '',
+          streamerUsername: data['initiatorUsername'] ?? '',
         ),
       ),
     );

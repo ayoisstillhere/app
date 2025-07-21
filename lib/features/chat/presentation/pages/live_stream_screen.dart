@@ -5,9 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 class LiveStreamScreen extends StatefulWidget {
-  const LiveStreamScreen({super.key, required this.livestreamCall});
+  const LiveStreamScreen({
+    super.key,
+    required this.livestreamCall,
+    required this.userName,
+  });
 
   final Call livestreamCall;
+  final String userName;
 
   @override
   State<LiveStreamScreen> createState() => _LiveStreamScreenState();

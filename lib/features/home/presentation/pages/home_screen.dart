@@ -355,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen>
 
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => LiveStreamScreen(livestreamCall: call),
+            builder: (context) => LiveStreamScreen(livestreamCall: call, userName: widget.currentUser.username,),
           ),
         );
       }
