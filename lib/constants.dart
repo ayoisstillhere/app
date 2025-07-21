@@ -43,16 +43,16 @@ List<Map<String, dynamic>> settingsDetails = [
       "Notification Settings",
     ],
   },
-  {
-    "title": "Privacy & Security",
-    "icon": "assets/icons/settings_privacy.svg",
-    "subItems": [
-      "Privacy Controls",
-      "Two-Step Verification",
-      "Blocked Users",
-      "Start Secret Chat Defaults",
-    ],
-  },
+  // {
+  //   "title": "Privacy & Security",
+  //   "icon": "assets/icons/settings_privacy.svg",
+  //   "subItems": [
+  //     "Privacy Controls",
+  //     "Two-Step Verification",
+  //     "Blocked Users",
+  //     "Start Secret Chat Defaults",
+  //   ],
+  // },
   {
     "title": "Support & Feedback",
     "icon": "assets/icons/settings_support.svg",
