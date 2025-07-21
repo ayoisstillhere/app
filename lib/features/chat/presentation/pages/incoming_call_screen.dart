@@ -256,7 +256,22 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   }
 
   Future<void> _declineCall() async {
-    await _stopRingtoneAndVibration();
-    Navigator.pop(context);
+    try {
+      await _stopRingtoneAndVibration();
+      final token = await AuthManager.getToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/calls/${widget.callId}/reject'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Navigator.pop(context);
+      }
+    } on Exception catch (e) {
+      debugPrint(e.toString());
+    }
   }
 }
