@@ -4,9 +4,11 @@ import 'package:app/features/chat/domain/repositories/firebase_repository.dart';
 import 'package:app/features/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:app/features/chat/presentation/cubit/chat_cubit.dart';
 import 'package:app/features/chat/presentation/cubit/live_stream_comment_cubit.dart';
+import 'package:app/features/chat/presentation/cubit/live_stream_reaction_cubit.dart';
 import 'package:get_it/get_it.dart';
 
 import 'features/chat/domain/usecases/get_live_stream_comnments_usecase.dart';
+import 'features/chat/domain/usecases/get_live_stream_reactions_usecase.dart';
 
 final sl = GetIt.instance;
 
@@ -16,12 +18,18 @@ Future<void> init() async {
   sl.registerFactory<LiveStreamCommentCubit>(
     () => LiveStreamCommentCubit(getLiveStreamComnmentsUsecase: sl.call()),
   );
+  sl.registerFactory<LiveStreamReactionCubit>(
+    () => LiveStreamReactionCubit(getLiveStreamReactionsUsecase: sl.call()),
+  );
   //!useCase
   sl.registerLazySingleton<GetMessagesUsecase>(
     () => GetMessagesUsecase(repository: sl.call()),
   );
   sl.registerLazySingleton<GetLiveStreamComnmentsUsecase>(
     () => GetLiveStreamComnmentsUsecase(repository: sl.call()),
+  );
+  sl.registerLazySingleton<GetLiveStreamReactionsUsecase>(
+    () => GetLiveStreamReactionsUsecase(repository: sl.call()),
   );
   //repository
   sl.registerLazySingleton<FirebaseRepository>(

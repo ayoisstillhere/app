@@ -11,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:media_kit/media_kit.dart';
 import 'features/chat/presentation/cubit/live_stream_comment_cubit.dart';
+import 'features/chat/presentation/cubit/live_stream_reaction_cubit.dart';
 import 'injection_container.dart' as di;
 import 'services/deep_link_navigation_service.dart';
 
@@ -203,6 +204,9 @@ class _MyAppState extends State<MyApp> {
         BlocProvider<ChatCubit>(create: (_) => di.sl<ChatCubit>()),
         BlocProvider<LiveStreamCommentCubit>(
           create: (_) => di.sl<LiveStreamCommentCubit>(),
+        ),
+        BlocProvider<LiveStreamReactionCubit>(
+          create: (_) => di.sl<LiveStreamReactionCubit>(),
         ),
       ],
       child: MediaQuery(
