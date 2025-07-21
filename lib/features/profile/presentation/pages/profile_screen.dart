@@ -905,16 +905,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         ),
-        PopupMenuItem<String>(
-          value: 'Account',
-          child: Text(
-            'Account',
-            style: TextStyle(
-              fontSize: getProportionateScreenWidth(15),
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-        ),
       ],
     );
 
