@@ -545,7 +545,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ),
                   ),
                 ),
-                exploreResponse!.trending[0].media.isEmpty
+                exploreResponse!.trending.isEmpty
+                    ? Container()
+                    : exploreResponse!.trending[0].media.isEmpty
                     ? Container()
                     : SizedBox(height: getProportionateScreenHeight(23)),
                 SingleChildScrollView(

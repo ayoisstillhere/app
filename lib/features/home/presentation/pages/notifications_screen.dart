@@ -6,6 +6,7 @@ import 'package:flutter/material.dart' hide Notification;
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../components/default_button.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
@@ -146,81 +147,95 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: RefreshIndicator(
           onRefresh: _refreshNotifications,
           child: isNotificationsLoaded
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: getProportionateScreenHeight(37)),
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: getProportionateScreenHeight(12),
-                              vertical: getProportionateScreenHeight(12),
-                            ),
-                            child: SvgPicture.asset(
-                              "assets/icons/back_button.svg",
-                              colorFilter: ColorFilter.mode(
-                                iconColor,
-                                BlendMode.srcIn,
-                              ),
-                              width: getProportionateScreenWidth(24),
-                              height: getProportionateScreenHeight(24),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          "Notifications",
-                          style: Theme.of(context).textTheme.displayMedium!
-                              .copyWith(
-                                fontWeight: FontWeight.w500,
-                                fontSize: getProportionateScreenWidth(24),
-                              ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: getProportionateScreenHeight(10)),
-                    Divider(thickness: 1, color: dividerColor),
-                    SizedBox(height: getProportionateScreenHeight(32)),
-                    Expanded(
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: getProportionateScreenWidth(20),
-                        ),
-                        itemCount: notifications.length + (hasMoreData ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == notifications.length) {
-                            return _buildLoadingIndicator();
-                          }
-
-                          return Column(
+              ? notifications.isEmpty
+                    ? EmptyState(
+                        message: 'No notifications yet!',
+                        buttonText: 'Go back',
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: getProportionateScreenHeight(37)),
+                          Row(
                             children: [
-                              NotificationTile(
-                                iconColor: iconColor,
-                                username: notifications[index].sender?.username,
-                                action: notifications[index].message,
-                                time: notifications[index].createdAt,
-                                image:
-                                    notifications[index].sender?.profileImage,
-                                isClickable: notifications[index].post != null,
-                                buttonText: "View",
-                                currentUser: widget.currentUser,
-                                postId: notifications[index].post?.id,
+                              InkWell(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: getProportionateScreenHeight(
+                                      12,
+                                    ),
+                                    vertical: getProportionateScreenHeight(12),
+                                  ),
+                                  child: SvgPicture.asset(
+                                    "assets/icons/back_button.svg",
+                                    colorFilter: ColorFilter.mode(
+                                      iconColor,
+                                      BlendMode.srcIn,
+                                    ),
+                                    width: getProportionateScreenWidth(24),
+                                    height: getProportionateScreenHeight(24),
+                                  ),
+                                ),
                               ),
-                              SizedBox(
-                                height: getProportionateScreenHeight(25),
+                              Text(
+                                "Notifications",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displayMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: getProportionateScreenWidth(24),
+                                    ),
                               ),
                             ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                )
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(10)),
+                          Divider(thickness: 1, color: dividerColor),
+                          SizedBox(height: getProportionateScreenHeight(32)),
+                          Expanded(
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: getProportionateScreenWidth(20),
+                              ),
+                              itemCount:
+                                  notifications.length + (hasMoreData ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == notifications.length) {
+                                  return _buildLoadingIndicator();
+                                }
+
+                                return Column(
+                                  children: [
+                                    NotificationTile(
+                                      iconColor: iconColor,
+                                      username:
+                                          notifications[index].sender?.username,
+                                      action: notifications[index].message,
+                                      time: notifications[index].createdAt,
+                                      image: notifications[index]
+                                          .sender
+                                          ?.profileImage,
+                                      isClickable:
+                                          notifications[index].post != null,
+                                      buttonText: "View",
+                                      currentUser: widget.currentUser,
+                                      postId: notifications[index].post?.id,
+                                    ),
+                                    SizedBox(
+                                      height: getProportionateScreenHeight(25),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      )
               : const Center(child: CircularProgressIndicator()),
         ),
       ),
@@ -231,6 +246,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: getProportionateScreenHeight(20)),
       child: const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class EmptyState extends StatelessWidget {
+  const EmptyState({
+    required this.message,
+    required this.buttonText,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String message;
+  final String buttonText;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(message, style: Theme.of(context).textTheme.displayMedium),
+          SizedBox(height: getProportionateScreenHeight(32)),
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(
+              horizontal: getProportionateScreenWidth(20),
+            ),
+            child: DefaultButton(text: buttonText, press: onPressed),
+          ),
+        ],
+      ),
     );
   }
 }
