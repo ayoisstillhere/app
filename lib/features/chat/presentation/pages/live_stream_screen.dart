@@ -423,32 +423,28 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
           ),
 
           // Chat messages (only for viewers)
-          if (!isHost)
-            Positioned(
-              bottom: 100,
-              left: 16,
-              right: 16,
-              child: SizedBox(
-                height: 200,
-                child: ListView(
-                  controller: _chatScrollController,
-                  children: [
-                    _buildChatMessage(
-                      "Casey Brown",
-                      "Engage with active listening",
-                    ),
-                    _buildChatMessage("Morgan Lee", "I love you"),
-                    _buildChatMessage("Taylor Johnson", "Just followed you"),
-                    _buildChatMessage("Jordan Smith", "Just sent you a gift!"),
-                    _buildChatMessage(
-                      "Jamie Chen",
-                      "Focus on the task at hand",
-                    ),
-                    _buildChatMessage("Alex walker", "Stop talking a lot"),
-                  ],
-                ),
+          Positioned(
+            bottom: 100,
+            left: 16,
+            right: 16,
+            child: SizedBox(
+              height: 200,
+              child: ListView(
+                controller: _chatScrollController,
+                children: [
+                  _buildChatMessage(
+                    "Casey Brown",
+                    "Engage with active listening",
+                  ),
+                  _buildChatMessage("Morgan Lee", "I love you"),
+                  _buildChatMessage("Taylor Johnson", "Just followed you"),
+                  _buildChatMessage("Jordan Smith", "Just sent you a gift!"),
+                  _buildChatMessage("Jamie Chen", "Focus on the task at hand"),
+                  _buildChatMessage("Alex walker", "Stop talking a lot"),
+                ],
               ),
             ),
+          ),
 
           // Message input (only for viewers)
           if (!isHost)
