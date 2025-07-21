@@ -1181,5 +1181,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     _callTimer?.cancel();
     _noParticipantsTimer?.cancel();
     super.dispose();
+    widget.call.leave();
   }
 }

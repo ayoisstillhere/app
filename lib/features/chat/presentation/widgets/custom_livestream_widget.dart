@@ -111,6 +111,8 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
     enableScreenshot();
     if (isHost) {
       widget.call.stopLive();
+    } else {
+      widget.call.leave();
     }
   }
 

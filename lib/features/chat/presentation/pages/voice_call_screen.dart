@@ -804,5 +804,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     _callTimer?.cancel();
     _noParticipantsTimer?.cancel();
     super.dispose();
+    widget.call.leave();
   }
 }
