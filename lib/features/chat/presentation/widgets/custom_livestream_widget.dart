@@ -172,31 +172,43 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
   }
 
   void _showFloatingReaction(String reaction) {
-    final animationController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
+    // Create 3-5 floating emojis for a nicer effect
+    final emojiCount = 3 + Random().nextInt(3); // 3-5 emojis
 
-    final reactionAnimation = _ReactionAnimation(
-      controller: animationController,
-      reaction: reaction,
-      startIndex: _reactionAnimations.length, // for positioning variation
-    );
+    for (int i = 0; i < emojiCount; i++) {
+      // Slight delay between each emoji (0-500ms)
+      Future.delayed(Duration(milliseconds: i * 150), () {
+        if (!mounted) return;
 
-    _reactionAnimations.add(reactionAnimation);
+        final animationController = AnimationController(
+          duration: Duration(
+            milliseconds: 2500 + Random().nextInt(1000),
+          ), // 2.5-3.5s
+          vsync: this,
+        );
 
-    // Remove controller after animation completes
-    animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _reactionAnimations.remove(reactionAnimation);
-        animationController.dispose();
-      }
-    });
+        final reactionAnimation = _ReactionAnimation(
+          controller: animationController,
+          reaction: reaction,
+          startIndex: _reactionAnimations.length + i,
+        );
 
-    animationController.forward();
+        _reactionAnimations.add(reactionAnimation);
 
-    if (mounted) {
-      setState(() {});
+        // Remove controller after animation completes
+        animationController.addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _reactionAnimations.remove(reactionAnimation);
+            animationController.dispose();
+          }
+        });
+
+        animationController.forward();
+
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
@@ -493,34 +505,65 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                       final screenHeight = MediaQuery.of(context).size.height;
                       final screenWidth = MediaQuery.of(context).size.width;
 
-                      // Random horizontal position
-                      final startX =
-                          screenWidth * 0.2 +
-                          random.nextDouble() * (screenWidth * 0.6);
-                      final endX = startX + (random.nextDouble() - 0.5) * 100;
+                      // Smooth curved motion using sine waves
+                      final baseX =
+                          screenWidth * 0.15 +
+                          random.nextDouble() * (screenWidth * 0.7);
+                      final swayAmount =
+                          30 + random.nextDouble() * 40; // 30-70px sway
+                      final currentX =
+                          baseX + sin(progress * pi * 2) * swayAmount;
 
-                      // Vertical movement from bottom to top
-                      final startY = screenHeight * 0.8;
-                      final endY = screenHeight * 0.2;
+                      // Smooth vertical movement with slight deceleration at top
+                      final startY = screenHeight * 0.85;
+                      final endY = screenHeight * 0.15;
+                      final easedProgress = Curves.easeOut.transform(progress);
+                      final currentY = startY - (startY - endY) * easedProgress;
 
-                      final currentX = startX + (endX - startX) * progress;
-                      final currentY = startY - (startY - endY) * progress;
+                      // Smooth opacity fade
+                      final opacity = progress < 0.1
+                          ? progress *
+                                10 // Fade in quickly
+                          : progress > 0.7
+                          ? 1.0 -
+                                ((progress - 0.7) / 0.3) // Fade out in last 30%
+                          : 1.0;
 
-                      // Fade out near the end
-                      final opacity = progress < 0.8
-                          ? 1.0
-                          : (1.0 - (progress - 0.8) / 0.2);
+                      // Gentle scale animation
+                      final scale =
+                          0.8 +
+                          sin(progress * pi) *
+                              0.3; // Scale from 0.8 to 1.1 and back
+
+                      // Gentle rotation
+                      final rotation =
+                          sin(progress * pi * 1.5) * 0.2; // Slight wobble
 
                       return Positioned(
                         left: currentX,
                         top: currentY,
                         child: Opacity(
-                          opacity: opacity,
+                          opacity: opacity.clamp(0.0, 1.0),
                           child: Transform.scale(
-                            scale: 1.0 + progress * 0.5, // Grow as it floats up
-                            child: Text(
-                              reaction, // Use the actual reaction instead of random
-                              style: const TextStyle(fontSize: 30),
+                            scale: scale,
+                            child: Transform.rotate(
+                              angle: rotation,
+                              child: Text(
+                                reaction, // Uses the actual reaction passed to the method
+                                style: TextStyle(
+                                  fontSize:
+                                      24 +
+                                      random.nextDouble() *
+                                          6, // Slight size variation
+                                  shadows: [
+                                    Shadow(
+                                      blurRadius: 4,
+                                      color: Colors.black.withOpacity(0.3),
+                                      offset: const Offset(1, 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
