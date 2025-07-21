@@ -509,76 +509,79 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                                     ),
                             const SizedBox(width: 8),
                             // Close button
-                            GestureDetector(
-                              onTap: () async {
-                                if (isHost) {
-                                  try {
-                                    final token = await AuthManager.getToken();
-                                    final response = await http.post(
-                                      Uri.parse(
-                                        '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/end',
-                                      ),
-                                      headers: {
-                                        'accept': '*/*',
-                                        'Authorization': 'Bearer $token',
-                                      },
-                                    );
+                            if (!isHost)
+                              GestureDetector(
+                                onTap: () async {
+                                  if (isHost) {
+                                    try {
+                                      final token =
+                                          await AuthManager.getToken();
+                                      final response = await http.post(
+                                        Uri.parse(
+                                          '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/end',
+                                        ),
+                                        headers: {
+                                          'accept': '*/*',
+                                          'Authorization': 'Bearer $token',
+                                        },
+                                      );
 
-                                    if (response.statusCode == 200 ||
-                                        response.statusCode == 201) {
-                                      widget.call.stopLive();
-                                      Navigator.pop(context);
-                                    } else {
+                                      if (response.statusCode == 200 ||
+                                          response.statusCode == 201) {
+                                        widget.call.stopLive();
+                                        Navigator.pop(context);
+                                      } else {
+                                        _showErrorSnackBar(
+                                          'Live stream ended but failed to notify server',
+                                        );
+                                      }
+                                    } catch (e) {
                                       _showErrorSnackBar(
-                                        'Live stream ended but failed to notify server',
+                                        'Live stream ended but failed to notify server: ${e.toString()}',
                                       );
                                     }
-                                  } catch (e) {
-                                    _showErrorSnackBar(
-                                      'Live stream ended but failed to notify server: ${e.toString()}',
-                                    );
-                                  }
-                                } else {
-                                  try {
-                                    final token = await AuthManager.getToken();
-                                    final response = await http.post(
-                                      Uri.parse(
-                                        '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/leave',
-                                      ),
-                                      headers: {
-                                        'accept': '*/*',
-                                        'Authorization': 'Bearer $token',
-                                      },
-                                    );
+                                  } else {
+                                    try {
+                                      final token =
+                                          await AuthManager.getToken();
+                                      final response = await http.post(
+                                        Uri.parse(
+                                          '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/leave',
+                                        ),
+                                        headers: {
+                                          'accept': '*/*',
+                                          'Authorization': 'Bearer $token',
+                                        },
+                                      );
 
-                                    if (response.statusCode == 200 ||
-                                        response.statusCode == 201) {
-                                      widget.call.leave();
-                                    } else {
+                                      if (response.statusCode == 200 ||
+                                          response.statusCode == 201) {
+                                        widget.call.leave();
+                                      } else {
+                                        _showErrorSnackBar(
+                                          'Live stream left but failed to notify server',
+                                        );
+                                      }
+                                    } catch (e) {
                                       _showErrorSnackBar(
-                                        'Live stream left but failed to notify server',
+                                        'Live stream left but failed to notify server: ${e.toString()}',
                                       );
                                     }
-                                  } catch (e) {
-                                    _showErrorSnackBar(
-                                      'Live stream left but failed to notify server: ${e.toString()}',
-                                    );
                                   }
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 20,
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ),
