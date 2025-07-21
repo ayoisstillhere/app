@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../../../../constants.dart';
@@ -22,11 +23,13 @@ class CustomLivestreamWidget extends StatefulWidget {
     required this.call,
     required this.userName,
     required this.liveStreamId,
+    required this.isScreenshotAllowed,
   });
 
   final Call call;
   final String userName;
   final String liveStreamId;
+  final bool isScreenshotAllowed;
 
   @override
   State<CustomLivestreamWidget> createState() => _CustomLivestreamWidgetState();
@@ -54,6 +57,8 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
       {}; // Track processed reactions by unique key
   final List<_ReactionAnimation> _reactionAnimations = [];
 
+  final _noScreenshot = NoScreenshot.instance;
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +67,18 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
     }
     BlocProvider.of<LiveStreamCommentCubit>(context).getLiveStreamComments();
     BlocProvider.of<LiveStreamReactionCubit>(context).getLiveStreamReactions();
+    disableScreenshot();
+  }
+
+  void disableScreenshot() async {
+    if (widget.isScreenshotAllowed) return;
+    bool result = await _noScreenshot.screenshotOff();
+    debugPrint('Screenshot Off: $result');
+  }
+
+  void enableScreenshot() async {
+    bool result = await _noScreenshot.screenshotOn();
+    debugPrint('Enable Screenshot: $result');
   }
 
   Future<void> _fetchUser() async {
@@ -91,6 +108,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
       reactionAnimation.controller.dispose();
     }
     super.dispose();
+    enableScreenshot();
   }
 
   bool get isHost {

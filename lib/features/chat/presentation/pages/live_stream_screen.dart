@@ -13,11 +13,13 @@ class LiveStreamScreen extends StatefulWidget {
     required this.livestreamCall,
     required this.userName,
     required this.liveStreamId,
+    required this.isScreenshotAllowed,
   });
 
   final Call livestreamCall;
   final String userName;
   final String liveStreamId;
+  final bool isScreenshotAllowed;
 
   @override
   State<LiveStreamScreen> createState() => _LiveStreamScreenState();
@@ -120,6 +122,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                 call: widget.livestreamCall,
                 userName: widget.userName,
                 liveStreamId: widget.liveStreamId,
+                isScreenshotAllowed: widget.isScreenshotAllowed,
               );
             },
           ),

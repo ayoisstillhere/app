@@ -135,6 +135,7 @@ class _TestCallState extends State<TestCall> {
           livestreamCall: call,
           userName: "Chief",
           liveStreamId: 'HWhhNtSfj80H',
+          isScreenshotAllowed: true,
         ),
       ),
     );

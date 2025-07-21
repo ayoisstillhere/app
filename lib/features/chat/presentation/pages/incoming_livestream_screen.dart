@@ -16,6 +16,7 @@ class IncomingLivestreamScreen extends StatefulWidget {
   final String imageUrl;
   final String streamTitle;
   final String streamerUsername;
+  final bool isScreenshotAllowed;
 
   const IncomingLivestreamScreen({
     super.key,
@@ -25,6 +26,7 @@ class IncomingLivestreamScreen extends StatefulWidget {
     required this.imageUrl,
     required this.streamTitle,
     required this.streamerUsername,
+    required this.isScreenshotAllowed,
   });
 
   @override
@@ -441,6 +443,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                 livestreamCall: call,
                 userName: widget.streamerUsername,
                 liveStreamId: widget.liveStreamId,
+                isScreenshotAllowed: widget.isScreenshotAllowed,
               ),
             ),
           );

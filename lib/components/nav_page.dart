@@ -301,6 +301,7 @@ class _NavPageState extends State<NavPage> {
           imageUrl:
               data['initiatorProfileImage'] ?? data['streamerImage'] ?? '',
           streamerUsername: data['initiatorUsername'] ?? '',
+          isScreenshotAllowed: data['isScreenshotAllowed'] ?? true,
         ),
       ),
     );

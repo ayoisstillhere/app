@@ -59,6 +59,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   bool _isLivestreamLoading = false;
 
+  bool _allowScreenshots = true;
+
   @override
   void initState() {
     super.initState();
@@ -294,8 +296,40 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _handleLivestream() async {
+    // Show dialog to ask user about screenshot permission
+    final bool? allowScreenshots = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Livestream Settings'),
+          content: Text(
+            'Do you want to allow viewers to take screenshots of your livestream?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('No Screenshots'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Allow Screenshots'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled the dialog, don't proceed
+    if (allowScreenshots == null) {
+      setState(() {
+        _isFabExpanded = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLivestreamLoading = true;
+      _allowScreenshots = allowScreenshots;
     });
 
     final token = await AuthManager.getToken();
@@ -303,7 +337,13 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/v1/calls/live-stream'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json', // Add this header
+        },
+        body: jsonEncode({
+          'isScreenshotAllowed': _allowScreenshots, // Add this field
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -359,6 +399,7 @@ class _HomeScreenState extends State<HomeScreen>
               livestreamCall: call,
               userName: widget.currentUser.username,
               liveStreamId: liveStreamId,
+              isScreenshotAllowed: _allowScreenshots,
             ),
           ),
         );
