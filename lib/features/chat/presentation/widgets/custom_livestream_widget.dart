@@ -516,8 +516,31 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                                     );
                                   }
                                 } else {
-                                  widget.call.leave();
-                                  Navigator.pop(context);
+                                  try {
+                                    final token = await AuthManager.getToken();
+                                    final response = await http.post(
+                                      Uri.parse(
+                                        '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/leave',
+                                      ),
+                                      headers: {
+                                        'accept': '*/*',
+                                        'Authorization': 'Bearer $token',
+                                      },
+                                    );
+
+                                    if (response.statusCode == 200 ||
+                                        response.statusCode == 201) {
+                                      widget.call.leave();
+                                    } else {
+                                      _showErrorSnackBar(
+                                        'Live stream left but failed to notify server',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    _showErrorSnackBar(
+                                      'Live stream left but failed to notify server: ${e.toString()}',
+                                    );
+                                  }
                                 }
                               },
                               child: Container(
