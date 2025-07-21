@@ -398,9 +398,33 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                             // Follow/End Live button
                             if (isHost)
                               ElevatedButton(
-                                onPressed: () {
-                                  widget.call.stopLive();
-                                  Navigator.pop(context);
+                                onPressed: () async {
+                                  try {
+                                    final token = await AuthManager.getToken();
+                                    final response = await http.post(
+                                      Uri.parse(
+                                        '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/end',
+                                      ),
+                                      headers: {
+                                        'accept': '*/*',
+                                        'Authorization': 'Bearer $token',
+                                      },
+                                    );
+
+                                    if (response.statusCode == 200 ||
+                                        response.statusCode == 201) {
+                                      widget.call.stopLive();
+                                      Navigator.pop(context);
+                                    } else {
+                                      _showErrorSnackBar(
+                                        'Live stream ended but failed to notify server',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    _showErrorSnackBar(
+                                      'Live stream ended but failed to notify server: ${e.toString()}',
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
@@ -463,13 +487,38 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                             const SizedBox(width: 8),
                             // Close button
                             GestureDetector(
-                              onTap: () {
+                              onTap: () async {
                                 if (isHost) {
-                                  widget.call.stopLive();
+                                  try {
+                                    final token = await AuthManager.getToken();
+                                    final response = await http.post(
+                                      Uri.parse(
+                                        '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/end',
+                                      ),
+                                      headers: {
+                                        'accept': '*/*',
+                                        'Authorization': 'Bearer $token',
+                                      },
+                                    );
+
+                                    if (response.statusCode == 200 ||
+                                        response.statusCode == 201) {
+                                      widget.call.stopLive();
+                                      Navigator.pop(context);
+                                    } else {
+                                      _showErrorSnackBar(
+                                        'Live stream ended but failed to notify server',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    _showErrorSnackBar(
+                                      'Live stream ended but failed to notify server: ${e.toString()}',
+                                    );
+                                  }
                                 } else {
                                   widget.call.leave();
+                                  Navigator.pop(context);
                                 }
-                                Navigator.pop(context);
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(8),
