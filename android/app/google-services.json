@@ -50,6 +50,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "966329839831-6578gd0t6glrjh2hs4cf67fg3kdvir3p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hirasocial.app",
+            "certificate_hash": "e0b870a0ef50f32bd232d13df6e3792ed8577eb6"
+          }
+        },
+        {
           "client_id": "966329839831-f2991c50i5t9jq892307jv2btf35il3o.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
