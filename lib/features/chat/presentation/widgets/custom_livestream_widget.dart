@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
@@ -398,7 +399,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                   left: 16,
                   right: 16,
                   child: SizedBox(
-                    height: 200,
+                    height: getProportionateScreenHeight(282),
                     child:
                         BlocBuilder<
                           LiveStreamCommentCubit,
@@ -420,6 +421,20 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                               requiredComments.sort(
                                 (a, b) => a.createdAt.compareTo(b.createdAt),
                               );
+
+                              // Auto-scroll to bottom after build is complete
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (_chatScrollController.hasClients) {
+                                  _chatScrollController.animateTo(
+                                    _chatScrollController
+                                        .position
+                                        .maxScrollExtent,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOut,
+                                  );
+                                }
+                              });
+
                               return ListView.builder(
                                 controller: _chatScrollController,
                                 itemCount: requiredComments.length,
