@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
@@ -9,6 +10,8 @@ import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/entities/user_entity.dart';
+import '../../domain/entities/live_stream_comment_entity.dart';
+import '../cubit/live_stream_comment_cubit.dart';
 
 class CustomLivestreamWidget extends StatefulWidget {
   const CustomLivestreamWidget({
@@ -39,6 +42,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
     if (mounted) {
       _fetchUser();
     }
+    BlocProvider.of<LiveStreamCommentCubit>(context).getLiveStreamComments();
   }
 
   Future<void> _fetchUser() async {
@@ -93,7 +97,9 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
         if (response.statusCode == 200 || response.statusCode == 201) {
           _messageController.clear();
           // Refresh messages to show the new one
-          // BlocProvider.of<ChatCubit>(context).getTextMessages();
+          BlocProvider.of<LiveStreamCommentCubit>(
+            context,
+          ).getLiveStreamComments();
         } else {
           _showErrorSnackBar(
             jsonDecode(
@@ -393,29 +399,42 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
                   right: 16,
                   child: SizedBox(
                     height: 200,
-                    child: ListView(
-                      controller: _chatScrollController,
-                      children: [
-                        _buildChatMessage(
-                          "Casey Brown",
-                          "Engage with active listening",
+                    child:
+                        BlocBuilder<
+                          LiveStreamCommentCubit,
+                          LiveStreamCommentState
+                        >(
+                          builder: (context, state) {
+                            if (state is LiveStreamCommentLoaded) {
+                              List<LiveStreamCommentEntity> requiredComments =
+                                  [];
+                              for (LiveStreamCommentEntity
+                                  liveStreamCommentEntity
+                                  in state.comments) {
+                                if (liveStreamCommentEntity.liveStreamId ==
+                                    widget.liveStreamId) {
+                                  requiredComments.add(liveStreamCommentEntity);
+                                }
+                              }
+
+                              requiredComments.sort(
+                                (a, b) => a.createdAt.compareTo(b.createdAt),
+                              );
+                              return ListView.builder(
+                                controller: _chatScrollController,
+                                itemCount: requiredComments.length,
+                                itemBuilder: (context, index) {
+                                  final comment = requiredComments[index];
+                                  return _buildChatMessage(
+                                    comment.username,
+                                    comment.comment,
+                                  );
+                                },
+                              );
+                            }
+                            return Center(child: CircularProgressIndicator());
+                          },
                         ),
-                        _buildChatMessage("Morgan Lee", "I love you"),
-                        _buildChatMessage(
-                          "Taylor Johnson",
-                          "Just followed you",
-                        ),
-                        _buildChatMessage(
-                          "Jordan Smith",
-                          "Just sent you a gift!",
-                        ),
-                        _buildChatMessage(
-                          "Jamie Chen",
-                          "Focus on the task at hand",
-                        ),
-                        _buildChatMessage("Alex walker", "Stop talking a lot"),
-                      ],
-                    ),
                   ),
                 ),
 

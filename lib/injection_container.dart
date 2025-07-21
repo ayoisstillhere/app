@@ -3,16 +3,25 @@ import 'package:app/features/chat/data/repositories/firebase_repository_impl.dar
 import 'package:app/features/chat/domain/repositories/firebase_repository.dart';
 import 'package:app/features/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:app/features/chat/presentation/cubit/chat_cubit.dart';
+import 'package:app/features/chat/presentation/cubit/live_stream_comment_cubit.dart';
 import 'package:get_it/get_it.dart';
+
+import 'features/chat/domain/usecases/get_live_stream_comnments_usecase.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
   //Features bloc,
   sl.registerFactory<ChatCubit>(() => ChatCubit(getMessagesUsecase: sl.call()));
+  sl.registerFactory<LiveStreamCommentCubit>(
+    () => LiveStreamCommentCubit(getLiveStreamComnmentsUsecase: sl.call()),
+  );
   //!useCase
   sl.registerLazySingleton<GetMessagesUsecase>(
     () => GetMessagesUsecase(repository: sl.call()),
+  );
+  sl.registerLazySingleton<GetLiveStreamComnmentsUsecase>(
+    () => GetLiveStreamComnmentsUsecase(repository: sl.call()),
   );
   //repository
   sl.registerLazySingleton<FirebaseRepository>(
@@ -20,7 +29,8 @@ Future<void> init() async {
   );
   //datasource
   sl.registerLazySingleton<FirebaseRemoteDataSource>(
-      () => FirebaseRemoteDatasourceImpl());
+    () => FirebaseRemoteDatasourceImpl(),
+  );
   //external
   //e.g final shared Preference = await SharedPreferences.getInstance();
 }
