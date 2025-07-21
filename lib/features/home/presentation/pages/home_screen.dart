@@ -57,6 +57,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   int notificationsCount = 0;
 
+  bool _isLivestreamLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -292,6 +294,10 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _handleLivestream() async {
+    setState(() {
+      _isLivestreamLoading = true;
+    });
+
     final token = await AuthManager.getToken();
     String callToken;
     try {
@@ -330,22 +336,11 @@ class _HomeScreenState extends State<HomeScreen>
         );
         if (result.isFailure) {
           debugPrint('Not able to create a call.');
+          setState(() {
+            _isLivestreamLoading = false;
+          });
           return;
         }
-
-        // final updateResult = await call.update(
-        //   startsAt: DateTime.now().toUtc().add(const Duration(seconds: 120)),
-        //   backstage: const StreamBackstageSettings(
-        //     enabled: true,
-        //     joinAheadTimeSeconds: 120,
-        //   ),
-        // );
-
-        // if (updateResult.isFailure) {
-        //   debugPrint('Not able to update the call.');
-        //   debugPrint(updateResult.getErrorOrNull().toString());
-        //   return;
-        // }
 
         final connectOptions = CallConnectOptions(
           camera: TrackOption.enabled(),
@@ -353,6 +348,10 @@ class _HomeScreenState extends State<HomeScreen>
         );
 
         await call.join(connectOptions: connectOptions);
+
+        setState(() {
+          _isLivestreamLoading = false;
+        });
 
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -376,6 +375,9 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       );
+      setState(() {
+        _isLivestreamLoading = false;
+      });
     }
 
     setState(() {
@@ -415,13 +417,28 @@ class _HomeScreenState extends State<HomeScreen>
                 ? Padding(
                     padding: EdgeInsets.only(bottom: 16),
                     child: FloatingActionButton(
-                      onPressed: _handleLivestream,
+                      onPressed: _isLivestreamLoading
+                          ? null
+                          : _handleLivestream,
                       heroTag: "livestream",
                       shape: const CircleBorder(),
                       mini: true,
                       elevation: 4,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.live_tv, color: Colors.black, size: 20),
+                      backgroundColor: _isLivestreamLoading
+                          ? Colors.grey
+                          : Colors.white,
+                      child: _isLivestreamLoading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.black,
+                                ),
+                              ),
+                            )
+                          : Icon(Icons.live_tv, color: Colors.black, size: 20),
                     ),
                   )
                 : SizedBox.shrink(),
