@@ -15,7 +15,6 @@ class IncomingLivestreamScreen extends StatefulWidget {
   final UserEntity currentUser;
   final String imageUrl;
   final String streamTitle;
-  final int viewerCount;
 
   const IncomingLivestreamScreen({
     super.key,
@@ -24,7 +23,6 @@ class IncomingLivestreamScreen extends StatefulWidget {
     required this.currentUser,
     required this.imageUrl,
     required this.streamTitle,
-    this.viewerCount = 0,
   });
 
   @override
@@ -210,24 +208,24 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                   SizedBox(height: 12),
 
                   // Viewer count
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.visibility, color: Colors.white70, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          '${widget.viewerCount} watching',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Container(
+                  //   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white.withOpacity(0.1),
+                  //     borderRadius: BorderRadius.circular(15),
+                  //   ),
+                  //   child: Row(
+                  //     mainAxisSize: MainAxisSize.min,
+                  //     children: [
+                  //       Icon(Icons.visibility, color: Colors.white70, size: 16),
+                  // SizedBox(width: 4),
+                  // Text(
+                  //   '${} watching',
+                  //   style: TextStyle(color: Colors.white70, fontSize: 12),
+                  // ),
+                  //     ],
+                  //   ),
+                  // ),
                   SizedBox(height: 50),
 
                   // Action buttons

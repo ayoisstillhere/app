@@ -292,11 +292,10 @@ class _NavPageState extends State<NavPage> {
       context,
       MaterialPageRoute(
         builder: (_) => IncomingLivestreamScreen(
-          streamerName:
-              data['initiatorFullName'] ?? data['streamerName'] ?? 'Unknown',
+          streamerName: data['initiatorFullName'] ?? 'Unknown',
           streamTitle:
               data['streamTitle'] ??
-              "${data['initiatorName'] ?? 'Unknown'} Live Stream",
+              "${data['initiatorFullName'] ?? 'Unknown'}'s Live Stream",
           roomId: data['liveStreamId'] ?? data['streamId'] ?? '',
           currentUser: user,
           imageUrl:
