@@ -109,6 +109,9 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
     }
     super.dispose();
     enableScreenshot();
+    if (isHost) {
+      widget.call.stopLive();
+    }
   }
 
   bool get isHost {
