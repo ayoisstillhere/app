@@ -28,13 +28,23 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
     // Check if user is host and automatically start livestream
     _checkAndStartLivestream();
 
-    _callStateSubscription = widget.livestreamCall.state.valueStream
-        .distinct((previous, current) => previous.status != current.status)
-        .listen((event) {
-          if (event.status is CallStatusDisconnected) {
-            // Prompt the user to check their internet connection
-          }
-        });
+    _callStateSubscription = widget.livestreamCall.state.valueStream.listen((
+      event,
+    ) {
+      final status = event.status;
+
+      if (status is CallStatusDisconnected) {
+        // Navigate to LivestreamEndedWidget
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) =>
+                  LivestreamEndedWidget(call: widget.livestreamCall),
+            ),
+          );
+        }
+      }
+    });
   }
 
   void _checkAndStartLivestream() {
