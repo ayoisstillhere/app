@@ -11,7 +11,7 @@ import 'live_stream_screen.dart';
 
 class IncomingLivestreamScreen extends StatefulWidget {
   final String streamerName;
-  final String roomId;
+  final String liveStreamId;
   final UserEntity currentUser;
   final String imageUrl;
   final String streamTitle;
@@ -20,7 +20,7 @@ class IncomingLivestreamScreen extends StatefulWidget {
   const IncomingLivestreamScreen({
     super.key,
     required this.streamerName,
-    required this.roomId,
+    required this.liveStreamId,
     required this.currentUser,
     required this.imageUrl,
     required this.streamTitle,
@@ -387,7 +387,9 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
       final token = await AuthManager.getToken();
       String streamToken;
       final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/calls/live-stream/${widget.roomId}/join'),
+        Uri.parse(
+          '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/join',
+        ),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -438,6 +440,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
               builder: (context) => LiveStreamScreen(
                 livestreamCall: call,
                 userName: widget.streamerUsername,
+                liveStreamId: widget.liveStreamId,
               ),
             ),
           );

@@ -296,7 +296,7 @@ class _NavPageState extends State<NavPage> {
           streamTitle:
               data['streamTitle'] ??
               "${data['initiatorFullName'] ?? 'Unknown'}'s Live Stream",
-          roomId: data['liveStreamId'] ?? data['streamId'] ?? '',
+          liveStreamId: data['liveStreamId'] ?? data['streamId'] ?? '',
           currentUser: user,
           imageUrl:
               data['initiatorProfileImage'] ?? data['streamerImage'] ?? '',

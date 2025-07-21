@@ -12,10 +12,12 @@ class LiveStreamScreen extends StatefulWidget {
     super.key,
     required this.livestreamCall,
     required this.userName,
+    required this.liveStreamId,
   });
 
   final Call livestreamCall;
   final String userName;
+  final String liveStreamId;
 
   @override
   State<LiveStreamScreen> createState() => _LiveStreamScreenState();
@@ -117,6 +119,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
               return CustomLivestreamWidget(
                 call: widget.livestreamCall,
                 userName: widget.userName,
+                liveStreamId: widget.liveStreamId,
               );
             },
           ),

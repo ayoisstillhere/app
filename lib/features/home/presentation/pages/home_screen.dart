@@ -315,6 +315,7 @@ class _HomeScreenState extends State<HomeScreen>
           userToken: callToken,
         );
         String roomId = jsonDecode(response.body)['liveStream']['roomId'];
+        String liveStreamId = jsonDecode(response.body)['liveStream']['id'];
         var call = StreamVideo.instance.makeCall(
           callType: StreamCallType.liveStream(),
           id: roomId,
@@ -355,7 +356,11 @@ class _HomeScreenState extends State<HomeScreen>
 
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => LiveStreamScreen(livestreamCall: call, userName: widget.currentUser.username,),
+            builder: (context) => LiveStreamScreen(
+              livestreamCall: call,
+              userName: widget.currentUser.username,
+              liveStreamId: liveStreamId,
+            ),
           ),
         );
       }

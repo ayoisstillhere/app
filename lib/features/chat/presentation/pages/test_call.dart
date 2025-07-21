@@ -131,7 +131,11 @@ class _TestCallState extends State<TestCall> {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => LiveStreamScreen(livestreamCall: call, userName: "Chief",),
+        builder: (context) => LiveStreamScreen(
+          livestreamCall: call,
+          userName: "Chief",
+          liveStreamId: 'HWhhNtSfj80H',
+        ),
       ),
     );
   }

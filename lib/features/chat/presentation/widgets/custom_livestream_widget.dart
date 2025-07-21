@@ -1,16 +1,24 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+
+import '../../../../constants.dart';
+import '../../../../services/auth_manager.dart';
 
 class CustomLivestreamWidget extends StatefulWidget {
   const CustomLivestreamWidget({
     super.key,
     required this.call,
     required this.userName,
+    required this.liveStreamId,
   });
 
   final Call call;
   final String userName;
+  final String liveStreamId;
 
   @override
   State<CustomLivestreamWidget> createState() => _CustomLivestreamWidgetState();
@@ -32,11 +40,48 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget> {
         false;
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_messageController.text.trim().isNotEmpty) {
-      // Send message logic here
-      _messageController.clear();
+      try {
+        final url = Uri.parse(
+          '$baseUrl/api/v1/calls/live-stream/${widget.liveStreamId}/comment',
+        );
+        final token = await AuthManager.getToken();
+
+        final response = await http.post(
+          url,
+          headers: {
+            'accept': '*/*',
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({'comment': _messageController.text.trim()}),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          _messageController.clear();
+          // Refresh messages to show the new one
+          // BlocProvider.of<ChatCubit>(context).getTextMessages();
+        } else {
+          _showErrorSnackBar(
+            jsonDecode(
+              response.body,
+            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+          );
+        }
+      } catch (e) {
+        _showErrorSnackBar('Failed to send message: ${e.toString()}');
+      }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(message, style: TextStyle(color: Colors.white)),
+      ),
+    );
   }
 
   @override
