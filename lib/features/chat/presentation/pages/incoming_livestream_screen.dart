@@ -36,8 +36,12 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _liveController;
+  late AnimationController _loadingController;
   late Animation<double> _pulseAnimation;
   late Animation<double> _liveAnimation;
+  late Animation<double> _loadingAnimation;
+
+  bool _isConnecting = false;
 
   @override
   void initState() {
@@ -54,6 +58,10 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
       duration: Duration(milliseconds: 800),
       vsync: this,
     );
+    _loadingController = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
 
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
@@ -61,6 +69,10 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
 
     _liveAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
       CurvedAnimation(parent: _liveController, curve: Curves.easeInOut),
+    );
+
+    _loadingAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _loadingController, curve: Curves.easeInOut),
     );
 
     _pulseController.repeat(reverse: true);
@@ -71,6 +83,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
   void dispose() {
     _pulseController.dispose();
     _liveController.dispose();
+    _loadingController.dispose();
     super.dispose();
   }
 
@@ -87,201 +100,273 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
           ),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              // Live indicator
-              AnimatedBuilder(
-                animation: _liveAnimation,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _liveAnimation.value,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Live indicator
+                  AnimatedBuilder(
+                    animation: _liveAnimation,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _liveAnimation.value,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.circle, color: Colors.white, size: 8),
+                              SizedBox(width: 4),
+                              Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 20),
+
+                  Text(
+                    'You\'re invited to join',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  SizedBox(height: 8),
+
+                  Text(
+                    '${widget.streamerName}\'s Livestream',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 30),
+
+                  // Animated avatar with pulsing effect
+                  AnimatedBuilder(
+                    animation: _pulseAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.purple.withOpacity(0.5),
+                                blurRadius: 20,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundImage: NetworkImage(widget.imageUrl),
+                            backgroundColor: Colors.purple.shade300,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 20),
+
+                  Text(
+                    widget.streamerName,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+
+                  if (widget.streamTitle.isNotEmpty)
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        widget.streamTitle,
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: Colors.white, size: 8),
-                          SizedBox(width: 4),
-                          Text(
-                            'LIVE',
-                            style: TextStyle(
+                    ),
+                  SizedBox(height: 12),
+
+                  // Viewer count
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.visibility, color: Colors.white70, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          '${widget.viewerCount} watching',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 50),
+
+                  // Action buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Decline button
+                      GestureDetector(
+                        onTap: _isConnecting ? null : _declineLivestream,
+                        child: AnimatedOpacity(
+                          opacity: _isConnecting ? 0.5 : 1.0,
+                          duration: Duration(milliseconds: 200),
+                          child: Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade600,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withOpacity(0.3),
+                                  blurRadius: 15,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.close,
                               color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              size: 35,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
 
-              Text(
-                'You\'re invited to join',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-              SizedBox(height: 8),
-
-              Text(
-                '${widget.streamerName}\'s Livestream',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 30),
-
-              // Animated avatar with pulsing effect
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withOpacity(0.5),
-                            blurRadius: 20,
-                            spreadRadius: 5,
+                      // Join button with loading state
+                      GestureDetector(
+                        onTap: _isConnecting ? null : _joinLivestream,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: _isConnecting
+                                ? Colors.purple.shade400
+                                : Colors.purple.shade600,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.purple.withOpacity(0.4),
+                                blurRadius: 20,
+                                spreadRadius: 3,
+                              ),
+                            ],
                           ),
-                        ],
+                          child: _isConnecting
+                              ? CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                )
+                              : Icon(
+                                  Icons.play_arrow,
+                                  color: Colors.white,
+                                  size: 45,
+                                ),
+                        ),
                       ),
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage: NetworkImage(widget.imageUrl),
-                        backgroundColor: Colors.purple.shade300,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
-
-              Text(
-                widget.streamerName,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8),
-
-              if (widget.streamTitle.isNotEmpty)
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    widget.streamTitle,
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    ],
                   ),
-                ),
-              SizedBox(height: 12),
+                  SizedBox(height: 30),
 
-              // Viewer count
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.visibility, color: Colors.white70, size: 16),
-                    SizedBox(width: 4),
-                    Text(
-                      '${widget.viewerCount} watching',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 50),
-
-              // Action buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Decline button
-                  GestureDetector(
-                    onTap: _declineLivestream,
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade600,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withOpacity(0.3),
-                            blurRadius: 15,
-                            spreadRadius: 2,
-                          ),
-                        ],
+                  // Action labels
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(
+                        'Decline',
+                        style: TextStyle(
+                          color: _isConnecting
+                              ? Colors.white38
+                              : Colors.white70,
+                          fontSize: 14,
+                        ),
                       ),
-                      child: Icon(Icons.close, color: Colors.white, size: 35),
-                    ),
-                  ),
-
-                  // Join button
-                  GestureDetector(
-                    onTap: _joinLivestream,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.purple.shade600,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withOpacity(0.4),
-                            blurRadius: 20,
-                            spreadRadius: 3,
-                          ),
-                        ],
+                      Text(
+                        _isConnecting ? 'Connecting...' : 'Join Stream',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
-                      child: Icon(
-                        Icons.play_arrow,
-                        color: Colors.white,
-                        size: 45,
-                      ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-              SizedBox(height: 30),
 
-              // Action labels
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(
-                    'Decline',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  Text(
-                    'Join Stream',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ],
-              ),
+              // Loading overlay
+              if (_isConnecting)
+                AnimatedBuilder(
+                  animation: _loadingAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      color: Colors.black.withOpacity(
+                        0.3 * _loadingAnimation.value,
+                      ),
+                      child: Center(
+                        child: FadeTransition(
+                          opacity: _loadingAnimation,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 50,
+                                height: 50,
+                                child: CircularProgressIndicator(
+                                  color: Colors.purple.shade300,
+                                  strokeWidth: 4,
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                              Text(
+                                'Connecting to livestream...',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Please wait while we connect you',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
             ],
           ),
         ),
@@ -290,32 +375,40 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
   }
 
   Future<void> _joinLivestream() async {
-    final token = await AuthManager.getToken();
-    String streamToken;
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/v1/calls/live-stream/${widget.roomId}/join'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+    if (_isConnecting) return;
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      streamToken = jsonDecode(response.body)['token'];
-      StreamVideo.reset();
-      StreamVideo(
-        getStreamKey,
-        user: User(
-          info: UserInfo(
-            name: widget.currentUser.fullName,
-            id: widget.currentUser.id,
-            image: widget.currentUser.profileImage,
-          ),
-        ),
-        userToken: streamToken,
+    setState(() {
+      _isConnecting = true;
+    });
+
+    _loadingController.forward();
+
+    try {
+      final token = await AuthManager.getToken();
+      String streamToken;
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/calls/live-stream/${widget.roomId}/join'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
 
-      try {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        streamToken = jsonDecode(response.body)['token'];
+        StreamVideo.reset();
+        StreamVideo(
+          getStreamKey,
+          user: User(
+            info: UserInfo(
+              name: widget.currentUser.fullName,
+              id: widget.currentUser.id,
+              image: widget.currentUser.profileImage,
+            ),
+          ),
+          userToken: streamToken,
+        );
+
         final call = StreamVideo.instance.makeCall(
           callType: StreamCallType.liveStream(),
           id: jsonDecode(response.body)['liveStream']['roomId'],
@@ -334,42 +427,64 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
           final joinResult = await call.join(connectOptions: connectOptions);
           if (joinResult case Failure failure) {
             debugPrint('Not able to join the call: ${failure.error}');
+            _showErrorDialog('Failed to join livestream. Please try again.');
             return;
           }
+
+          // Navigate to the livestream screen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => LiveStreamScreen(livestreamCall: call),
             ),
           );
+        } else {
+          _showErrorDialog(
+            'Failed to create livestream connection. Please try again.',
+          );
         }
-      } catch (e) {
-        debugPrint('Error joining livestream: $e');
+      } else {
         _showErrorDialog('Failed to join livestream. Please try again.');
       }
-    } else {
+    } catch (e) {
+      debugPrint('Error joining livestream: $e');
       _showErrorDialog('Failed to join livestream. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+        });
+        _loadingController.reset();
+      }
     }
   }
 
   Future<void> _declineLivestream() async {
+    if (_isConnecting) return;
     Navigator.pop(context);
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey.shade900,
-        title: Text('Error', style: TextStyle(color: Colors.white)),
-        content: Text(message, style: TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('OK', style: TextStyle(color: Colors.purple)),
-          ),
-        ],
-      ),
-    );
+    if (mounted) {
+      setState(() {
+        _isConnecting = false;
+      });
+      _loadingController.reset();
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey.shade900,
+          title: Text('Error', style: TextStyle(color: Colors.white)),
+          content: Text(message, style: TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK', style: TextStyle(color: Colors.purple)),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
