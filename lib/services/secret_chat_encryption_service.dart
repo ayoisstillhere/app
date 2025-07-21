@@ -166,17 +166,17 @@ class SecretChatEncryptionService {
   Future<String> decryptConversationKey(String encryptedConversationKey) async {
     try {
       // Get the private key from secure storage
-      final privateKey = await getPrivateKey();
+      String? privateKey = await getPrivateKey();
       if (privateKey == null) {
         final encryptionService = SecretChatEncryptionService();
         await encryptionService.ensureKeyPairExists();
-        throw Exception('Private key not found');
+        privateKey = await encryptionService.getPrivateKey();
       }
 
       // Decrypt the conversation key using RSA and the private key
       final decryptedConversationKey = await RSA.decryptPKCS1v15(
         encryptedConversationKey,
-        privateKey,
+        privateKey!,
       );
 
       return decryptedConversationKey;
