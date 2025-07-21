@@ -14,7 +14,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../constants.dart';
 import '../features/home/presentation/pages/post_details_screen.dart';

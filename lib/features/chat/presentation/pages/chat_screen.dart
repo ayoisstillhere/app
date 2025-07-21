@@ -123,7 +123,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _initializeAudioRecorder();
   }
 
-  Future<void> _createSecretChat({bool deleteFormerChat = false}) async {
+  Future<void> _createSecretChat() async {
     if (widget.isGroup) {
       return;
     }
@@ -173,7 +173,6 @@ class _ChatScreenState extends State<ChatScreen> {
         "participantUserIds": widget.participants.map((e) => e.userId).toList(),
         "myConversationKey": myEncryptedKey,
         "otherParticipantConversationKey": otherEncryptedKey,
-        "deleteFormerChat": deleteFormerChat,
       });
 
       final response = await http.post(uri, headers: headers, body: body);

@@ -99,6 +99,7 @@ const String getStreamSecret =
 // ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf android/.gradle
 
 // ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf ~/.gradle/caches/
+// ./gradlew --stop && rm -rf android/.gradle && rm -rf ~/.gradle/caches/ && flutter clean && flutter pub get
 // 8461
 
 enum NotificationType { LIKE, COMMENT, REPLY, REPOST, MENTION, FOLLOW, LIVE }

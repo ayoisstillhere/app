@@ -168,6 +168,8 @@ class SecretChatEncryptionService {
       // Get the private key from secure storage
       final privateKey = await getPrivateKey();
       if (privateKey == null) {
+        final encryptionService = SecretChatEncryptionService();
+        await encryptionService.ensureKeyPairExists();
         throw Exception('Private key not found');
       }
 
