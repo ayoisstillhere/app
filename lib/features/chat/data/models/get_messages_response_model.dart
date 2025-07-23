@@ -34,7 +34,6 @@ class ConversationModel extends Conversation {
     required super.createdAt,
     required super.updatedAt,
     required List<ParticipantModel> participants,
-    required List<MessageModel> messages,
     required super.isConversationMutedForMe,
     required super.isConversationArchivedForMe,
     required super.isConversationRequestForMe,
@@ -42,11 +41,7 @@ class ConversationModel extends Conversation {
     required super.unreadCount,
     required super.isConversationBlockedForMe,
     required super.groupImage,
-  }) : super(
-         participants: participants,
-         messages: messages,
-         lastMessage: lastMessage,
-       );
+  }) : super(participants: participants, lastMessage: lastMessage);
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
     return ConversationModel(
@@ -60,9 +55,6 @@ class ConversationModel extends Conversation {
       updatedAt: DateTime.parse(json['updatedAt']),
       participants: (json['participants'] as List)
           .map((e) => ParticipantModel.fromJson(e))
-          .toList(),
-      messages: (json['messages'] as List)
-          .map((e) => MessageModel.fromJson(e))
           .toList(),
       isConversationMutedForMe: json['isConversationMutedForMe'],
       isConversationArchivedForMe: json['isConversationArchivedForMe'],
@@ -88,7 +80,6 @@ class ConversationModel extends Conversation {
     'participants': participants
         .map((e) => (e as ParticipantModel).toJson())
         .toList(),
-    'messages': messages.map((e) => (e as MessageModel).toJson()).toList(),
     'isConversationMutedForMe': isConversationMutedForMe,
     'isConversationArchivedForMe': isConversationArchivedForMe,
     'isConversationRequestForMe': isConversationRequestForMe,

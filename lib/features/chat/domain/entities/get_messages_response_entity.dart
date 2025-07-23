@@ -15,13 +15,12 @@ class Conversation {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<Participant> participants;
-  final List<Message> messages;
   final bool isConversationMutedForMe;
   final bool isConversationArchivedForMe;
   final bool isConversationRequestForMe;
   final bool isConversationBlockedForMe;
   final Message? lastMessage;
-  final int unreadCount;
+  final int? unreadCount;
   final String? groupImage;
 
   Conversation({
@@ -34,7 +33,6 @@ class Conversation {
     required this.createdAt,
     required this.updatedAt,
     required this.participants,
-    required this.messages,
     required this.isConversationMutedForMe,
     required this.isConversationArchivedForMe,
     required this.isConversationRequestForMe,

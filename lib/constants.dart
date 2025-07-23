@@ -88,9 +88,9 @@ String formatDuration(DateTime from, DateTime to) {
 }
 
 // API keys
-const String getStreamKey = "q25hn6c2zjg3";
+const String getStreamKey = "jbz62r4keh7e";
 const String getStreamSecret =
-    "dsj4r4dcddeeakzqgnrdj8sdnsuqjz3c5m594ub9qugeekq7wbr8tr965qb7fbsp";
+    "tzsmngy3eyxupq75e7vu37aa478fmqe8as3vzkunhrdcqt6uf8rs3xc3zzs4hbvw";
 
 // ayodelefagbami@Ayodeles-MacBook-Air android % ./gradlew --stop
 

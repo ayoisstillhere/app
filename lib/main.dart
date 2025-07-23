@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:app/features/chat/presentation/cubit/chat_cubit.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:app/splash_screen.dart';
 import 'package:app/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -8,7 +9,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:media_kit/media_kit.dart';
 import 'features/chat/presentation/cubit/live_stream_comment_cubit.dart';
 import 'features/chat/presentation/cubit/live_stream_reaction_cubit.dart';
@@ -86,44 +86,21 @@ Future<void> _requestNotificationPermission() async {
 }
 
 Future<void> getFcmToken() async {
-  const FlutterSecureStorage secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-      // This prevents data loss on app updates
-      sharedPreferencesName: 'FlutterSecureStorage',
-      preferencesKeyPrefix: 'flutter_secure_storage_',
-    ),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   String? token = await messaging.getToken();
 
   if (token != null) {
     debugPrint('📱 FCM Token: $token');
-    await secureStorage.write(key: 'fcm_token', value: token);
+    await AuthManager.setFCMToken(token);
   } else {
     debugPrint('⚠️ Failed to get FCM token');
   }
 }
 
 void listenForTokenRefresh() {
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    const FlutterSecureStorage secureStorage = FlutterSecureStorage(
-      aOptions: AndroidOptions(
-        encryptedSharedPreferences: true,
-        // This prevents data loss on app updates
-        sharedPreferencesName: 'FlutterSecureStorage',
-        preferencesKeyPrefix: 'flutter_secure_storage_',
-      ),
-      iOptions: IOSOptions(
-        accessibility: KeychainAccessibility.first_unlock_this_device,
-      ),
-    );
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
     debugPrint('🔄 FCM token refreshed: $newToken');
-
-    secureStorage.write(key: 'fcm_token', value: newToken);
+    await AuthManager.setFCMToken(newToken);
   });
 }
 

@@ -16,18 +16,6 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
 
   GoogleSignInCubit() : _googleSignIn = GoogleSignIn(), super(null);
 
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-      // This prevents data loss on app updates
-      sharedPreferencesName: 'FlutterSecureStorage',
-      preferencesKeyPrefix: 'flutter_secure_storage_',
-    ),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
-
   // Sign in with Google
   Future<void> signIn(BuildContext context) async {
     await AuthManager.logout();
@@ -40,7 +28,7 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
         body: jsonEncode({
           'email': account.email,
           'token': auth.idToken,
-          'deviceId': await _secureStorage.read(key: "fcm_token"),
+          'deviceId': await AuthManager.getFCMToken(),
           'platform': Platform.isAndroid ? 'ANDROID' : 'IOS',
         }),
       );

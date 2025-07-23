@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:app/features/auth/data/models/user_model.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
+import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_list_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_call_screen.dart';
 import 'package:app/features/chat/presentation/pages/incoming_livestream_screen.dart';
@@ -16,6 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../constants.dart';
+import '../features/chat/data/models/get_messages_response_model.dart'
+    hide UserModel;
+import '../features/chat/presentation/pages/chat_screen.dart';
+import '../features/chat/presentation/pages/secret_chat_screen.dart';
 import '../features/home/presentation/pages/post_details_screen.dart';
 import '../features/onboarding/presentation/pages/onboarding_screen.dart'
     show OnboardingScreen;
@@ -321,9 +326,88 @@ class _NavPageState extends State<NavPage> {
     if (conversationId != null && senderId != null) {
       // Navigate to specific chat - you'll need to implement this screen
       // For now, navigate to chat list
-      _navigateToChatList();
+      _navigateToChat(data);
     } else {
       _navigateToChatList();
+    }
+  }
+
+  Future<void> _navigateToChat(Map<String, dynamic> data) async {
+    Conversation? conversation;
+    final token = await AuthManager.getToken();
+    final conversationId = data['conversationId'];
+    String url = '$baseUrl/api/v1/chat/conversations/$conversationId';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      conversation = ConversationModel.fromJson(jsonDecode(response.body));
+      String image;
+      String chatHandle;
+      String name;
+      if (conversation.type == "GROUP") {
+        image = conversation.groupImage ?? '';
+        chatHandle = conversation.name ?? 'Group Chat';
+        name = conversation.name ?? 'Group Chat';
+      } else {
+        // For direct chats, use the other participant's image
+        final otherParticipants = conversation.participants
+            .where(
+              (participant) =>
+                  participant.user.username != currentUser!.username,
+            )
+            .toList();
+        image = otherParticipants.isNotEmpty
+            ? otherParticipants.first.user.profileImage ?? ''
+            : '';
+        chatHandle = otherParticipants.isNotEmpty
+            ? otherParticipants.first.user.username
+            : '';
+        name = otherParticipants.isNotEmpty
+            ? otherParticipants.first.user.fullName ?? 'Unknown User'
+            : 'Unknown User';
+      }
+      if (conversation.isSecret) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SecretChatScreen(
+              chatId: conversation!.id,
+              name: name,
+              imageUrl: image,
+              currentUser: currentUser!,
+              isGroup: conversation.type == "GROUP",
+              chatHandle: chatHandle,
+              participants: conversation.participants,
+              isConversationMuted: conversation.isConversationMutedForMe,
+              isConversationBlockedForMe:
+                  conversation.isConversationBlockedForMe,
+            ),
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              chatId: conversation!.id,
+              name: name,
+              imageUrl: image,
+              currentUser: currentUser!,
+              encryptionKey: conversation.encryptionKey!,
+              isGroup: conversation.type == "GROUP",
+              chatHandle: chatHandle,
+              participants: conversation.participants,
+              isConversationMuted: conversation.isConversationMutedForMe,
+              isConversationBlockedForMe:
+                  conversation.isConversationBlockedForMe,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -388,7 +472,10 @@ class _NavPageState extends State<NavPage> {
       final exploreScreen = navPages[1] as ExploreScreen;
       exploreScreen.onExploreButtonPressed?.call();
     }
-    pageController.jumpToPage(page);
+
+    if (pageController.hasClients) {
+      pageController.jumpToPage(page);
+    }
   }
 
   void onPageChanged(int page) {

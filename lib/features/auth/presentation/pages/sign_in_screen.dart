@@ -7,7 +7,6 @@ import 'package:app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:app/features/auth/presentation/widgets/google_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -33,17 +32,6 @@ class _SignInScreenState extends State<SignInScreen> {
   final _signinFormKey = GlobalKey<FormState>();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-      // This prevents data loss on app updates
-      sharedPreferencesName: 'FlutterSecureStorage',
-      preferencesKeyPrefix: 'flutter_secure_storage_',
-    ),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
   bool _obscureText = true;
 
   @override
@@ -298,9 +286,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                                       _passwordController.text
                                                           .trim(),
                                                   "deviceId":
-                                                      await _secureStorage.read(
-                                                        key: "fcm_token",
-                                                      ),
+                                                      await AuthManager.getFCMToken(),
                                                 }),
                                               );
                                               if (response.statusCode == 200) {
