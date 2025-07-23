@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../services/auth_manager.dart';
+import '../../../../services/secret_chat_encryption_service.dart';
 
 class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
   final GoogleSignIn _googleSignIn;
@@ -29,6 +30,7 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
 
   // Sign in with Google
   Future<void> signIn(BuildContext context) async {
+    await AuthManager.logout();
     try {
       final account = await _googleSignIn.signIn();
       final GoogleSignInAuthentication auth = await account!.authentication;
@@ -50,6 +52,8 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
         // Use AuthManager instead of SharedPreferences
         await AuthManager.setToken(token);
         await AuthManager.setRefreshToken(refreshToken);
+        final encryptionService = SecretChatEncryptionService();
+        await encryptionService.ensureKeyPairExists();
         emit(account);
       } else {
         emit(null);
@@ -67,13 +71,20 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
       }
     } catch (error) {
       emit(null);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Error Signing In with Google",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     }
   }
 
   Future<void> signUp(BuildContext context) async {
+    await AuthManager.logout();
     try {
       final account = await _googleSignIn.signIn();
       final GoogleSignInAuthentication auth = await account!.authentication;
@@ -94,6 +105,8 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
         // Use AuthManager instead of SharedPreferences
         await AuthManager.setToken(token);
         await AuthManager.setRefreshToken(refreshToken);
+        final encryptionService = SecretChatEncryptionService();
+        await encryptionService.ensureKeyPairExists();
         emit(account);
       } else {
         emit(null);
@@ -111,9 +124,15 @@ class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
       }
     } catch (error) {
       emit(null);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Error Signing Up with Google",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
     }
   }
 

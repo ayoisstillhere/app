@@ -130,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate to main app
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const NavPage()),
+      MaterialPageRoute(builder: (context) => NavPage()),
       (route) => false, // This removes all previous routes
     );
 

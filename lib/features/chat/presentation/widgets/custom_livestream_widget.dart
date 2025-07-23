@@ -111,6 +111,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
     enableScreenshot();
     if (isHost) {
       widget.call.stopLive();
+      widget.call.end();
     } else {
       widget.call.leave();
     }
@@ -437,6 +438,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                                     if (response.statusCode == 200 ||
                                         response.statusCode == 201) {
                                       widget.call.stopLive();
+                                      widget.call.end();
                                       Navigator.pop(context);
                                     } else {
                                       _showErrorSnackBar(
@@ -529,6 +531,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                                       if (response.statusCode == 200 ||
                                           response.statusCode == 201) {
                                         widget.call.stopLive();
+                                        widget.call.end();
                                         Navigator.pop(context);
                                       } else {
                                         _showErrorSnackBar(

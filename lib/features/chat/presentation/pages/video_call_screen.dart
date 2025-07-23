@@ -957,192 +957,198 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       bottom: 40,
       left: 0,
       right: 0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Microphone toggle
-          _buildControlButton(
-            icon: _isMicrophoneEnabled ? Icons.mic : Icons.mic_off,
-            isEnabled: _isMicrophoneEnabled,
-            onPressed: () async {
-              try {
-                if (_isMicrophoneEnabled) {
-                  await call.setMicrophoneEnabled(enabled: false);
-                } else {
-                  await call.setMicrophoneEnabled(enabled: true);
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Microphone toggle
+            _buildControlButton(
+              icon: _isMicrophoneEnabled ? Icons.mic : Icons.mic_off,
+              isEnabled: _isMicrophoneEnabled,
+              onPressed: () async {
+                try {
+                  if (_isMicrophoneEnabled) {
+                    await call.setMicrophoneEnabled(enabled: false);
+                  } else {
+                    await call.setMicrophoneEnabled(enabled: true);
+                  }
+                  // State will be updated through the call state listener
+                } catch (e) {
+                  debugPrint('Failed to toggle microphone: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Unable to toggle microphone'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
-                // State will be updated through the call state listener
-              } catch (e) {
-                debugPrint('Failed to toggle microphone: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unable to toggle microphone'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
+              },
+            ),
 
-          // Speaker toggle
-          _buildControlButton(
-            icon: _isSpeakerEnabled ? Icons.volume_up : Icons.volume_off,
-            isEnabled: _isSpeakerEnabled,
-            onPressed: () async {
-              try {
-                // For iOS, trigger the native audio route picker
-                if (Theme.of(context).platform == TargetPlatform.iOS) {
-                  await RtcMediaDeviceNotifier.instance
-                      .triggeriOSAudioRouteSelectionUI();
-                } else {
-                  // For Android, toggle speaker phone
-                  final audioOutputsResult = await RtcMediaDeviceNotifier
-                      .instance
-                      .audioOutputs();
-                  audioOutputsResult.fold(
-                    success: (audioOutputsSuccess) {
-                      final audioOutputs = audioOutputsSuccess.data;
-                      if (audioOutputs.isNotEmpty) {
-                        final currentOutput =
-                            call.state.value.audioOutputDevice;
-                        final nextDevice = audioOutputs.firstWhere(
-                          (device) => device.id != currentOutput?.id,
-                          orElse: () => audioOutputs.first,
-                        );
-                        call.setAudioOutputDevice(nextDevice).then((result) {
-                          result.fold(
-                            success: (success) {
-                              setState(() {
-                                _isSpeakerEnabled = !_isSpeakerEnabled;
-                              });
-                            },
-                            failure: (failure) {
-                              debugPrint(
-                                'Failed to set audio output: ${failure.error.message}',
-                              );
-                            },
+            // Speaker toggle
+            _buildControlButton(
+              icon: _isSpeakerEnabled ? Icons.volume_up : Icons.volume_off,
+              isEnabled: _isSpeakerEnabled,
+              onPressed: () async {
+                try {
+                  // For iOS, trigger the native audio route picker
+                  if (Theme.of(context).platform == TargetPlatform.iOS) {
+                    await RtcMediaDeviceNotifier.instance
+                        .triggeriOSAudioRouteSelectionUI();
+                  } else {
+                    // For Android, toggle speaker phone
+                    final audioOutputsResult = await RtcMediaDeviceNotifier
+                        .instance
+                        .audioOutputs();
+                    audioOutputsResult.fold(
+                      success: (audioOutputsSuccess) {
+                        final audioOutputs = audioOutputsSuccess.data;
+                        if (audioOutputs.isNotEmpty) {
+                          final currentOutput =
+                              call.state.value.audioOutputDevice;
+                          final nextDevice = audioOutputs.firstWhere(
+                            (device) => device.id != currentOutput?.id,
+                            orElse: () => audioOutputs.first,
                           );
-                        });
-                      }
-                    },
-                    failure: (failure) {
-                      debugPrint(
-                        'Failed to get audio outputs: ${failure.error.message}',
-                      );
-                    },
-                  );
-                }
-              } catch (e) {
-                debugPrint('Error toggling speaker: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unable to toggle speaker'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-
-          // Camera toggle
-          _buildControlButton(
-            icon: Icons.videocam,
-            onPressed: () async {
-              try {
-                final isVideoEnabled =
-                    call.state.valueOrNull?.localParticipant?.isVideoEnabled ??
-                    false;
-
-                if (isVideoEnabled) {
-                  await call.setCameraEnabled(enabled: false);
-                } else {
-                  await call.setCameraEnabled(enabled: true);
-                }
-              } catch (e) {
-                debugPrint('Failed to toggle camera: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unable to toggle camera'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-
-          // Add person to call button (updated for single selection)
-          _buildControlButton(
-            icon: Icons.person_add,
-            isEnabled: true,
-            onPressed: _showAddPersonDialog,
-          ),
-
-          // Screen share
-          _buildControlButton(
-            icon: _isScreenSharingEnabled
-                ? Icons.stop_screen_share
-                : Icons.screen_share,
-            isEnabled: _isScreenSharingEnabled,
-            onPressed: () async {
-              try {
-                if (_isScreenSharingEnabled) {
-                  // Stop screen sharing
-                  await call.setScreenShareEnabled(enabled: false);
-                  if (CurrentPlatform.isAndroid) {
-                    await StreamBackgroundService()
-                        .stopScreenSharingNotificationService(call.id);
-                  } else {
-                    // TODO: IOS Stop screen sharing
+                          call.setAudioOutputDevice(nextDevice).then((result) {
+                            result.fold(
+                              success: (success) {
+                                setState(() {
+                                  _isSpeakerEnabled = !_isSpeakerEnabled;
+                                });
+                              },
+                              failure: (failure) {
+                                debugPrint(
+                                  'Failed to set audio output: ${failure.error.message}',
+                                );
+                              },
+                            );
+                          });
+                        }
+                      },
+                      failure: (failure) {
+                        debugPrint(
+                          'Failed to get audio outputs: ${failure.error.message}',
+                        );
+                      },
+                    );
                   }
-                } else {
-                  // Start screen sharing
-                  if (CurrentPlatform.isAndroid) {
-                    // Check if the user has granted permission to share their screen
-                    if (!await call.requestScreenSharePermission()) {
-                      return;
+                } catch (e) {
+                  debugPrint('Error toggling speaker: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Unable to toggle speaker'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+
+            // Camera toggle
+            _buildControlButton(
+              icon: Icons.videocam,
+              onPressed: () async {
+                try {
+                  final isVideoEnabled =
+                      call
+                          .state
+                          .valueOrNull
+                          ?.localParticipant
+                          ?.isVideoEnabled ??
+                      false;
+
+                  if (isVideoEnabled) {
+                    await call.setCameraEnabled(enabled: false);
+                  } else {
+                    await call.setCameraEnabled(enabled: true);
+                  }
+                } catch (e) {
+                  debugPrint('Failed to toggle camera: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Unable to toggle camera'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+
+            // Add person to call button (updated for single selection)
+            _buildControlButton(
+              icon: Icons.person_add,
+              isEnabled: true,
+              onPressed: _showAddPersonDialog,
+            ),
+
+            // Screen share
+            _buildControlButton(
+              icon: _isScreenSharingEnabled
+                  ? Icons.stop_screen_share
+                  : Icons.screen_share,
+              isEnabled: _isScreenSharingEnabled,
+              onPressed: () async {
+                try {
+                  if (_isScreenSharingEnabled) {
+                    // Stop screen sharing
+                    await call.setScreenShareEnabled(enabled: false);
+                    if (CurrentPlatform.isAndroid) {
+                      await StreamBackgroundService()
+                          .stopScreenSharingNotificationService(call.id);
+                    } else {
+                      // TODO: IOS Stop screen sharing
                     }
-                    // Start the screen sharing notification service
-                    await StreamBackgroundService()
-                        .startScreenSharingNotificationService(call);
-
-                    await call.setScreenShareEnabled(enabled: true);
                   } else {
-                    // TODO: IOS Start screen sharing
-                    await widget.call.setScreenShareEnabled(enabled: true);
+                    // Start screen sharing
+                    if (CurrentPlatform.isAndroid) {
+                      // Check if the user has granted permission to share their screen
+                      if (!await call.requestScreenSharePermission()) {
+                        return;
+                      }
+                      // Start the screen sharing notification service
+                      await StreamBackgroundService()
+                          .startScreenSharingNotificationService(call);
+
+                      await call.setScreenShareEnabled(enabled: true);
+                    } else {
+                      // TODO: IOS Start screen sharing
+                      await widget.call.setScreenShareEnabled(enabled: true);
+                    }
+                  }
+                } catch (e) {
+                  debugPrint('Failed to toggle screen share: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Unable to toggle screen share'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 }
-              } catch (e) {
-                debugPrint('Failed to toggle screen share: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unable to toggle screen share'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
+              },
+            ),
 
-          // End call
-          _buildControlButton(
-            icon: Icons.call_end,
-            backgroundColor: Colors.red,
-            onPressed: () async {
-              await call.end();
-              if (mounted) {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-        ],
+            // End call
+            _buildControlButton(
+              icon: Icons.call_end,
+              backgroundColor: Colors.red,
+              onPressed: () async {
+                await call.end();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

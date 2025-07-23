@@ -513,7 +513,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     );
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const NavPage()),
+      MaterialPageRoute(builder: (context) => NavPage()),
     );
   }
 
@@ -550,7 +550,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     if (response.statusCode == 200) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const NavPage()),
+        MaterialPageRoute(builder: (context) => NavPage()),
       );
     }
   }
@@ -570,7 +570,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     if (response.statusCode == 200) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const NavPage()),
+        MaterialPageRoute(builder: (context) => NavPage()),
       );
     }
   }
@@ -583,7 +583,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     );
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const NavPage()),
+      MaterialPageRoute(builder: (context) => NavPage()),
     );
   }
 
@@ -1243,42 +1243,42 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                           ],
                                         ),
                                       ),
-                                InkWell(
-                                  onTap: () {},
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        "assets/icons/chat_report.svg",
-                                        colorFilter: ColorFilter.mode(
-                                          iconColor,
-                                          BlendMode.srcIn,
-                                        ),
-                                        width: getProportionateScreenWidth(
-                                          18.38,
-                                        ),
-                                        height: getProportionateScreenHeight(
-                                          18.38,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: getProportionateScreenHeight(
-                                          4.6,
-                                        ),
-                                      ),
-                                      Text(
-                                        "Report",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(
-                                                11.49,
-                                              ),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                // InkWell(
+                                //   onTap: () {},
+                                //   child: Column(
+                                //     mainAxisAlignment: MainAxisAlignment.center,
+                                //     children: [
+                                //       SvgPicture.asset(
+                                //         "assets/icons/chat_report.svg",
+                                //         colorFilter: ColorFilter.mode(
+                                //           iconColor,
+                                //           BlendMode.srcIn,
+                                //         ),
+                                //         width: getProportionateScreenWidth(
+                                //           18.38,
+                                //         ),
+                                //         height: getProportionateScreenHeight(
+                                //           18.38,
+                                //         ),
+                                //       ),
+                                //       SizedBox(
+                                //         height: getProportionateScreenHeight(
+                                //           4.6,
+                                //         ),
+                                //       ),
+                                //       Text(
+                                //         "Report",
+                                //         style: TextStyle(
+                                //           fontSize:
+                                //               getProportionateScreenHeight(
+                                //                 11.49,
+                                //               ),
+                                //           fontWeight: FontWeight.w500,
+                                //         ),
+                                //       ),
+                                //     ],
+                                //   ),
+                                // ),
                               ],
                             ),
                     ),

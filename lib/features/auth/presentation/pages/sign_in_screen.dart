@@ -16,6 +16,7 @@ import '../../../../components/default_button.dart';
 import '../../../../components/nav_page.dart';
 import '../../../../services/auth_manager.dart';
 // import '../../../../services/notification_service.dart';
+import '../../../../services/secret_chat_encryption_service.dart';
 import '../../../../size_config.dart';
 import '../widgets/custom_check_box.dart';
 import '../widgets/form_header.dart';
@@ -275,6 +276,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                           setState(() {
                                             _isLoading = true;
                                           });
+                                          await AuthManager.logout();
                                           try {
                                             if (_signinFormKey.currentState!
                                                 .validate()) {
@@ -317,12 +319,16 @@ class _SignInScreenState extends State<SignInScreen> {
                                                 await AuthManager.setRefreshToken(
                                                   refreshToken,
                                                 );
+                                                final encryptionService =
+                                                    SecretChatEncryptionService();
+                                                await encryptionService
+                                                    .ensureKeyPairExists();
 
                                                 Navigator.pushAndRemoveUntil(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (context) =>
-                                                        const NavPage(),
+                                                        NavPage(),
                                                   ),
                                                   (route) =>
                                                       false, // This removes all previous routes

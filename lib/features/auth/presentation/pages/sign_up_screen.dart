@@ -220,6 +220,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           setState(() {
                                             _isLoading = true;
                                           });
+                                          await AuthManager.logout();
                                           try {
                                             if (_signupFormKey.currentState!
                                                 .validate()) {
@@ -257,7 +258,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                 await AuthManager.setRefreshToken(
                                                   refreshToken,
                                                 );
-
                                                 Navigator.of(context).push(
                                                   MaterialPageRoute(
                                                     builder: (context) =>

@@ -824,6 +824,8 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       }
+    } else {
+      _showErrorSnackBar(jsonDecode(response.body)['message']);
     }
   }
 
@@ -1534,11 +1536,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     "assets/icons/chat_paperclip.svg",
                                                     height:
                                                         getProportionateScreenHeight(
-                                                          21.27,
+                                                          24,
                                                         ),
                                                     width:
                                                         getProportionateScreenWidth(
-                                                          21.27,
+                                                          24,
                                                         ),
                                                     colorFilter:
                                                         ColorFilter.mode(
@@ -1559,11 +1561,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     "assets/icons/chat_mic.svg",
                                                     height:
                                                         getProportionateScreenHeight(
-                                                          21.27,
+                                                          24,
                                                         ),
                                                     width:
                                                         getProportionateScreenWidth(
-                                                          21.27,
+                                                          24,
                                                         ),
                                                     colorFilter:
                                                         ColorFilter.mode(
@@ -1584,11 +1586,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                                     "assets/icons/chat_image.svg",
                                                     height:
                                                         getProportionateScreenHeight(
-                                                          21.27,
+                                                          24,
                                                         ),
                                                     width:
                                                         getProportionateScreenWidth(
-                                                          21.27,
+                                                          24,
                                                         ),
                                                     colorFilter:
                                                         ColorFilter.mode(
@@ -1822,7 +1824,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<File> compressImage(File file) async {
     final compressedBytes = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
-      quality: 50, // adjust as needed
+      quality: 85, // adjust as needed
     );
 
     final compressedFile = File('${file.path}_compressed.jpg')
@@ -1833,7 +1835,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<File> compressVideo(File file) async {
     final compressedVideo = await VideoCompress.compressVideo(
       file.path,
-      quality: VideoQuality.LowQuality,
+      quality: VideoQuality.HighestQuality,
       deleteOrigin: false,
       includeAudio: true,
     );

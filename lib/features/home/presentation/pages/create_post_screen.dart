@@ -56,7 +56,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<File> compressImage(File file) async {
     final compressedBytes = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
-      quality: 50, // adjust as needed
+      quality: 85, // adjust as needed
     );
 
     final compressedFile = File('${file.path}_compressed.jpg')
@@ -67,7 +67,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<File> compressVideo(File file) async {
     final compressedVideo = await VideoCompress.compressVideo(
       file.path,
-      quality: VideoQuality.LowQuality,
+      quality: VideoQuality.HighestQuality,
       deleteOrigin: false,
       includeAudio: true,
     );

@@ -849,6 +849,8 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
           ),
         );
       }
+    } else {
+      _showErrorSnackBar(jsonDecode(response.body)['message']);
     }
   }
 
@@ -1592,11 +1594,11 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                                                           "assets/icons/send.svg",
                                                           height:
                                                               getProportionateScreenHeight(
-                                                                21.27,
+                                                                24,
                                                               ),
                                                           width:
                                                               getProportionateScreenWidth(
-                                                                21.27,
+                                                                24,
                                                               ),
                                                         ),
                                                       ),
@@ -1608,11 +1610,11 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                                                           "assets/icons/chat_paperclip.svg",
                                                           height:
                                                               getProportionateScreenHeight(
-                                                                21.27,
+                                                                24,
                                                               ),
                                                           width:
                                                               getProportionateScreenWidth(
-                                                                21.27,
+                                                                24,
                                                               ),
                                                           colorFilter:
                                                               ColorFilter.mode(
@@ -1633,11 +1635,11 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
                                                           "assets/icons/chat_mic.svg",
                                                           height:
                                                               getProportionateScreenHeight(
-                                                                21.27,
+                                                                24,
                                                               ),
                                                           width:
                                                               getProportionateScreenWidth(
-                                                                21.27,
+                                                                24,
                                                               ),
                                                           colorFilter:
                                                               ColorFilter.mode(
@@ -1845,7 +1847,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   Future<File> compressImage(File file) async {
     final compressedBytes = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
-      quality: 50, // adjust as needed
+      quality: 85, // adjust as needed
     );
 
     final compressedFile = File('${file.path}_compressed.jpg')
@@ -1856,7 +1858,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   Future<File> compressVideo(File file) async {
     final compressedVideo = await VideoCompress.compressVideo(
       file.path,
-      quality: VideoQuality.LowQuality,
+      quality: VideoQuality.HighestQuality,
       deleteOrigin: false,
       includeAudio: true,
     );

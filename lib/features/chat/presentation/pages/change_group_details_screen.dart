@@ -49,7 +49,7 @@ class _ChangeGroupDetailsScreenState extends State<ChangeGroupDetailsScreen> {
   Future<File> compressImage(File file) async {
     final compressedBytes = await FlutterImageCompress.compressWithFile(
       file.absolute.path,
-      quality: 50, // adjust as needed
+      quality: 85, // adjust as needed
     );
 
     final compressedFile = File('${file.path}_compressed.jpg')
@@ -128,7 +128,7 @@ class _ChangeGroupDetailsScreenState extends State<ChangeGroupDetailsScreen> {
           context,
           MaterialPageRoute(
             builder: (context) {
-              return const NavPage();
+              return NavPage();
             },
           ),
         );

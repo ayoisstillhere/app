@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/secret_chat_encryption_service.dart';
 import '../../../../size_config.dart';
 import '../widgets/form_header.dart';
 import 'package:http_parser/http_parser.dart'; // Required for MediaType
@@ -44,10 +45,12 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
         final compressedFile = await compressImage(_selectedBannerImage!);
         await uploadImage(compressedFile, '/api/v1/user/upload-banner-image');
       }
+      final encryptionService = SecretChatEncryptionService();
+      await encryptionService.ensureKeyPairExists();
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const NavPage()),
+        MaterialPageRoute(builder: (context) => NavPage()),
         (route) => false, // This removes all previous routes
       );
     } catch (e) {
@@ -244,11 +247,17 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                         ) // Maintain spacing
                       : SkipButon(
                           text: 'Skip',
-                          press: () {
+                          press: () async {
+                            setState(() {
+                              isLoading = true; // Set loading to true
+                            });
+                            final encryptionService =
+                                SecretChatEncryptionService();
+                            await encryptionService.ensureKeyPairExists();
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const NavPage(),
+                                builder: (context) => NavPage(),
                               ),
                               (route) =>
                                   false, // This removes all previous routes
@@ -324,7 +333,7 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
 Future<File> compressImage(File file) async {
   final compressedBytes = await FlutterImageCompress.compressWithFile(
     file.absolute.path,
-    quality: 50, // adjust as needed
+    quality: 85, // adjust as needed
   );
 
   final compressedFile = File('${file.path}_compressed.jpg')

@@ -1059,7 +1059,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (response.statusCode == 200) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const NavPage()),
+        MaterialPageRoute(builder: (context) => NavPage()),
       );
     }
   }

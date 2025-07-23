@@ -24,7 +24,8 @@ import '../size_config.dart';
 import 'package:http/http.dart' as http;
 
 class NavPage extends StatefulWidget {
-  const NavPage({super.key});
+  NavPage({super.key, this.page = 0});
+  int? page;
 
   @override
   State<NavPage> createState() => _NavPageState();
@@ -39,11 +40,14 @@ class _NavPageState extends State<NavPage> {
 
   @override
   void initState() {
-    pageController = PageController();
+    pageController = PageController(initialPage: widget.page ?? 0);
     super.initState();
     _getProfile();
     navPages = [];
     _setupNotificationHandling();
+    setState(() {
+      _page = widget.page ?? 0;
+    });
   }
 
   void _setupNotificationHandling() {

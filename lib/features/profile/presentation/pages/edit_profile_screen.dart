@@ -1,7 +1,12 @@
+import 'package:app/components/nav_page.dart';
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'dart:io';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
@@ -17,6 +22,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   bool userDataLoaded = false;
   late final UserEntity currentUser;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -28,10 +34,259 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     UserEntity? user = await AuthManager.getCurrentUser();
     if (mounted) {
       setState(() {
-        currentUser = user!; // This line causes the error if called twice
+        currentUser = user!;
         userDataLoaded = true;
       });
     }
+  }
+
+  Future<void> uploadImage(File file, String endpoint) async {
+    final token = await AuthManager.getToken();
+    final uri = Uri.parse('$baseUrl$endpoint');
+    // Determine the MIME type (e.g., image/png)
+    final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+    final mimeSplit = mimeType.split('/');
+    var request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(
+        http.MultipartFile(
+          'file',
+          file.readAsBytes().asStream(),
+          file.lengthSync(),
+          filename: file.path.split('/').last,
+          contentType: MediaType(mimeSplit[0], mimeSplit[1]),
+        ),
+      );
+    final response = await request.send();
+    if (response.statusCode != 200) {
+      final responseBody = await response.stream.bytesToString();
+      throw Exception(
+        'Failed to upload image: ${response.statusCode} - $responseBody',
+      );
+    }
+  }
+
+  void _showImagePickerMenu(bool isBanner, TapDownDetails details) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        details.globalPosition & const Size(40, 40),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        const PopupMenuItem<String>(
+          value: 'camera',
+          child: Row(
+            children: [
+              Icon(Icons.camera_alt),
+              SizedBox(width: 8),
+              Text('Take Photo'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'gallery',
+          child: Row(
+            children: [
+              Icon(Icons.photo_library),
+              SizedBox(width: 8),
+              Text('Choose Existing Photo'),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        if (value == 'camera') {
+          _pickImage(ImageSource.camera, isBanner);
+        } else if (value == 'gallery') {
+          _pickImage(ImageSource.gallery, isBanner);
+        }
+      }
+    });
+  }
+
+  Future<void> _pickImage(ImageSource source, bool isBanner) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        File imageFile = File(pickedFile.path);
+        String endpoint = isBanner
+            ? '/api/v1/user/upload-banner-image'
+            : '/api/v1/user/upload-profile-image';
+
+        await uploadImage(imageFile, endpoint);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isBanner
+                  ? 'Banner updated successfully'
+                  : 'Profile image updated successfully',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => NavPage(page: 3)),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildProfileHeader() {
+    return SizedBox(
+      height: getProportionateScreenHeight(200),
+      child: Stack(
+        children: [
+          // Banner Image
+          SizedBox(
+            height: getProportionateScreenHeight(150),
+            width: double.infinity,
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: kGreySearchInput,
+                    image: currentUser.bannerImage.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(currentUser.bannerImage),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: currentUser.bannerImage.isEmpty
+                      ? Center(
+                          child: Icon(
+                            Icons.image,
+                            size: getProportionateScreenHeight(50),
+                            color: Colors.grey[600],
+                          ),
+                        )
+                      : null,
+                ),
+                // Banner overlay and edit icon
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: Center(
+                      child: GestureDetector(
+                        onTapDown: (details) =>
+                            _showImagePickerMenu(true, details),
+                        child: Container(
+                          padding: EdgeInsets.all(
+                            getProportionateScreenWidth(12),
+                          ),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: SvgPicture.asset(
+                            "assets/icons/edit.svg",
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
+                            width: getProportionateScreenWidth(16),
+                            height: getProportionateScreenHeight(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Profile Image
+          Positioned(
+            bottom: 0,
+            left: getProportionateScreenWidth(25),
+            child: SizedBox(
+              width: getProportionateScreenWidth(100),
+              height: getProportionateScreenWidth(100),
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        width: 4,
+                      ),
+                      color: kGreySearchInput,
+                      image: currentUser.profileImage.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(currentUser.profileImage),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: currentUser.profileImage.isEmpty
+                        ? Center(
+                            child: Icon(
+                              Icons.person,
+                              size: getProportionateScreenHeight(40),
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        : null,
+                  ),
+                  // Profile image overlay and edit icon
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.3),
+                      ),
+                      child: Center(
+                        child: GestureDetector(
+                          onTapDown: (details) =>
+                              _showImagePickerMenu(false, details),
+                          child: Container(
+                            padding: EdgeInsets.all(
+                              getProportionateScreenWidth(8),
+                            ),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: SvgPicture.asset(
+                              "assets/icons/edit.svg",
+                              colorFilter: const ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ),
+                              width: getProportionateScreenWidth(16),
+                              height: getProportionateScreenHeight(16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Navigation methods for each field
@@ -46,9 +301,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
-
     if (result != null) {
-      // Refresh user data after edit
       await getCurrentUser();
     }
   }
@@ -64,9 +317,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
-
     if (result != null) {
-      // Refresh user data after edit
       await getCurrentUser();
     }
   }
@@ -82,9 +333,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
-
     if (result != null) {
-      // Refresh user data after edit
       await getCurrentUser();
     }
   }
@@ -100,9 +349,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
-
     if (result != null) {
-      // Refresh user data after edit
       await getCurrentUser();
     }
   }
@@ -118,9 +365,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
-
     if (result != null) {
-      // Refresh user data after edit
       await getCurrentUser();
     }
   }
@@ -132,45 +377,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             appBar: _buildAppBar(),
             body: SafeArea(
               child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: getProportionateScreenWidth(25),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: getProportionateScreenHeight(23)),
-                      _buildFieldContainer(
-                        label: "Name",
-                        value: currentUser.fullName,
-                        onChangeTap: _navigateToEditName,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Profile header with banner and profile image
+                    _buildProfileHeader(),
+                    SizedBox(height: getProportionateScreenHeight(23)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: getProportionateScreenWidth(25),
                       ),
-                      SizedBox(height: getProportionateScreenHeight(15)),
-                      _buildFieldContainer(
-                        label: "Username",
-                        value: currentUser.username,
-                        onChangeTap: _navigateToEditUserName,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFieldContainer(
+                            label: "Name",
+                            value: currentUser.fullName,
+                            onChangeTap: _navigateToEditName,
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(15)),
+                          _buildFieldContainer(
+                            label: "Username",
+                            value: currentUser.username,
+                            onChangeTap: _navigateToEditUserName,
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(15)),
+                          _buildFieldContainer(
+                            label: "Bio",
+                            value: currentUser.bio,
+                            onChangeTap: _navigateToEditBio,
+                          ),
+                          SizedBox(height: getProportionateScreenHeight(15)),
+                          _buildFieldContainer(
+                            label: "Location",
+                            value: currentUser.location,
+                            onChangeTap: _navigateToEditLocation,
+                          ),
+                        ],
                       ),
-                      SizedBox(height: getProportionateScreenHeight(15)),
-                      // _buildFieldContainer(
-                      //   label: "Email",
-                      //   value: currentUser.email,
-                      //   onChangeTap: _navigateToEditEmail,
-                      // ),
-                      // SizedBox(height: getProportionateScreenHeight(15)),
-                      _buildFieldContainer(
-                        label: "Bio",
-                        value: currentUser.bio,
-                        onChangeTap: _navigateToEditBio,
-                      ),
-                      SizedBox(height: getProportionateScreenHeight(15)),
-                      _buildFieldContainer(
-                        label: "Location",
-                        value: currentUser.location,
-                        onChangeTap: _navigateToEditLocation,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -178,7 +424,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         : const Center(child: CircularProgressIndicator());
   }
 
-  // Refactored method to build field containers
   Widget _buildFieldContainer({
     required String label,
     required String value,
