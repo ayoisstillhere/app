@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:app/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
@@ -14,7 +13,9 @@ import '../../../../services/secret_chat_encryption_service.dart';
 class GoogleSignInCubit extends Cubit<GoogleSignInAccount?> {
   final GoogleSignIn _googleSignIn;
 
-  GoogleSignInCubit() : _googleSignIn = GoogleSignIn(), super(null);
+  GoogleSignInCubit()
+    : _googleSignIn = GoogleSignIn(scopes: ['email']),
+      super(null);
 
   // Sign in with Google
   Future<void> signIn(BuildContext context) async {
