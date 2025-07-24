@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../components/nav_page.dart';
@@ -46,25 +46,25 @@ class _ChangeGroupDetailsScreenState extends State<ChangeGroupDetailsScreen> {
     super.dispose();
   }
 
-  Future<File> compressImage(File file) async {
-    final compressedBytes = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      quality: 85, // adjust as needed
-    );
+  // Future<File> compressImage(File file) async {
+  //   final compressedBytes = await FlutterImageCompress.compressWithFile(
+  //     file.absolute.path,
+  //     quality: 85, // adjust as needed
+  //   );
 
-    final compressedFile = File('${file.path}_compressed.jpg')
-      ..writeAsBytesSync(compressedBytes!);
-    return compressedFile;
-  }
+  //   final compressedFile = File('${file.path}_compressed.jpg')
+  //     ..writeAsBytesSync(compressedBytes!);
+  //   return compressedFile;
+  // }
 
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         final File imageFile = File(image.path);
-        final File compressedImage = await compressImage(imageFile);
+        // final File compressedImage = await compressImage(imageFile);
         setState(() {
-          _selectedImage = compressedImage;
+          _selectedImage = imageFile;
         });
       }
     } catch (e) {

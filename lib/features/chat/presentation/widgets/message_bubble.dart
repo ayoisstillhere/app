@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:app/features/chat/presentation/widgets/full_screen_video_player_ios.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -1104,15 +1105,28 @@ class _MessageBubbleState extends State<MessageBubble> {
                         GestureDetector(
                           onTap: () {
                             // Navigate to full screen video player
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FullScreenVideoPlayer(
-                                  videoFile: decryptedFile!,
-                                  message: widget.message,
+                            if (Platform.isIOS) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      FullScreenVideoPlayerIos(
+                                        videoFile: decryptedFile!,
+                                        message: widget.message,
+                                      ),
                                 ),
-                              ),
-                            );
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullScreenVideoPlayer(
+                                    videoFile: decryptedFile!,
+                                    message: widget.message,
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           child: Container(
                             height: getProportionateScreenHeight(200),

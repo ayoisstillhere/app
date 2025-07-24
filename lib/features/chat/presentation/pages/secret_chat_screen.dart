@@ -9,7 +9,7 @@ import 'package:fast_rsa/fast_rsa.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -18,7 +18,7 @@ import 'package:no_screenshot/no_screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
-import 'package:video_compress/video_compress.dart';
+// import 'package:video_compress/video_compress.dart';
 
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/chat/domain/entities/get_messages_response_entity.dart'
@@ -26,6 +26,7 @@ import 'package:app/features/chat/domain/entities/get_messages_response_entity.d
 import 'package:app/features/chat/domain/entities/text_message_entity.dart';
 import 'package:app/features/chat/presentation/pages/chat_details_screen.dart';
 import 'package:app/services/file_encryptor.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../../components/default_button.dart';
 import '../../../../constants.dart';
@@ -95,6 +96,7 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
   String? _recordingPath;
   Player? _player;
   VideoController? _videoController;
+  VideoPlayerController? _iosVideoController;
   bool _showSecretChatOverlay = true;
   String? _conversationKey;
   String conversationId = '';
@@ -312,9 +314,9 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
 
         File fileToSend = _selectedFile!.file;
 
-        if (type == MessageType.IMAGE || type == MessageType.VIDEO) {
-          fileToSend = await compressImage(File(_selectedFile!.file.path));
-        }
+        // if (type == MessageType.IMAGE || type == MessageType.VIDEO) {
+        //   fileToSend = await compressImage(File(_selectedFile!.file.path));
+        // }
 
         final encryptedFile = await FileEncryptor.encryptFile(fileToSend);
 
@@ -695,9 +697,16 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
 
     // Initialize video player if it's a video file
     if (type == MessageType.VIDEO) {
-      _player = Player();
-      _videoController = VideoController(_player!);
-      await _player!.open(Media('file://${file.path}'));
+      if (Platform.isAndroid) {
+        _player = Player();
+        _videoController = VideoController(_player!);
+        await _player!.open(Media('file://${file.path}'));
+      } else {
+        _iosVideoController = VideoPlayerController.file(file);
+        _iosVideoController!.initialize().then((_) {
+          setState(() {});
+        });
+      }
     }
   }
 
@@ -709,6 +718,11 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
     }
     if (_videoController != null) {
       _videoController = null;
+    }
+
+    if (_iosVideoController != null) {
+      _iosVideoController!.dispose();
+      _iosVideoController = null;
     }
 
     setState(() {
@@ -933,22 +947,39 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
           ),
         );
       case MessageType.VIDEO:
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
-          child: _player != null && _videoController != null
-              ? AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Video(
-                    controller: _videoController!,
-                    fit: BoxFit.cover,
+        if (Platform.isAndroid) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
+            child: _player != null && _videoController != null
+                ? AspectRatio(
                     aspectRatio: 16 / 9,
+                    child: Video(
+                      controller: _videoController!,
+                      fit: BoxFit.cover,
+                      aspectRatio: 16 / 9,
+                    ),
+                  )
+                : Container(
+                    color: Colors.black,
+                    child: Icon(Icons.video_library, color: Colors.white),
                   ),
-                )
-              : Container(
-                  color: Colors.black,
-                  child: Icon(Icons.video_library, color: Colors.white),
-                ),
-        );
+          );
+        } else {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(getProportionateScreenWidth(8)),
+            child:
+                _iosVideoController != null &&
+                    _iosVideoController!.value.isInitialized
+                ? AspectRatio(
+                    aspectRatio: _iosVideoController!.value.aspectRatio,
+                    child: VideoPlayer(_iosVideoController!),
+                  )
+                : Container(
+                    color: Colors.black,
+                    child: Icon(Icons.video_library, color: Colors.white),
+                  ),
+          );
+        }
       case MessageType.AUDIO:
         return Icon(Icons.audiotrack, size: getProportionateScreenWidth(30));
       case MessageType.FILE:
@@ -1841,31 +1872,36 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
       _player!.dispose();
     }
 
+    if (_iosVideoController != null) {
+      _iosVideoController!.dispose();
+      _iosVideoController = null;
+    }
+
     super.dispose();
   }
 
-  Future<File> compressImage(File file) async {
-    final compressedBytes = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      quality: 85, // adjust as needed
-    );
+  // Future<File> compressImage(File file) async {
+  //   final compressedBytes = await FlutterImageCompress.compressWithFile(
+  //     file.absolute.path,
+  //     quality: 85, // adjust as needed
+  //   );
 
-    final compressedFile = File('${file.path}_compressed.jpg')
-      ..writeAsBytesSync(compressedBytes!);
-    return compressedFile;
-  }
+  //   final compressedFile = File('${file.path}_compressed.jpg')
+  //     ..writeAsBytesSync(compressedBytes!);
+  //   return compressedFile;
+  // }
 
-  Future<File> compressVideo(File file) async {
-    final compressedVideo = await VideoCompress.compressVideo(
-      file.path,
-      quality: VideoQuality.HighestQuality,
-      deleteOrigin: false,
-      includeAudio: true,
-    );
+  // Future<File> compressVideo(File file) async {
+  //   final compressedVideo = await VideoCompress.compressVideo(
+  //     file.path,
+  //     quality: VideoQuality.HighestQuality,
+  //     deleteOrigin: false,
+  //     includeAudio: true,
+  //   );
 
-    if (compressedVideo != null) {
-      return File(compressedVideo.path!);
-    }
-    return file; // Return original if compression fails
-  }
+  //   if (compressedVideo != null) {
+  //     return File(compressedVideo.path!);
+  //   }
+  //   return file; // Return original if compression fails
+  // }
 }

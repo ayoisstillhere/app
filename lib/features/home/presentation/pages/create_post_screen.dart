@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_compress/video_compress.dart';
+// import 'package:video_compress/video_compress.dart';
 
 import 'package:app/size_config.dart';
 
@@ -53,30 +53,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     super.dispose();
   }
 
-  Future<File> compressImage(File file) async {
-    final compressedBytes = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      quality: 85, // adjust as needed
-    );
+  // Future<File> compressImage(File file) async {
+  //   final compressedBytes = await FlutterImageCompress.compressWithFile(
+  //     file.absolute.path,
+  //     quality: 85, // adjust as needed
+  //   );
 
-    final compressedFile = File('${file.path}_compressed.jpg')
-      ..writeAsBytesSync(compressedBytes!);
-    return compressedFile;
-  }
+  //   final compressedFile = File('${file.path}_compressed.jpg')
+  //     ..writeAsBytesSync(compressedBytes!);
+  //   return compressedFile;
+  // }
 
-  Future<File> compressVideo(File file) async {
-    final compressedVideo = await VideoCompress.compressVideo(
-      file.path,
-      quality: VideoQuality.HighestQuality,
-      deleteOrigin: false,
-      includeAudio: true,
-    );
+  // Future<File> compressVideo(File file) async {
+  //   final compressedVideo = await VideoCompress.compressVideo(
+  //     file.path,
+  //     quality: VideoQuality.HighestQuality,
+  //     deleteOrigin: false,
+  //     includeAudio: true,
+  //   );
 
-    if (compressedVideo != null) {
-      return File(compressedVideo.path!);
-    }
-    return file; // Return original if compression fails
-  }
+  //   if (compressedVideo != null) {
+  //     return File(compressedVideo.path!);
+  //   }
+  //   return file; // Return original if compression fails
+  // }
 
   Future<void> _pickImageFromGallery() async {
     try {
@@ -89,8 +89,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         List<File> compressedImages = [];
         for (XFile image in images) {
           File originalFile = File(image.path);
-          File compressedFile = await compressImage(originalFile);
-          compressedImages.add(compressedFile);
+          // File compressedFile = await compressImage(originalFile);
+          compressedImages.add(originalFile);
         }
 
         setState(() {
@@ -125,17 +125,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         File originalVideoFile = File(video.path);
 
         // Compress video
-        File compressedVideoFile = await compressVideo(originalVideoFile);
+        // File compressedVideoFile = await compressVideo(originalVideoFile);
 
         // Initialize media_kit player for preview
         final player = Player();
         final controller = VideoController(player);
-        await player.open(Media('file://${compressedVideoFile.path}'));
+        await player.open(Media('file://${originalVideoFile.path}'));
 
         setState(() {
-          selectedVideos.add(compressedVideoFile);
-          videoPlayers[compressedVideoFile.path] = player;
-          videoControllers[compressedVideoFile.path] = controller;
+          selectedVideos.add(originalVideoFile);
+          videoPlayers[originalVideoFile.path] = player;
+          videoControllers[originalVideoFile.path] = controller;
           isLoading = false;
         });
       }
@@ -164,10 +164,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         });
 
         File originalFile = File(image.path);
-        File compressedFile = await compressImage(originalFile);
+        // File compressedFile = await compressImage(originalFile);
 
         setState(() {
-          selectedImages.add(compressedFile);
+          selectedImages.add(originalFile);
           isLoading = false;
         });
       }
@@ -198,17 +198,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         File originalVideoFile = File(video.path);
 
         // Compress video
-        File compressedVideoFile = await compressVideo(originalVideoFile);
+        // File compressedVideoFile = await compressVideo(originalVideoFile);
 
         // Initialize media_kit player for preview
         final player = Player();
         final controller = VideoController(player);
-        await player.open(Media('file://${compressedVideoFile.path}'));
+        await player.open(Media('file://${originalVideoFile.path}'));
 
         setState(() {
-          selectedVideos.add(compressedVideoFile);
-          videoPlayers[compressedVideoFile.path] = player;
-          videoControllers[compressedVideoFile.path] = controller;
+          selectedVideos.add(originalVideoFile);
+          videoPlayers[originalVideoFile.path] = player;
+          videoControllers[originalVideoFile.path] = controller;
           isLoading = false;
         });
       }

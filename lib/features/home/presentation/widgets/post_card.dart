@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:app/features/chat/presentation/widgets/full_screen_url_video_player_ios.dart';
 import 'package:app/features/home/presentation/pages/post_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -281,15 +284,27 @@ class _PostCardState extends State<PostCard> {
       return GestureDetector(
         onTap: () {
           // Navigate to full screen URL video player
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FullScreenUrlVideoPlayer(
-                videoUrl: url,
-                title: widget.content,
+          if (Platform.isIOS) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FullScreenUrlVideoPlayerIos(
+                  videoUrl: url,
+                  title: widget.content,
+                ),
               ),
-            ),
-          );
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FullScreenUrlVideoPlayer(
+                  videoUrl: url,
+                  title: widget.content,
+                ),
+              ),
+            );
+          }
         },
         child: Container(
           decoration: BoxDecoration(
