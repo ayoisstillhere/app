@@ -17,7 +17,8 @@ class FullScreenVideoPlayerIos extends StatefulWidget {
   });
 
   @override
-  _FullScreenVideoPlayerIosState createState() => _FullScreenVideoPlayerIosState();
+  _FullScreenVideoPlayerIosState createState() =>
+      _FullScreenVideoPlayerIosState();
 }
 
 class _FullScreenVideoPlayerIosState extends State<FullScreenVideoPlayerIos> {
@@ -95,6 +96,7 @@ class _FullScreenVideoPlayerIosState extends State<FullScreenVideoPlayerIos> {
 
   @override
   void dispose() {
+    _isPlaying = false;
     _controller.dispose();
 
     // Restore system UI and orientation
