@@ -37,7 +37,7 @@ List<Map<String, dynamic>> settingsDetails = [
     "title": "Account",
     "icon": "assets/icons/settings_account.svg",
     "subItems": [
-      "Email/Phome Number",
+      "Email/Phone Number",
       "Password",
       "Username",
       "Notification Settings",

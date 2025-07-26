@@ -3,6 +3,7 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
@@ -109,33 +110,127 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
+  Future<File?> _cropImage(File imageFile, bool isBanner) async {
+    try {
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: imageFile.path,
+        aspectRatio: isBanner
+            ? const CropAspectRatio(ratioX: 3, ratioY: 1) // Banner aspect ratio
+            : const CropAspectRatio(ratioX: 1, ratioY: 1), // Square for profile
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: isBanner ? 'Crop Banner Image' : 'Crop Profile Image',
+            toolbarColor: kAccentColor,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: isBanner
+                ? CropAspectRatioPreset.ratio3x2
+                : CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+            aspectRatioPresets: [
+              if (isBanner) ...[
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.ratio16x9,
+              ] else ...[
+                CropAspectRatioPreset.square,
+              ],
+            ],
+            hideBottomControls: false,
+            cropGridRowCount: 3,
+            cropGridColumnCount: 3,
+            cropGridStrokeWidth: 2,
+            cropGridColor: kAccentColor,
+            activeControlsWidgetColor: kAccentColor,
+          ),
+          IOSUiSettings(
+            title: isBanner ? 'Crop Banner Image' : 'Crop Profile Image',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+            aspectRatioPickerButtonHidden: true,
+            rotateButtonsHidden: false,
+            resetButtonHidden: false,
+            aspectRatioPresets: [
+              if (isBanner) ...[
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.ratio16x9,
+              ] else ...[
+                CropAspectRatioPreset.square,
+              ],
+            ],
+          ),
+          WebUiSettings(context: context),
+        ],
+      );
+
+      if (croppedFile != null) {
+        return File(croppedFile.path);
+      }
+      return null;
+    } catch (e) {
+      print('Error cropping image: $e');
+      return null;
+    }
+  }
+
   Future<void> _pickImage(ImageSource source, bool isBanner) async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: source);
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: isBanner ? 1200 : 800,
+        maxHeight: isBanner ? 400 : 800,
+        imageQuality: 85,
+      );
+
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
-        String endpoint = isBanner
-            ? '/api/v1/user/upload-banner-image'
-            : '/api/v1/user/upload-profile-image';
 
-        await uploadImage(imageFile, endpoint);
+        // Show cropping interface
+        File? croppedFile = await _cropImage(imageFile, isBanner);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isBanner
-                  ? 'Banner updated successfully'
-                  : 'Profile image updated successfully',
+        if (croppedFile != null) {
+          String endpoint = isBanner
+              ? '/api/v1/user/upload-banner-image'
+              : '/api/v1/user/upload-profile-image';
+
+          // Show loading indicator
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return const Center(child: CircularProgressIndicator());
+            },
+          );
+
+          await uploadImage(croppedFile, endpoint);
+
+          // Hide loading indicator
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isBanner
+                    ? 'Banner updated successfully'
+                    : 'Profile image updated successfully',
+              ),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => NavPage(page: 3)),
-        );
+          );
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => NavPage(page: 3)),
+          );
+        }
+        // If user cancelled cropping, do nothing
       }
     } catch (e) {
+      // Hide loading indicator if it's showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error uploading image: $e'),
