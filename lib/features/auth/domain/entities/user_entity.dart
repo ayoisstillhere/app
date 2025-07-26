@@ -7,8 +7,8 @@ class UserEntity extends Equatable {
   final String fullName;
   final String bio;
   final String location;
-  final String profileImage;
-  final dynamic bannerImage;
+  final String? profileImage;
+  final String? bannerImage;
   final bool isEmailVerified;
   final int followerCount;
   final int followingCount;

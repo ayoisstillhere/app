@@ -94,9 +94,9 @@ class Post {
 }
 
 class Sender {
-  final String username;
-  final String fullName;
-  final String profileImage;
+  final String? username;
+  final String? fullName;
+  final String? profileImage;
 
   Sender({
     required this.username,

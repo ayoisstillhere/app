@@ -311,9 +311,9 @@ class _WriteCommentScreenState extends State<WriteCommentScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
-                        image: widget.currentUser.profileImage.isEmpty
+                        image: widget.currentUser.profileImage!.isEmpty
                             ? NetworkImage(defaultAvatar)
-                            : NetworkImage(widget.currentUser.profileImage),
+                            : NetworkImage(widget.currentUser.profileImage!),
                         fit: BoxFit.cover,
                       ),
                     ),

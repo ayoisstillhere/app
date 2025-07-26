@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen>
       context,
       MaterialPageRoute(
         builder: (context) =>
-            CreatePostScreen(profileImage: widget.currentUser.profileImage),
+            CreatePostScreen(profileImage: widget.currentUser.profileImage!),
       ),
     );
     // Close the expansion after navigation
@@ -681,9 +681,9 @@ class _HomeScreenState extends State<HomeScreen>
                   shape: BoxShape.circle,
                   image: DecorationImage(
                     image: NetworkImage(
-                      widget.currentUser.profileImage.isEmpty
+                      widget.currentUser.profileImage!.isEmpty
                           ? defaultAvatar
-                          : widget.currentUser.profileImage,
+                          : widget.currentUser.profileImage!,
                     ),
                     fit: BoxFit.cover,
                   ),

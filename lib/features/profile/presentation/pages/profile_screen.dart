@@ -571,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 context,
                 MaterialPageRoute(
                   builder: (context) => FullScreenImageViewer(
-                    imageUrl: user!.profileImage,
+                    imageUrl: user!.profileImage!,
                     userName: user!.fullName,
                   ),
                 ),
@@ -583,9 +583,9 @@ class _ProfileScreenState extends State<ProfileScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: user!.profileImage.isEmpty
+                  image: user!.profileImage!.isEmpty
                       ? NetworkImage(defaultAvatar)
-                      : NetworkImage(user!.profileImage),
+                      : NetworkImage(user!.profileImage!),
                   fit: BoxFit.cover,
                 ),
                 border: Border.all(width: 1, color: kPrimPurple),
@@ -788,7 +788,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 _createChat(
                   [user!.id, widget.currentUser.id],
                   user!.fullName,
-                  user!.profileImage,
+                  user!.profileImage!,
                   user!.username,
                 );
               },
@@ -842,7 +842,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       decoration: user!.bannerImage != null
           ? BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(user!.bannerImage),
+                image: NetworkImage(user!.bannerImage!),
                 fit: BoxFit.cover,
               ),
             )

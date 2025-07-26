@@ -256,14 +256,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   height: double.infinity,
                   decoration: BoxDecoration(
                     color: kGreySearchInput,
-                    image: currentUser.bannerImage.isNotEmpty
+                    image: currentUser.bannerImage!.isEmpty
                         ? DecorationImage(
-                            image: NetworkImage(currentUser.bannerImage),
+                            image: NetworkImage(currentUser.bannerImage!),
                             fit: BoxFit.cover,
                           )
                         : null,
                   ),
-                  child: currentUser.bannerImage.isEmpty
+                  child: currentUser.bannerImage!.isEmpty
                       ? Center(
                           child: Icon(
                             Icons.image,
@@ -325,14 +325,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         width: 4,
                       ),
                       color: kGreySearchInput,
-                      image: currentUser.profileImage.isNotEmpty
+                      image: currentUser.profileImage!.isNotEmpty
                           ? DecorationImage(
-                              image: NetworkImage(currentUser.profileImage),
+                              image: NetworkImage(currentUser.profileImage!),
                               fit: BoxFit.cover,
                             )
                           : null,
                     ),
-                    child: currentUser.profileImage.isEmpty
+                    child: currentUser.profileImage!.isEmpty
                         ? Center(
                             child: Icon(
                               Icons.person,

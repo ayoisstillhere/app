@@ -622,9 +622,9 @@ class _NavPageState extends State<NavPage> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: currentUser!.profileImage.isEmpty
+                    image: currentUser!.profileImage!.isEmpty
                         ? NetworkImage(defaultAvatar)
-                        : NetworkImage(currentUser!.profileImage),
+                        : NetworkImage(currentUser!.profileImage!),
                     fit: BoxFit.cover,
                   ),
                 ),
