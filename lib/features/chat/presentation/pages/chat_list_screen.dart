@@ -739,7 +739,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               dividerColor: dividerColor,
               image: isGroupChat
                   ? conversation.groupImage ?? ''
-                  : otherParticipant?.user.profileImage,
+                  : otherParticipant?.user.profileImage ?? defaultAvatar,
               name: isGroupChat
                   ? conversation.name ?? 'Group Chat'
                   : otherParticipant?.user.fullName ?? 'Unknown User',
