@@ -29,8 +29,8 @@ class FollowersResponse {
 class Follower {
   String id;
   String username;
-  String fullName;
-  String profileImage;
+  String? fullName;
+  String? profileImage;
   String? bio;
   int followerCount;
   int followingCount;
@@ -54,9 +54,9 @@ class Follower {
   factory Follower.fromJson(Map<String, dynamic> json) => Follower(
     id: json["id"],
     username: json["username"],
-    fullName: json["fullName"],
-    profileImage: json["profileImage"],
-    bio: json["bio"],
+    fullName: json["fullName"] ?? "",
+    profileImage: json["profileImage"] ?? "",
+    bio: json["bio"] ?? "",
     followerCount: json["followerCount"],
     followingCount: json["followingCount"],
     followedAt: DateTime.parse(json["followedAt"]),

@@ -190,8 +190,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         onTap: () => toggleUserSelection(user),
                         child: ChatSuggestionTile(
                           dividerColor: dividerColor,
-                          image: user.profileImage,
-                          name: user.fullName,
+                          image: user.profileImage ?? defaultAvatar,
+                          name: user.fullName ?? user.username,
                           handle: user.username,
                           isSelected: isSelected,
                           showCheckbox: true,
@@ -264,9 +264,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: user.profileImage.isEmpty
+                  image: user.profileImage != null
                       ? NetworkImage(defaultAvatar)
-                      : NetworkImage(user.profileImage),
+                      : NetworkImage(user.profileImage!),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -288,7 +288,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         SizedBox(
           width: getProportionateScreenWidth(62),
           child: Text(
-            user.fullName,
+            user.fullName ?? user.username,
             style: TextStyle(
               fontSize: getProportionateScreenHeight(12),
               fontWeight: FontWeight.w500,

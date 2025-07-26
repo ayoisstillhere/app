@@ -12,9 +12,9 @@ class FollowingResponse {
 class Following {
     final String id;
     final String username;
-    final String fullName;
-    final String profileImage;
-    final String bio;
+    final String? fullName;
+    final String? profileImage;
+    final String? bio;
     final int followerCount;
     final int followingCount;
     final DateTime followedAt;

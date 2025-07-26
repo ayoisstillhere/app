@@ -105,9 +105,9 @@ class Sender {
   });
 
   factory Sender.fromJson(Map<String, dynamic> json) => Sender(
-    username: json["username"],
-    fullName: json["fullName"],
-    profileImage: json["profileImage"],
+    username: json["username"] ?? "",
+    fullName: json["fullName"] ?? "",
+    profileImage: json["profileImage"] ?? "",
   );
 
   Map<String, dynamic> toJson() => {

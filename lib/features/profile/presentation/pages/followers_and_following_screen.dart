@@ -195,9 +195,9 @@ class _FollowersAndFollowingScreenState
 
   void _filterFollowers() {
     filteredFollowers = followers.where((follower) {
-      final name = follower.fullName.toLowerCase();
+      final name = follower.fullName?.toLowerCase();
       final username = follower.username.toLowerCase();
-      return name.contains(searchQuery) || username.contains(searchQuery);
+      return name != null && name.contains(searchQuery) || username.contains(searchQuery);
     }).toList();
   }
 
@@ -243,7 +243,7 @@ class _FollowersAndFollowingScreenState
                 shape: BoxShape.circle,
                 image: DecorationImage(
                   image: follower.profileImage != null
-                      ? NetworkImage(follower.profileImage)
+                      ? NetworkImage(follower.profileImage!)
                       : AssetImage('assets/images/avatar.png'),
                   fit: BoxFit.cover,
                 ),
@@ -253,7 +253,7 @@ class _FollowersAndFollowingScreenState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(follower.fullName),
+                Text(follower.fullName ?? '', style: TextStyle(fontWeight: FontWeight.bold)),
                 Text('@${follower.username}'),
               ],
             ),
@@ -318,8 +318,8 @@ class _FollowersAndFollowingScreenState
                     onTap: () {
                       _goToMessage(
                         selectedUsers,
-                        follower.fullName,
-                        follower.profileImage,
+                        follower.fullName ?? '',
+                        follower.profileImage ?? '',
                         follower.username,
                       );
                     },
@@ -377,7 +377,7 @@ class _FollowersAndFollowingScreenState
                 shape: BoxShape.circle,
                 image: DecorationImage(
                   image: followingUser.profileImage != null
-                      ? NetworkImage(followingUser.profileImage)
+                      ? NetworkImage(followingUser.profileImage!)
                       : AssetImage('assets/images/avatar.png'),
                   fit: BoxFit.cover,
                 ),
@@ -397,7 +397,7 @@ class _FollowersAndFollowingScreenState
                 _goToMessage(
                   selectedUsers,
                   followingUser.fullName ?? '',
-                  followingUser.profileImage,
+                  followingUser.profileImage ?? '',
                   followingUser.username,
                 );
               },

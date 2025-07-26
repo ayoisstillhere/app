@@ -30,7 +30,7 @@ class Following {
   String id;
   String username;
   String? fullName;
-  String profileImage;
+  String? profileImage;
   String? bio;
   int followerCount;
   int followingCount;
@@ -54,9 +54,9 @@ class Following {
   factory Following.fromJson(Map<String, dynamic> json) => Following(
     id: json["id"],
     username: json["username"],
-    fullName: json["fullName"],
-    profileImage: json["profileImage"],
-    bio: json["bio"],
+    fullName: json["fullName"] ?? "",
+    profileImage: json["profileImage"] ?? "",
+    bio: json["bio"] ?? "",
     followerCount: json["followerCount"],
     followingCount: json["followingCount"],
     followedAt: DateTime.parse(json["followedAt"]),
