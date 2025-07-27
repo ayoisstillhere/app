@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import '../../../../services/file_encryptor.dart';
 import '../../../../size_config.dart';
 import '../../domain/entities/get_media_response_entity.dart';
@@ -36,35 +35,35 @@ class _VoiceWidgetState extends State<VoiceWidget> {
   }
 
   Future<void> _setupAudio() async {
-  if (decryptedFile != null) {
-    try {
-      await _audioPlayer.setFilePath(decryptedFile!.path);
-      _audioPlayer.playerStateStream.listen((state) {
-        if (state.processingState == ProcessingState.completed) {
-          setState(() {
-            isPlaying = false;
-          });
-        }
-      });
-    } catch (e) {
-      // Handle audio setup error
+    if (decryptedFile != null) {
+      try {
+        await _audioPlayer.setFilePath(decryptedFile!.path);
+        _audioPlayer.playerStateStream.listen((state) {
+          if (state.processingState == ProcessingState.completed) {
+            setState(() {
+              isPlaying = false;
+            });
+          }
+        });
+      } catch (e) {
+        // Handle audio setup error
+      }
     }
   }
-}
 
-void _togglePlay() async {
-  if (_audioPlayer.playing) {
-    await _audioPlayer.pause();
-    setState(() {
-      isPlaying = false;
-    });
-  } else {
-    await _audioPlayer.play();
-    setState(() {
-      isPlaying = true;
-    });
+  void _togglePlay() async {
+    if (_audioPlayer.playing) {
+      await _audioPlayer.pause();
+      setState(() {
+        isPlaying = false;
+      });
+    } else {
+      await _audioPlayer.play();
+      setState(() {
+        isPlaying = true;
+      });
+    }
   }
-}
 
   Future<void> _decryptFile() async {
     if (!mounted) return;
@@ -133,9 +132,22 @@ void _togglePlay() async {
         ),
       ),
       subtitle: Text(
-        "Recorded  ${timeago.format(widget.data.createdAt)}",
+        "Recorded  ${_formatTime(widget.data.createdAt)}",
         style: TextStyle(fontSize: getProportionateScreenHeight(12)),
       ),
     );
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else {
+      return '${difference.inDays}d';
+    }
   }
 }

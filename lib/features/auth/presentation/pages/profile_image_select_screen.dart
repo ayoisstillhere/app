@@ -4,12 +4,13 @@ import 'package:app/components/default_button.dart';
 import 'package:app/components/nav_page.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../constants.dart';
+import '../../../../services/secret_chat_encryption_service.dart';
 import '../../../../size_config.dart';
 import '../widgets/form_header.dart';
 import 'package:http_parser/http_parser.dart'; // Required for MediaType
@@ -35,19 +36,22 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
 
     try {
       if (_selectedProfileImage != null) {
-        final compressedFile = await compressImage(_selectedProfileImage!);
+        // final compressedFile = await compressImage(_selectedProfileImage!);
 
-        await uploadImage(compressedFile, '/api/v1/user/upload-profile-image');
+        await uploadImage(_selectedProfileImage!, '/api/v1/user/upload-profile-image');
       }
 
       if (_selectedBannerImage != null) {
-        final compressedFile = await compressImage(_selectedBannerImage!);
-        await uploadImage(compressedFile, '/api/v1/user/upload-banner-image');
+        // final compressedFile = await compressImage(_selectedBannerImage!);
+        await uploadImage(_selectedBannerImage!, '/api/v1/user/upload-banner-image');
       }
+      final encryptionService = SecretChatEncryptionService();
+      await encryptionService.ensureKeyPairExists();
 
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => NavPage()),
+        (route) => false, // This removes all previous routes
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -243,12 +247,20 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
                         ) // Maintain spacing
                       : SkipButon(
                           text: 'Skip',
-                          press: () {
-                            Navigator.push(
+                          press: () async {
+                            setState(() {
+                              isLoading = true; // Set loading to true
+                            });
+                            final encryptionService =
+                                SecretChatEncryptionService();
+                            await encryptionService.ensureKeyPairExists();
+                            Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => NavPage(),
                               ),
+                              (route) =>
+                                  false, // This removes all previous routes
                             );
                           },
                         ),
@@ -318,16 +330,16 @@ class _ProfileImageSelectScreenState extends State<ProfileImageSelectScreen> {
   }
 }
 
-Future<File> compressImage(File file) async {
-  final compressedBytes = await FlutterImageCompress.compressWithFile(
-    file.absolute.path,
-    quality: 50, // adjust as needed
-  );
+// Future<File> compressImage(File file) async {
+//   final compressedBytes = await FlutterImageCompress.compressWithFile(
+//     file.absolute.path,
+//     quality: 85, // adjust as needed
+//   );
 
-  final compressedFile = File('${file.path}_compressed.jpg')
-    ..writeAsBytesSync(compressedBytes!);
-  return compressedFile;
-}
+//   final compressedFile = File('${file.path}_compressed.jpg')
+//     ..writeAsBytesSync(compressedBytes!);
+//   return compressedFile;
+// }
 
 class SkipButon extends StatelessWidget {
   const SkipButon({super.key, required this.text, required this.press});

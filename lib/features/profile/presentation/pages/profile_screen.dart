@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:app/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -11,8 +12,11 @@ import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:app/size_config.dart';
 
+import '../../../../components/full_screen_image_viewer.dart';
+import '../../../../components/nav_page.dart';
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import '../../../../services/profile_sharing_service.dart';
 import '../../../chat/data/models/get_messages_response_model.dart'
     hide UserModel;
 import '../../../chat/domain/entities/get_messages_response_entity.dart';
@@ -20,6 +24,7 @@ import '../../../chat/presentation/pages/chat_screen.dart';
 import '../../../chat/presentation/pages/secret_chat_screen.dart';
 import '../../../home/data/models/post_response_model.dart';
 import '../../../home/presentation/widgets/post_Card.dart';
+import 'followers_and_following_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -99,6 +104,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
+  void _shareProfile() {
+    ProfileSharingService.shareProfile(
+      username: user!.username,
+      fullName: user!.fullName,
+      profileImage: user!.profileImage,
+    );
+  }
+
   Future<void> _createChat(
     List selectedUsers,
     String name,
@@ -108,18 +121,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
     final token = await AuthManager.getToken();
 
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
+    // Create multipart request
+    final request = http.MultipartRequest('POST', url);
 
-    final body = jsonEncode({
-      "participantUserIds": selectedUsers,
-      "type": "DIRECT",
-    });
+    // Add headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add form fields
+    request.fields['participantUserIds'] = jsonEncode(selectedUsers);
+    request.fields['type'] = 'DIRECT';
 
     try {
-      final response = await http.post(url, headers: headers, body: body);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (jsonDecode(response.body)['isSecret']) {
@@ -192,9 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            jsonDecode(
-              "$e",
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            'Error: ${e.toString()}',
             style: TextStyle(color: Colors.white),
           ),
         ),
@@ -458,37 +470,67 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Posts")),
+                                child: Center(
+                                  child: Text(
+                                    "Posts",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Reposts")),
+                                child: Center(
+                                  child: Text(
+                                    "Reposts",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Media")),
+                                child: Center(
+                                  child: Text(
+                                    "Media",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Comments")),
+                                child: Center(
+                                  child: Text(
+                                    "Comments",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Saved")),
+                                child: Center(
+                                  child: Text(
+                                    "Saved",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                             Tab(
                               child: SizedBox(
                                 width: getProportionateScreenWidth(70),
-                                child: Center(child: Text("Liked")),
+                                child: Center(
+                                  child: Text(
+                                    "Liked",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -523,18 +565,31 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       child: Row(
         children: [
-          Container(
-            height: getProportionateScreenHeight(68),
-            width: getProportionateScreenWidth(68),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: user!.profileImage.isEmpty
-                    ? NetworkImage(defaultAvatar)
-                    : NetworkImage(user!.profileImage),
-                fit: BoxFit.cover,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FullScreenImageViewer(
+                    imageUrl: user!.profileImage!,
+                    userName: user!.fullName,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              height: getProportionateScreenHeight(68),
+              width: getProportionateScreenWidth(68),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: user!.profileImage!.isEmpty
+                      ? NetworkImage(defaultAvatar)
+                      : NetworkImage(user!.profileImage!),
+                  fit: BoxFit.cover,
+                ),
+                border: Border.all(width: 1, color: kPrimPurple),
               ),
-              border: Border.all(width: 1, color: kPrimPurple),
             ),
           ),
           SizedBox(width: getProportionateScreenWidth(6)),
@@ -568,46 +623,74 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
           Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                NumberFormat.compact().format(user!.followerCount),
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(16),
-                  fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FollowersAndFollowingScreen(
+                    index: 0,
+                    userName: user!.username,
+                    userId: user!.id,
+                  ),
                 ),
-              ),
-              Text(
-                "Followers",
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(12),
-                  fontWeight: FontWeight.w500,
-                  color: kProfileText,
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  NumberFormat.compact().format(user!.followerCount),
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(16),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  user!.followerCount == 1 ? "Follower" : "Followers",
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(12),
+                    fontWeight: FontWeight.w500,
+                    color: kProfileText,
+                  ),
+                ),
+              ],
+            ),
           ),
           SizedBox(width: getProportionateScreenWidth(10)),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                NumberFormat.compact().format(user!.followingCount),
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(16),
-                  fontWeight: FontWeight.w500,
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FollowersAndFollowingScreen(
+                    index: 1,
+                    userName: user!.username,
+                    userId: user!.id,
+                  ),
                 ),
-              ),
-              Text(
-                "Following",
-                style: TextStyle(
-                  fontSize: getProportionateScreenHeight(12),
-                  fontWeight: FontWeight.w500,
-                  color: kProfileText,
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  NumberFormat.compact().format(user!.followingCount),
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(16),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  "Following",
+                  style: TextStyle(
+                    fontSize: getProportionateScreenHeight(12),
+                    fontWeight: FontWeight.w500,
+                    color: kProfileText,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -675,7 +758,16 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           // Edit Profile / Follow buttons
           if (user!.isOwnProfile)
-            _buildActionButton("Edit Profile", null, () {}),
+            _buildActionButton("Edit Profile", null, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return EditProfileScreen();
+                  },
+                ),
+              );
+            }),
           if (!user!.isOwnProfile && !user!.isFollowing && !user!.followsYou)
             _buildActionButton("Follow", kAccentColor, _followUser),
           if (!user!.isOwnProfile && user!.isFollowing)
@@ -685,8 +777,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
           Spacer(),
 
-          // Share Profile button
-          _buildActionButton("Share Profile", null, () {}),
+          // Share Profile button - Updated with actual functionality
+          _buildActionButton("Share Profile", null, _shareProfile),
 
           // Message button
           if (canMessage) ...[
@@ -696,7 +788,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 _createChat(
                   [user!.id, widget.currentUser.id],
                   user!.fullName,
-                  user!.profileImage,
+                  user!.profileImage!,
                   user!.username,
                 );
               },
@@ -750,7 +842,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       decoration: user!.bannerImage != null
           ? BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(user!.bannerImage),
+                image: NetworkImage(user!.bannerImage!),
                 fit: BoxFit.cover,
               ),
             )
@@ -768,16 +860,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
           Spacer(),
-          InkWell(
-            onTap: () {},
-            child: SvgPicture.asset(
-              "assets/icons/search.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
-            ),
-          ),
-          SizedBox(width: getProportionateScreenWidth(10)),
           InkWell(
             onTap: user!.isOwnProfile ? _onMyMoreButtonTap : _onMoreButtonTap,
             child: SvgPicture.asset(
@@ -804,6 +886,16 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       items: [
         PopupMenuItem<String>(
+          value: 'Share Profile',
+          child: Text(
+            'Share Profile',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
           value: 'Settings',
           child: Text(
             'Settings',
@@ -813,20 +905,12 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         ),
-        PopupMenuItem<String>(
-          value: 'Account',
-          child: Text(
-            'Account',
-            style: TextStyle(
-              fontSize: getProportionateScreenWidth(15),
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-        ),
       ],
     );
 
-    if (selected == 'Settings' && mounted) {
+    if (selected == 'Share Profile' && mounted) {
+      _shareProfile();
+    } else if (selected == 'Settings' && mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => SettingsScreen()),
@@ -857,6 +941,16 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         PopupMenuItem<String>(
+          value: 'Share Profile',
+          child: Text(
+            'Share Profile',
+            style: TextStyle(
+              fontSize: getProportionateScreenWidth(15),
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
           value: 'Mute',
           child: Text(
             'Mute',
@@ -878,8 +972,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ],
     );
+
     if (selected == 'Unfollow' && mounted) {
       await _unfollowUser();
+    } else if (selected == 'Share Profile' && mounted) {
+      _shareProfile();
+    } else if (selected == 'Block' && mounted) {
+      await _onBlock();
     }
   }
 
@@ -908,7 +1007,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to follow user. Please try again.")),
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Failed to follow user. Please try again.",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       );
     }
   }
@@ -939,6 +1044,22 @@ class _ProfileScreenState extends State<ProfileScreen>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to unfollow user. Please try again.")),
+      );
+    }
+  }
+
+  Future<void> _onBlock() async {
+    final token = await AuthManager.getToken();
+    final userId = user!.id;
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/user/block/$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NavPage()),
       );
     }
   }

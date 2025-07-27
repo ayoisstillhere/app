@@ -1,6 +1,7 @@
 import 'package:app/components/nav_page.dart';
 import 'package:app/services/auth_manager.dart';
 import 'package:app/services/secret_chat_encryption_service.dart';
+import 'package:app/services/deep_link_navigation_service.dart'; // Add this import
 import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -63,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
               height: getProportionateScreenHeight(83),
               width: getProportionateScreenWidth(83),
             ),
-            SizedBox(height: getProportionateScreenHeight(18)),
+            SizedBox(height: getProportionateScreenHeight(6)),
             Text(
               "HIRA",
               style: TextStyle(
@@ -71,9 +72,9 @@ class _SplashScreenState extends State<SplashScreen>
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: getProportionateScreenHeight(25)),
+            // SizedBox(height: getProportionateScreenHeight(4)),
             Text(
-              "Connect. Share. Grow.",
+              "...be heard",
               style: TextStyle(
                 fontSize: getProportionateScreenHeight(18),
                 fontWeight: FontWeight.normal,
@@ -122,13 +123,26 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _navigateToHome() {
+  void _navigateToHome() async {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
 
-    Navigator.of(
+    // Navigate to main app
+    Navigator.pushAndRemoveUntil(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (context) => const NavPage()));
+      MaterialPageRoute(builder: (context) => NavPage()),
+      (route) => false, // This removes all previous routes
+    );
+
+    // Handle initial deep link after navigation is complete
+    // Add a small delay to ensure the navigation is complete
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Now handle any initial deep link
+    DeepLinkNavigationService.handleInitialLink();
+
+    // Process any queued deep links
+    DeepLinkNavigationService.onAppReady();
   }
 
   void _navigateToOnboarding() {

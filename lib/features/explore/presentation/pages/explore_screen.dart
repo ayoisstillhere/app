@@ -545,14 +545,16 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ),
                   ),
                 ),
-                exploreResponse!.trending[0].media.isEmpty
+                exploreResponse!.trending.isEmpty
+                    ? Container()
+                    : exploreResponse!.trending[0].media.isEmpty
                     ? Container()
                     : SizedBox(height: getProportionateScreenHeight(23)),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      for (var image in exploreResponse!.trending[0].media)
+                      for (var item in exploreResponse!.trending)
                         Container(
                           width: getProportionateScreenWidth(159),
                           height: getProportionateScreenHeight(161),
@@ -564,9 +566,9 @@ class _ExploreScreenState extends State<ExploreScreen>
                               getProportionateScreenWidth(10),
                             ),
                             image: DecorationImage(
-                              image: image.isEmpty
+                              image: item.media.isEmpty
                                   ? NetworkImage(defaultAvatar)
-                                  : NetworkImage(image),
+                                  : NetworkImage(item.media[0]),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -574,13 +576,11 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ],
                   ),
                 ),
-                exploreResponse!.trending[0].media.isEmpty
-                    ? Container()
-                    : SizedBox(height: getProportionateScreenHeight(52)),
-                SizedBox(height: getProportionateScreenHeight(23)),
+                SizedBox(height: getProportionateScreenHeight(8)),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: List.generate(
                       exploreResponse!.trending.length,
                       (index) => PostCard(
@@ -612,7 +612,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                     ),
                   ),
                 ),
-                SizedBox(height: getProportionateScreenHeight(54)),
+                SizedBox(height: getProportionateScreenHeight(8)),
                 Padding(
                   padding: EdgeInsets.only(
                     left: getProportionateScreenWidth(19),
@@ -629,6 +629,14 @@ class _ExploreScreenState extends State<ExploreScreen>
                             postNumber: exploreResponse!
                                 .popularKeywords[index]
                                 .postsCount,
+                            onTap: () {
+                              _searchController.text = exploreResponse!
+                                  .popularKeywords[index]
+                                  .keyword;
+                              _onSearchSubmitted(
+                                exploreResponse!.popularKeywords[index].keyword,
+                              );
+                            },
                           ),
                           SizedBox(height: getProportionateScreenWidth(16)),
                         ],
@@ -688,6 +696,13 @@ class _ExploreScreenState extends State<ExploreScreen>
             ),
             title: TextFormField(
               controller: _searchController,
+              focusNode: _searchFocusNode, // Add this line
+              onFieldSubmitted: _onSearchSubmitted, // Add this line
+              onChanged: (value) {
+                // Add this callback for real-time search (optional)
+                // You can implement real-time search here if needed
+                // For now, we'll just update on submission
+              },
               decoration: _buildExploreSearchFieldInputDecoration(context),
             ),
             bottom: TabBar(

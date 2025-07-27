@@ -55,6 +55,12 @@ class _HomeScreenState extends State<HomeScreen>
   late ScrollController recommendedScrollController;
   late ScrollController followingScrollController;
 
+  int notificationsCount = 0;
+
+  bool _isLivestreamLoading = false;
+
+  bool _allowScreenshots = true;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen>
     followingScrollController.addListener(_onFollowingScroll);
 
     if (mounted) {
+      _getNotificationsCount();
       _getFollowingPosts();
       _getRecommendedPosts();
     }
@@ -184,6 +191,20 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _getNotificationsCount() async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/notifications/count"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        notificationsCount = jsonDecode(response.body)["count"];
+      });
+    }
+  }
+
   Future<void> _loadMoreRecommendedPosts() async {
     if (isLoadingMoreRecommended || !hasMoreRecommended) return;
 
@@ -265,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen>
       context,
       MaterialPageRoute(
         builder: (context) =>
-            CreatePostScreen(profileImage: widget.currentUser.profileImage),
+            CreatePostScreen(profileImage: widget.currentUser.profileImage!),
       ),
     );
     // Close the expansion after navigation
@@ -275,12 +296,54 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _handleLivestream() async {
+    // Show dialog to ask user about screenshot permission
+    final bool? allowScreenshots = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Livestream Settings'),
+          content: Text(
+            'Do you want to allow viewers to take screenshots of your livestream?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('No Screenshots'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Allow Screenshots'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled the dialog, don't proceed
+    if (allowScreenshots == null) {
+      setState(() {
+        _isFabExpanded = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLivestreamLoading = true;
+      _allowScreenshots = allowScreenshots;
+    });
+
     final token = await AuthManager.getToken();
     String callToken;
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/v1/calls/live-stream'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json', // Add this header
+        },
+        body: jsonEncode({
+          'isScreenshotAllowed': _allowScreenshots, // Add this field
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -292,11 +355,13 @@ class _HomeScreenState extends State<HomeScreen>
             info: UserInfo(
               name: widget.currentUser.fullName,
               id: widget.currentUser.id,
+              image: widget.currentUser.profileImage,
             ),
           ),
           userToken: callToken,
         );
         String roomId = jsonDecode(response.body)['liveStream']['roomId'];
+        String liveStreamId = jsonDecode(response.body)['liveStream']['id'];
         var call = StreamVideo.instance.makeCall(
           callType: StreamCallType.liveStream(),
           id: roomId,
@@ -311,22 +376,11 @@ class _HomeScreenState extends State<HomeScreen>
         );
         if (result.isFailure) {
           debugPrint('Not able to create a call.');
+          setState(() {
+            _isLivestreamLoading = false;
+          });
           return;
         }
-
-        // final updateResult = await call.update(
-        //   startsAt: DateTime.now().toUtc().add(const Duration(seconds: 120)),
-        //   backstage: const StreamBackstageSettings(
-        //     enabled: true,
-        //     joinAheadTimeSeconds: 120,
-        //   ),
-        // );
-
-        // if (updateResult.isFailure) {
-        //   debugPrint('Not able to update the call.');
-        //   debugPrint(updateResult.getErrorOrNull().toString());
-        //   return;
-        // }
 
         final connectOptions = CallConnectOptions(
           camera: TrackOption.enabled(),
@@ -335,9 +389,18 @@ class _HomeScreenState extends State<HomeScreen>
 
         await call.join(connectOptions: connectOptions);
 
+        setState(() {
+          _isLivestreamLoading = false;
+        });
+
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => LiveStreamScreen(livestreamCall: call),
+            builder: (context) => LiveStreamScreen(
+              livestreamCall: call,
+              userName: widget.currentUser.username,
+              liveStreamId: liveStreamId,
+              isScreenshotAllowed: _allowScreenshots,
+            ),
           ),
         );
       }
@@ -353,6 +416,9 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       );
+      setState(() {
+        _isLivestreamLoading = false;
+      });
     }
 
     setState(() {
@@ -392,13 +458,28 @@ class _HomeScreenState extends State<HomeScreen>
                 ? Padding(
                     padding: EdgeInsets.only(bottom: 16),
                     child: FloatingActionButton(
-                      onPressed: _handleLivestream,
+                      onPressed: _isLivestreamLoading
+                          ? null
+                          : _handleLivestream,
                       heroTag: "livestream",
                       shape: const CircleBorder(),
                       mini: true,
                       elevation: 4,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.live_tv, color: Colors.black, size: 20),
+                      backgroundColor: _isLivestreamLoading
+                          ? Colors.grey
+                          : Colors.white,
+                      child: _isLivestreamLoading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.black,
+                                ),
+                              ),
+                            )
+                          : Icon(Icons.live_tv, color: Colors.black, size: 20),
                     ),
                   )
                 : SizedBox.shrink(),
@@ -462,6 +543,29 @@ class _HomeScreenState extends State<HomeScreen>
       return Center(child: CircularProgressIndicator());
     }
 
+    // Add this check to handle empty posts list
+    if (posts.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          onRefresh();
+        },
+        child: ListView(
+          controller: scrollController,
+          children: [
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: Text(
+                  "No posts available",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         onRefresh();
@@ -478,26 +582,32 @@ class _HomeScreenState extends State<HomeScreen>
             );
           }
 
-          final post = posts[index];
-          return PostCard(
-            dividerColor: dividerColor,
-            iconColor: iconColor,
-            authorName: post.author.fullName,
-            authorHandle: post.author.username,
-            imageUrl: post.author.profileImage,
-            postTime: post.createdAt,
-            likes: post.count.likes,
-            comments: post.count.comments,
-            reposts: post.count.reposts,
-            bookmarks: post.count.saves,
-            content: post.content,
-            pictures: post.media,
-            currentUser: widget.currentUser,
-            postId: post.id,
-            isLiked: post.isLiked,
-            isReposted: post.isReposted,
-            isSaved: post.isSaved,
-          );
+          // Double-check index is valid (defensive programming)
+          if (index >= 0 && index < posts.length) {
+            final post = posts[index];
+            return PostCard(
+              dividerColor: dividerColor,
+              iconColor: iconColor,
+              authorName: post.author.fullName,
+              authorHandle: post.author.username,
+              imageUrl: post.author.profileImage,
+              postTime: post.createdAt,
+              likes: post.count.likes,
+              comments: post.count.comments,
+              reposts: post.count.reposts,
+              bookmarks: post.count.saves,
+              content: post.content,
+              pictures: post.media,
+              currentUser: widget.currentUser,
+              postId: post.id,
+              isLiked: post.isLiked,
+              isReposted: post.isReposted,
+              isSaved: post.isSaved,
+            );
+          } else {
+            // Return an empty container if index is somehow invalid
+            return SizedBox.shrink();
+          }
         },
       ),
     );
@@ -571,9 +681,9 @@ class _HomeScreenState extends State<HomeScreen>
                   shape: BoxShape.circle,
                   image: DecorationImage(
                     image: NetworkImage(
-                      widget.currentUser.profileImage.isEmpty
+                      widget.currentUser.profileImage!.isEmpty
                           ? defaultAvatar
-                          : widget.currentUser.profileImage,
+                          : widget.currentUser.profileImage!,
                     ),
                     fit: BoxFit.cover,
                   ),
@@ -614,8 +724,8 @@ class _HomeScreenState extends State<HomeScreen>
                 height: getProportionateScreenHeight(24),
                 width: getProportionateScreenWidth(24),
                 child: InkWell(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => NotificationsScreen(
@@ -623,10 +733,46 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                     );
+                    // Refresh notifications count when returning from notifications screen
+                    _getNotificationsCount();
                   },
-                  child: SvgPicture.asset(
-                    "assets/icons/bell.svg",
-                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  child: Stack(
+                    children: [
+                      SvgPicture.asset(
+                        "assets/icons/bell.svg",
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      if (notificationsCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: getProportionateScreenWidth(16),
+                              minHeight: getProportionateScreenHeight(16),
+                            ),
+                            child: Text(
+                              notificationsCount > 99
+                                  ? '99+'
+                                  : notificationsCount.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: getProportionateScreenWidth(10),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),

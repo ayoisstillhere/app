@@ -77,15 +77,12 @@ class Body extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: getProportionateScreenHeight(23)),
-                SizedBox(
-                  height: getProportionateScreenHeight(34),
-                  child: Text(
-                    subtitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: kWhite,
-                    ),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: kWhite,
                   ),
                 ),
                 SizedBox(height: getProportionateScreenHeight(48.32)),

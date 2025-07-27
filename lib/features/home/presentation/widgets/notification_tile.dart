@@ -1,7 +1,6 @@
 import 'package:app/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../constants.dart';
 import '../../../../size_config.dart';
@@ -11,10 +10,10 @@ class NotificationTile extends StatelessWidget {
   const NotificationTile({
     super.key,
     required this.iconColor,
-    required this.username,
+    this.username,
     required this.action,
     required this.time,
-    required this.image,
+    this.image,
     required this.isClickable,
     this.buttonText,
     this.postId,
@@ -22,10 +21,10 @@ class NotificationTile extends StatelessWidget {
   });
 
   final Color iconColor;
-  final String username;
+  final String? username;
   final String action;
   final DateTime time;
-  final String image;
+  final String? image;
   final bool isClickable;
   final String? buttonText;
   final String? postId;
@@ -41,24 +40,26 @@ class NotificationTile extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             image: DecorationImage(
-              image: image.isEmpty
+              image: image == null || image!.isEmpty
                   ? NetworkImage(defaultAvatar)
-                  : NetworkImage(image),
+                  : NetworkImage(image!),
               fit: BoxFit.cover,
             ),
           ),
         ),
         SizedBox(width: getProportionateScreenWidth(10)),
-        Text(
-          username,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: getProportionateScreenWidth(13),
-          ),
-        ),
+        username == null
+            ? const Spacer()
+            : Text(
+                username!,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: getProportionateScreenWidth(13),
+                ),
+              ),
         SizedBox(width: getProportionateScreenWidth(2)),
         SizedBox(
-          width: getProportionateScreenWidth(115),
+          width: getProportionateScreenWidth(180),
           child: Text(
             action,
             style: TextStyle(
@@ -80,7 +81,7 @@ class NotificationTile extends StatelessWidget {
           ),
         ),
         Text(
-          timeago.format(time),
+          _formatTime(time),
           style: TextStyle(
             fontWeight: FontWeight.normal,
             fontSize: getProportionateScreenWidth(12),
@@ -133,5 +134,18 @@ class NotificationTile extends StatelessWidget {
               ),
       ],
     );
+  }
+}
+
+String _formatTime(DateTime timestamp) {
+  final now = DateTime.now();
+  final difference = now.difference(timestamp);
+
+  if (difference.inMinutes < 60) {
+    return '${difference.inMinutes}m';
+  } else if (difference.inHours < 24) {
+    return '${difference.inHours}h';
+  } else {
+    return '${difference.inDays}d';
   }
 }

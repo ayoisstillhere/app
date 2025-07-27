@@ -2,7 +2,7 @@ name: app
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 2.4.0+14
 
 environment:
   sdk: ^3.8.1
@@ -28,7 +28,9 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  app_links: ^6.4.0
   audioplayers: ^6.5.0
+  change_app_package_name: ^1.5.0
   cloud_firestore: ^5.6.11
   crypto: ^3.0.6
   cupertino_icons: ^1.0.8
@@ -47,31 +49,43 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   flutter_sound: ^9.28.0
   flutter_svg: ^2.2.0
+  flutter_windowmanager: ^0.2.0
   get_it: ^8.0.3
+  google_sign_in: ^6.0.2
   http: ^1.4.0
   http_parser: ^4.1.2
+  image_cropper: ^9.1.0
+  image_gallery_saver: ^2.0.3
   image_picker: ^1.1.2
   intl: ^0.20.2
   just_audio: ^0.10.4
+  media_kit: ^1.2.0
+  media_kit_libs_ios_video: ^1.1.4
+  media_kit_libs_video: ^1.0.6
+  media_kit_video: ^1.3.0
   mime: ^2.0.0
+  no_screenshot: ^0.3.1
   open_file: ^3.5.10
   path: ^1.9.1
   path_provider: ^2.1.5
   permission_handler: ^12.0.1
   pointycastle: ^3.9.1
+  share_plus: ^11.0.0
   shared_preferences: ^2.5.3
   stream_video_flutter: ^0.10.0
   stream_video_push_notification: ^0.10.0
   timeago: ^3.7.1
+  url_launcher: ^6.3.2
   uuid: ^4.5.1
   vibration: ^3.1.3
+  video_compress: ^3.1.4
   video_player: ^2.10.0
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.4
 
 flutter_icons:
   android: true
@@ -80,11 +94,16 @@ flutter_icons:
   adaptive_icon_foreground: "assets/appstore-fore.png"
   adaptive_icon_background: "#FFFFFF"
 
+dependency_overrides:
+  image_gallery_saver:
+    git:
+      url: https://github.com/knottx/image_gallery_saver.git
+      ref: knottx-latest
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

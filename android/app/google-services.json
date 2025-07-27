@@ -7,12 +7,41 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:966329839831:android:5b514c2bf42b942a6dc092",
+        "mobilesdk_app_id": "1:966329839831:android:d4a99b24c673031c6dc092",
         "android_client_info": {
-          "package_name": "com.hira.app"
+          "package_name": "com.hirasocial.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "966329839831-6578gd0t6glrjh2hs4cf67fg3kdvir3p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hirasocial.app",
+            "certificate_hash": "e0b870a0ef50f32bd232d13df6e3792ed8577eb6"
+          }
+        },
+        {
+          "client_id": "966329839831-f2991c50i5t9jq892307jv2btf35il3o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hirasocial.app",
+            "certificate_hash": "38a63fcedd1ab2db350f016a74637cd6f9416d1c"
+          }
+        },
+        {
+          "client_id": "966329839831-ik5mc8h3t86i010d022vtk80bmoi0peh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hirasocial.app",
+            "certificate_hash": "e1effc7a965208180e6dd0ccdfe07a3c7cbd60d4"
+          }
+        },
+        {
+          "client_id": "966329839831-ths3pnccmet6i4sa8lbna72ehg6rrkim.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDZeeBgWLyXyYVMe_PSlZmspy7ZIjzAFQk"
@@ -20,26 +49,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:966329839831:android:75824ba7b4558f806dc092",
-        "android_client_info": {
-          "package_name": "com.hiraofficial.hira"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDZeeBgWLyXyYVMe_PSlZmspy7ZIjzAFQk"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "966329839831-ths3pnccmet6i4sa8lbna72ehg6rrkim.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "966329839831-30es8ft9ls1j5v2se83pelk81a9rcdu1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hirasocial.app"
+              }
+            }
+          ]
         }
       }
     }

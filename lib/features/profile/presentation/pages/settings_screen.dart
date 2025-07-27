@@ -1,3 +1,5 @@
+import 'package:app/features/profile/presentation/pages/privacy_screen.dart';
+import 'package:app/features/profile/presentation/pages/support_and_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -6,6 +8,7 @@ import '../../../../services/auth_manager.dart';
 import '../../../../size_config.dart';
 import '../../../onboarding/presentation/pages/onboarding_screen.dart';
 import '../widgets/settings_tile.dart';
+import 'edit_profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -50,10 +53,42 @@ class SettingsScreen extends StatelessWidget {
               settingsDetails.length,
               (index) => Column(
                 children: [
-                  SettingsTile(
-                    dividerColor: dividerColor,
-                    iconColor: iconColor,
-                    settings: settingsDetails[index],
+                  InkWell(
+                    onTap: () {
+                      if (index == 0) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return EditProfileScreen();
+                            },
+                          ),
+                        );
+                      } else if (index == 1) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return PrivacyScreen();
+                            },
+                          ),
+                        );
+                      } else if (index == 2) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return SupportAndFeedback();
+                            },
+                          ),
+                        );
+                      }
+                    },
+                    child: SettingsTile(
+                      dividerColor: dividerColor,
+                      iconColor: iconColor,
+                      settings: settingsDetails[index],
+                    ),
                   ),
                   SizedBox(height: getProportionateScreenHeight(16)),
                 ],

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:app/features/chat/presentation/cubit/chat_cubit.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:app/splash_screen.dart';
 import 'package:app/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -8,14 +9,18 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:media_kit/media_kit.dart';
+import 'features/chat/presentation/cubit/live_stream_comment_cubit.dart';
+import 'features/chat/presentation/cubit/live_stream_reaction_cubit.dart';
 import 'injection_container.dart' as di;
+import 'services/deep_link_navigation_service.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   const AndroidInitializationSettings initializationSettingsAndroid =
@@ -34,15 +39,27 @@ Future<void> main() async {
     await initFCM();
   }
   runApp(const MyApp());
+  // Initialize deep link handling
+  DeepLinkNavigationService.initialize();
 }
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // This runs when app is in background or terminated
   await Firebase.initializeApp();
   debugPrint("Handling background message: ${message.messageId}");
-  if (message.data['type'] == 'CALL_NOTIFICATION') {
-    // Handle background notification logic here
+
+  final type = message.data['type'];
+
+  // For call notifications, you might want to show a heads-up notification
+  // or trigger a local notification that can wake the app
+  if (type == 'CALL_NOTIFICATION') {
+    // Handle call notification in background
+    // You could show a local notification here if needed
+    debugPrint('Call notification received in background');
   }
+
+  // Other notifications are handled when the app opens
+  debugPrint('Background notification type: $type');
 }
 
 Future<void> initFCM() async {
@@ -69,24 +86,21 @@ Future<void> _requestNotificationPermission() async {
 }
 
 Future<void> getFcmToken() async {
-  final FlutterSecureStorage secureStorage = FlutterSecureStorage();
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   String? token = await messaging.getToken();
 
   if (token != null) {
     debugPrint('📱 FCM Token: $token');
-    await secureStorage.write(key: 'fcm_token', value: token);
+    await AuthManager.setFCMToken(token);
   } else {
     debugPrint('⚠️ Failed to get FCM token');
   }
 }
 
 void listenForTokenRefresh() {
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
     debugPrint('🔄 FCM token refreshed: $newToken');
-
-    secureStorage.write(key: 'fcm_token', value: newToken);
+    await AuthManager.setFCMToken(newToken);
   });
 }
 
@@ -102,7 +116,9 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    _setupFCM();
+    if (Platform.isAndroid) {
+      _setupFCM();
+    }
   }
 
   void _setupFCM() async {
@@ -161,13 +177,22 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [BlocProvider<ChatCubit>(create: (_) => di.sl<ChatCubit>())],
+      providers: [
+        BlocProvider<ChatCubit>(create: (_) => di.sl<ChatCubit>()),
+        BlocProvider<LiveStreamCommentCubit>(
+          create: (_) => di.sl<LiveStreamCommentCubit>(),
+        ),
+        BlocProvider<LiveStreamReactionCubit>(
+          create: (_) => di.sl<LiveStreamReactionCubit>(),
+        ),
+      ],
       child: MediaQuery(
         data: MediaQuery.of(
           context,
         ).copyWith(platformBrightness: Brightness.dark),
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
+          navigatorKey: DeepLinkNavigationService.navigatorKey,
           title: 'Flutter Demo',
           theme: theme(),
           darkTheme: darkTheme(),

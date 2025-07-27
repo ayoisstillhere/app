@@ -22,6 +22,8 @@ const kGreySearchInput = Color(0xFF1F1F1F);
 const kPrimPurple = Color(0xFF9500FF);
 const kProfileText = Color(0xFF727272);
 const kChatBubble = Color(0xFF373737);
+const kFollowerAndFollowingBorder = Color(0xFF939393);
+const kFollowerAndFollowingFill = Color(0xFF1F1F1F);
 const kChatBubbleGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
@@ -35,27 +37,22 @@ List<Map<String, dynamic>> settingsDetails = [
     "title": "Account",
     "icon": "assets/icons/settings_account.svg",
     "subItems": [
-      "Email/Phome Number",
+      "Email/Phone Number",
       "Password",
       "Username",
       "Notification Settings",
     ],
   },
-  {
-    "title": "Privacy & Security",
-    "icon": "assets/icons/settings_privacy.svg",
-    "subItems": [
-      "Privacy Controls",
-      "Two-Step Verification",
-      "Blocked Users",
-      "Start Secret Chat Defaults",
-    ],
-  },
-  {
-    "title": "App Preferences",
-    "icon": "assets/icons/settings_preferences.svg",
-    "subItems": ["Theme", "Language & Region", "Push Notifications"],
-  },
+  // {
+  //   "title": "Privacy & Security",
+  //   "icon": "assets/icons/settings_privacy.svg",
+  //   "subItems": [
+  //     "Privacy Controls",
+  //     "Two-Step Verification",
+  //     "Blocked Users",
+  //     "Start Secret Chat Defaults",
+  //   ],
+  // },
   {
     "title": "Support & Feedback",
     "icon": "assets/icons/settings_support.svg",
@@ -71,6 +68,9 @@ const String baseUrl = 'https://api.hiraofficial.com';
 
 // ignore: constant_identifier_names
 enum MessageType { TEXT, AUDIO, VIDEO, IMAGE, FILE }
+
+// Enum to define field types
+enum FieldType { name, email, bio, username, location }
 
 String formatDuration(DateTime from, DateTime to) {
   Duration diff = to.difference(from).abs();
@@ -88,15 +88,18 @@ String formatDuration(DateTime from, DateTime to) {
 }
 
 // API keys
-const String getStreamKey = "q25hn6c2zjg3";
+const String getStreamKey = "jbz62r4keh7e";
 const String getStreamSecret =
-    "dsj4r4dcddeeakzqgnrdj8sdnsuqjz3c5m594ub9qugeekq7wbr8tr965qb7fbsp";
+    "tzsmngy3eyxupq75e7vu37aa478fmqe8as3vzkunhrdcqt6uf8rs3xc3zzs4hbvw";
 
-
-// ayodelefagbami@Ayodeles-MacBook-Air android % ./gradlew --stop           
+// ayodelefagbami@Ayodeles-MacBook-Air android % ./gradlew --stop
 
 // Stopping Daemon(s)
 // 1 Daemon stopped
-// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf android/.gradle     
+// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf android/.gradle
 
-// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf ~/.gradle/caches/  
+// ayodelefagbami@Ayodeles-MacBook-Air android % rm -rf ~/.gradle/caches/
+// ./gradlew --stop && rm -rf android/.gradle && rm -rf ~/.gradle/caches/ && flutter clean && flutter pub get
+// 8461
+
+enum NotificationType { LIKE, COMMENT, REPLY, REPOST, MENTION, FOLLOW, LIVE }

@@ -2,17 +2,20 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+// import 'package:video_compress/video_compress.dart';
 
 import 'package:app/size_config.dart';
 
 import '../../../../constants.dart';
 import '../../../../services/auth_manager.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key, required this.profileImage});
@@ -27,6 +30,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
   List<File> selectedImages = [];
+  List<File> selectedVideos = [];
+  Map<String, Player> videoPlayers = {};
+  Map<String, VideoController> videoControllers = {};
 
   @override
   void initState() {
@@ -36,16 +42,41 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     });
   }
 
-  Future<File> compressImage(File file) async {
-    final compressedBytes = await FlutterImageCompress.compressWithFile(
-      file.absolute.path,
-      quality: 50, // adjust as needed
-    );
-
-    final compressedFile = File('${file.path}_compressed.jpg')
-      ..writeAsBytesSync(compressedBytes!);
-    return compressedFile;
+  @override
+  void dispose() {
+    _postController.removeListener(() {});
+    _postController.dispose();
+    // Dispose media_kit players
+    for (var player in videoPlayers.values) {
+      player.dispose();
+    }
+    super.dispose();
   }
+
+  // Future<File> compressImage(File file) async {
+  //   final compressedBytes = await FlutterImageCompress.compressWithFile(
+  //     file.absolute.path,
+  //     quality: 85, // adjust as needed
+  //   );
+
+  //   final compressedFile = File('${file.path}_compressed.jpg')
+  //     ..writeAsBytesSync(compressedBytes!);
+  //   return compressedFile;
+  // }
+
+  // Future<File> compressVideo(File file) async {
+  //   final compressedVideo = await VideoCompress.compressVideo(
+  //     file.path,
+  //     quality: VideoQuality.HighestQuality,
+  //     deleteOrigin: false,
+  //     includeAudio: true,
+  //   );
+
+  //   if (compressedVideo != null) {
+  //     return File(compressedVideo.path!);
+  //   }
+  //   return file; // Return original if compression fails
+  // }
 
   Future<void> _pickImageFromGallery() async {
     try {
@@ -58,8 +89,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         List<File> compressedImages = [];
         for (XFile image in images) {
           File originalFile = File(image.path);
-          File compressedFile = await compressImage(originalFile);
-          compressedImages.add(compressedFile);
+          // File compressedFile = await compressImage(originalFile);
+          compressedImages.add(originalFile);
         }
 
         setState(() {
@@ -83,6 +114,47 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  Future<void> _pickVideoFromGallery() async {
+    try {
+      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+      if (video != null) {
+        setState(() {
+          isLoading = true;
+        });
+
+        File originalVideoFile = File(video.path);
+
+        // Compress video
+        // File compressedVideoFile = await compressVideo(originalVideoFile);
+
+        // Initialize media_kit player for preview
+        final player = Player();
+        final controller = VideoController(player);
+        await player.open(Media('file://${originalVideoFile.path}'));
+
+        setState(() {
+          selectedVideos.add(originalVideoFile);
+          videoPlayers[originalVideoFile.path] = player;
+          videoControllers[originalVideoFile.path] = controller;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error picking video: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _pickImageFromCamera() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.camera);
@@ -92,10 +164,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         });
 
         File originalFile = File(image.path);
-        File compressedFile = await compressImage(originalFile);
+        // File compressedFile = await compressImage(originalFile);
 
         setState(() {
-          selectedImages.add(compressedFile);
+          selectedImages.add(originalFile);
           isLoading = false;
         });
       }
@@ -115,19 +187,126 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  Future<void> _pickVideoFromCamera() async {
+    try {
+      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+      if (video != null) {
+        setState(() {
+          isLoading = true;
+        });
+
+        File originalVideoFile = File(video.path);
+
+        // Compress video
+        // File compressedVideoFile = await compressVideo(originalVideoFile);
+
+        // Initialize media_kit player for preview
+        final player = Player();
+        final controller = VideoController(player);
+        await player.open(Media('file://${originalVideoFile.path}'));
+
+        setState(() {
+          selectedVideos.add(originalVideoFile);
+          videoPlayers[originalVideoFile.path] = player;
+          videoControllers[originalVideoFile.path] = controller;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Error recording video: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
   void _removeImage(int index) {
     setState(() {
       selectedImages.removeAt(index);
     });
   }
 
+  void _removeVideo(int index) {
+    final videoFile = selectedVideos[index];
+    final player = videoPlayers[videoFile.path];
+    if (player != null) {
+      player.dispose();
+      videoPlayers.remove(videoFile.path);
+      videoControllers.remove(videoFile.path);
+    }
+    setState(() {
+      selectedVideos.removeAt(index);
+    });
+  }
+
+  void _showMediaOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Gallery Images'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromGallery();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.video_library),
+                  title: Text('Gallery Videos'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickVideoFromGallery();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.camera_alt),
+                  title: Text('Camera Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromCamera();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.videocam),
+                  title: Text('Camera Video'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickVideoFromCamera();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _createPost() async {
-    if (_postController.text.isEmpty && selectedImages.isEmpty) {
+    if (_postController.text.isEmpty &&
+        selectedImages.isEmpty &&
+        selectedVideos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            'Please add some content or images',
+            'Please add some content, images, or videos',
             style: TextStyle(color: Colors.white),
           ),
         ),
@@ -152,6 +331,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final file = selectedImages[i];
         final mimeType =
             lookupMimeType(file.path) ?? 'application/octet-stream';
+        final mimeSplit = mimeType.split('/');
+
+        request.files.add(
+          http.MultipartFile(
+            'media',
+            file.readAsBytes().asStream(),
+            file.lengthSync(),
+            filename: file.path.split('/').last,
+            contentType: MediaType(mimeSplit[0], mimeSplit[1]),
+          ),
+        );
+      }
+
+      // Add videos with proper MIME type detection
+      for (int i = 0; i < selectedVideos.length; i++) {
+        final file = selectedVideos[i];
+        final mimeType = lookupMimeType(file.path) ?? 'video/mp4';
         final mimeSplit = mimeType.split('/');
 
         request.files.add(
@@ -206,11 +402,80 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _postController.removeListener(() {});
-    _postController.dispose();
-    super.dispose();
+  Widget _buildVideoPreview(File videoFile, int index) {
+    final player = videoPlayers[videoFile.path];
+    final controller = videoControllers[videoFile.path];
+
+    if (player == null || controller == null) return Container();
+
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              getProportionateScreenWidth(10),
+            ),
+            color: Colors.black,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              getProportionateScreenWidth(10),
+            ),
+            child: AspectRatio(
+              aspectRatio: 1.0, // Force a square aspect ratio for the container
+              child: Center(
+                child: Video(
+                  controller: controller,
+                  fit: BoxFit.contain,
+                  controls: NoVideoControls,
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Duration indicator and other UI elements...
+        Positioned(
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: IconButton(
+              icon: StreamBuilder<bool>(
+                stream: player.stream.playing,
+                builder: (context, snapshot) {
+                  final isPlaying = snapshot.data ?? false;
+                  return Icon(
+                    isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 48,
+                  );
+                },
+              ),
+              onPressed: () {
+                player.playOrPause();
+              },
+            ),
+          ),
+        ),
+        // Add the remove button
+        Positioned(
+          top: 5,
+          right: 5,
+          child: GestureDetector(
+            onTap: () => _removeVideo(index),
+            child: Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -322,7 +587,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         Row(
                           children: [
                             InkWell(
-                              onTap: _pickImageFromGallery,
+                              onTap: _showMediaOptions,
                               child: SvgPicture.asset(
                                 "assets/icons/post_image.svg",
                                 height: getProportionateScreenHeight(18),
@@ -331,22 +596,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             ),
                             SizedBox(width: getProportionateScreenWidth(26)),
                             InkWell(
-                              onTap: _pickImageFromCamera,
+                              onTap: _showMediaOptions,
                               child: SvgPicture.asset(
                                 "assets/icons/post_camera.svg",
                                 height: getProportionateScreenHeight(18),
                                 width: getProportionateScreenWidth(18),
                               ),
                             ),
-                            SizedBox(width: getProportionateScreenWidth(26)),
-                            InkWell(
-                              onTap: () {},
-                              child: SvgPicture.asset(
-                                "assets/icons/post_link.svg",
-                                height: getProportionateScreenHeight(18),
-                                width: getProportionateScreenWidth(18),
-                              ),
-                            ),
+                            // SizedBox(width: getProportionateScreenWidth(26)),
+                            // InkWell(
+                            //   onTap: () {},
+                            //   child: SvgPicture.asset(
+                            //     "assets/icons/post_link.svg",
+                            //     height: getProportionateScreenHeight(18),
+                            //     width: getProportionateScreenWidth(18),
+                            //   ),
+                            // ),
                             Spacer(),
                             InkWell(
                               onTap: _createPost,
@@ -356,7 +621,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 decoration: BoxDecoration(
                                   color:
                                       (_postController.text.isNotEmpty ||
-                                          selectedImages.isNotEmpty)
+                                          selectedImages.isNotEmpty ||
+                                          selectedVideos.isNotEmpty)
                                       ? kLightPurple
                                       : kLightPurple.withValues(alpha: 0.4),
                                   borderRadius: BorderRadius.circular(10),
@@ -379,8 +645,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     ),
                   ),
                 ),
-                // Display selected images
-                if (selectedImages.isNotEmpty)
+                // Display selected media
+                if (selectedImages.isNotEmpty || selectedVideos.isNotEmpty)
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.all(getProportionateScreenWidth(14)),
@@ -388,7 +654,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Selected Images (${selectedImages.length})",
+                            "Selected Media (${selectedImages.length + selectedVideos.length})",
                             style: TextStyle(
                               fontSize: getProportionateScreenWidth(16),
                               fontWeight: FontWeight.w500,
@@ -406,44 +672,56 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                         getProportionateScreenHeight(10),
                                     childAspectRatio: 1,
                                   ),
-                              itemCount: selectedImages.length,
+                              itemCount:
+                                  selectedImages.length + selectedVideos.length,
                               itemBuilder: (context, index) {
-                                return Stack(
-                                  children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          getProportionateScreenWidth(10),
-                                        ),
-                                        image: DecorationImage(
-                                          image: FileImage(
-                                            selectedImages[index],
+                                if (index < selectedImages.length) {
+                                  // Display image
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            getProportionateScreenWidth(10),
                                           ),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 5,
-                                      right: 5,
-                                      child: InkWell(
-                                        onTap: () => _removeImage(index),
-                                        child: Container(
-                                          padding: EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            Icons.close,
-                                            color: Colors.white,
-                                            size: 16,
+                                          image: DecorationImage(
+                                            image: FileImage(
+                                              selectedImages[index],
+                                            ),
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                );
+                                      Positioned(
+                                        top: 5,
+                                        right: 5,
+                                        child: InkWell(
+                                          onTap: () => _removeImage(index),
+                                          child: Container(
+                                            padding: EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  // Display video
+                                  final videoIndex =
+                                      index - selectedImages.length;
+                                  return _buildVideoPreview(
+                                    selectedVideos[videoIndex],
+                                    videoIndex,
+                                  );
+                                }
                               },
                             ),
                           ),

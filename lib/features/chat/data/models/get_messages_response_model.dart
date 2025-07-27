@@ -34,18 +34,14 @@ class ConversationModel extends Conversation {
     required super.createdAt,
     required super.updatedAt,
     required List<ParticipantModel> participants,
-    required List<MessageModel> messages,
     required super.isConversationMutedForMe,
     required super.isConversationArchivedForMe,
     required super.isConversationRequestForMe,
     required MessageModel? lastMessage,
     required super.unreadCount,
     required super.isConversationBlockedForMe,
-  }) : super(
-         participants: participants,
-         messages: messages,
-         lastMessage: lastMessage,
-       );
+    required super.groupImage,
+  }) : super(participants: participants, lastMessage: lastMessage);
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
     return ConversationModel(
@@ -60,9 +56,6 @@ class ConversationModel extends Conversation {
       participants: (json['participants'] as List)
           .map((e) => ParticipantModel.fromJson(e))
           .toList(),
-      messages: (json['messages'] as List)
-          .map((e) => MessageModel.fromJson(e))
-          .toList(),
       isConversationMutedForMe: json['isConversationMutedForMe'],
       isConversationArchivedForMe: json['isConversationArchivedForMe'],
       isConversationRequestForMe: json['isConversationRequestForMe'],
@@ -71,6 +64,7 @@ class ConversationModel extends Conversation {
           : null,
       unreadCount: json['unreadCount'],
       isConversationBlockedForMe: json['isConversationBlockedForMe'],
+      groupImage: json['groupImage'],
     );
   }
 
@@ -86,7 +80,6 @@ class ConversationModel extends Conversation {
     'participants': participants
         .map((e) => (e as ParticipantModel).toJson())
         .toList(),
-    'messages': messages.map((e) => (e as MessageModel).toJson()).toList(),
     'isConversationMutedForMe': isConversationMutedForMe,
     'isConversationArchivedForMe': isConversationArchivedForMe,
     'isConversationRequestForMe': isConversationRequestForMe,
@@ -95,6 +88,7 @@ class ConversationModel extends Conversation {
         : null,
     'unreadCount': unreadCount,
     'isConversationBlockedForMe': isConversationBlockedForMe,
+    'groupImage': groupImage,
   };
 }
 

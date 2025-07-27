@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:app/features/chat/presentation/pages/group_participants_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +17,7 @@ import '../../../profile/presentation/pages/profile_screen.dart';
 import '../widgets/file_widget.dart';
 import '../widgets/media_widget.dart';
 import '../widgets/voice_widget.dart';
+import 'change_group_details_screen.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({
@@ -511,7 +513,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     );
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const NavPage()),
+      MaterialPageRoute(builder: (context) => NavPage()),
     );
   }
 
@@ -548,7 +550,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     if (response.statusCode == 200) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const NavPage()),
+        MaterialPageRoute(builder: (context) => NavPage()),
       );
     }
   }
@@ -560,10 +562,17 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
           (participant) => participant.userId != widget.currentUser.id,
         )
         .userId;
-    await http.delete(
-      Uri.parse('$baseUrl/api/v1/user/block/$userId'),
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/user/unblock/$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NavPage()),
+      );
+    }
   }
 
   void _onDelete() async {
@@ -574,7 +583,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
     );
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const NavPage()),
+      MaterialPageRoute(builder: (context) => NavPage()),
     );
   }
 
@@ -659,6 +668,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
       ),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
+          final otherParticipant = widget.participants.firstWhere(
+            (participant) => participant.userId != widget.currentUser.id,
+            orElse: () =>
+                throw Exception("Current user not found in participants"),
+          );
           return [
             // ... [Your existing header sliver code remains the same]
             SliverToBoxAdapter(
@@ -666,26 +680,76 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                 child: Column(
                   children: [
                     SizedBox(height: getProportionateScreenHeight(32)),
-                    Container(
-                      height: getProportionateScreenHeight(60),
-                      width: getProportionateScreenWidth(60),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: widget.chatImage.isEmpty
-                              ? NetworkImage(defaultAvatar)
-                              : NetworkImage(widget.chatImage),
-                          fit: BoxFit.cover,
+                    InkWell(
+                      onTap: () {
+                        if (widget.isGroup) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfileScreen(
+                              isVerified: true,
+                              isFromNav: false,
+                              userName: otherParticipant.user.username,
+                              currentUser: widget.currentUser,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: getProportionateScreenHeight(60),
+                        width: getProportionateScreenWidth(60),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: widget.chatImage.isEmpty
+                                ? NetworkImage(defaultAvatar)
+                                : NetworkImage(widget.chatImage),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: getProportionateScreenHeight(19.5)),
-                    Text(
-                      widget.chatName,
-                      style: TextStyle(
-                        fontSize: getProportionateScreenHeight(24),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.chatName,
+                          style: TextStyle(
+                            fontSize: getProportionateScreenHeight(24),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        widget.isGroup
+                            ? SizedBox(width: getProportionateScreenWidth(20))
+                            : const SizedBox(),
+                        widget.isGroup
+                            ? InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ChangeGroupDetailsScreen(
+                                            currentName: widget.chatName,
+                                            chatId: widget.chatId,
+                                            currentImageUrl: widget.chatImage,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                child: SvgPicture.asset(
+                                  "assets/icons/pencil.svg",
+                                  colorFilter: ColorFilter.mode(
+                                    iconColor,
+                                    BlendMode.srcIn,
+                                  ),
+                                  width: getProportionateScreenWidth(19),
+                                  height: getProportionateScreenHeight(19),
+                                ),
+                              )
+                            : const SizedBox(),
+                      ],
                     ),
                     SizedBox(height: getProportionateScreenHeight(22.5)),
                     Container(
@@ -1179,42 +1243,42 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                           ],
                                         ),
                                       ),
-                                InkWell(
-                                  onTap: () {},
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        "assets/icons/chat_report.svg",
-                                        colorFilter: ColorFilter.mode(
-                                          iconColor,
-                                          BlendMode.srcIn,
-                                        ),
-                                        width: getProportionateScreenWidth(
-                                          18.38,
-                                        ),
-                                        height: getProportionateScreenHeight(
-                                          18.38,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: getProportionateScreenHeight(
-                                          4.6,
-                                        ),
-                                      ),
-                                      Text(
-                                        "Report",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(
-                                                11.49,
-                                              ),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                // InkWell(
+                                //   onTap: () {},
+                                //   child: Column(
+                                //     mainAxisAlignment: MainAxisAlignment.center,
+                                //     children: [
+                                //       SvgPicture.asset(
+                                //         "assets/icons/chat_report.svg",
+                                //         colorFilter: ColorFilter.mode(
+                                //           iconColor,
+                                //           BlendMode.srcIn,
+                                //         ),
+                                //         width: getProportionateScreenWidth(
+                                //           18.38,
+                                //         ),
+                                //         height: getProportionateScreenHeight(
+                                //           18.38,
+                                //         ),
+                                //       ),
+                                //       SizedBox(
+                                //         height: getProportionateScreenHeight(
+                                //           4.6,
+                                //         ),
+                                //       ),
+                                //       Text(
+                                //         "Report",
+                                //         style: TextStyle(
+                                //           fontSize:
+                                //               getProportionateScreenHeight(
+                                //                 11.49,
+                                //               ),
+                                //           fontWeight: FontWeight.w500,
+                                //         ),
+                                //       ),
+                                //     ],
+                                //   ),
+                                // ),
                               ],
                             ),
                     ),
@@ -1302,37 +1366,78 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen>
                                   ),
                             SizedBox(height: getProportionateScreenHeight(26)),
                             widget.isGroup
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "People",
-                                        style: TextStyle(
-                                          fontSize:
-                                              getProportionateScreenHeight(15),
-                                          fontWeight: FontWeight.w500,
+                                ? InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              GroupParticipantsScreen(
+                                                participants:
+                                                    widget.participants,
+                                                conversationId: widget.chatId,
+                                              ),
                                         ),
-                                      ),
-                                      SizedBox(
-                                        width: getProportionateScreenWidth(285),
-                                        child: Text(
-                                          widget.participants
-                                              .map((e) => e.user.fullName)
-                                              .join(", "),
+                                      );
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "People",
                                           style: TextStyle(
                                             fontSize:
                                                 getProportionateScreenHeight(
-                                                  13,
+                                                  15,
                                                 ),
-                                            fontWeight: FontWeight.normal,
-                                            color: kProfileText,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                    ],
+                                        Row(
+                                          children: [
+                                            SizedBox(
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    230,
+                                                  ),
+                                              child: Text(
+                                                widget.participants
+                                                    .map((e) => e.user.fullName)
+                                                    .join(", "),
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      getProportionateScreenHeight(
+                                                        13,
+                                                      ),
+                                                  fontWeight: FontWeight.normal,
+                                                  color: kProfileText,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width:
+                                                  getProportionateScreenWidth(
+                                                    5,
+                                                  ),
+                                            ),
+                                            Text(
+                                              "more",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    getProportionateScreenHeight(
+                                                      13,
+                                                    ),
+                                                fontWeight: FontWeight.normal,
+                                                color: kProfileText,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   )
                                 : Text(
                                     "Move Chat",

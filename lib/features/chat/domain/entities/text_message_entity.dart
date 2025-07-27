@@ -11,6 +11,7 @@ class TextMessageEntity extends Equatable {
   final bool? isViewOnce;
   final String? mediaUrl;
   final Map<String, dynamic> reactions;
+  final String? replyToId;
   final String senderId;
   final String type;
   final String? encryptionMetadata;
@@ -24,6 +25,7 @@ class TextMessageEntity extends Equatable {
     this.isViewOnce,
     this.mediaUrl,
     this.reactions,
+    this.replyToId,
     this.senderId,
     this.type,
     this.encryptionMetadata,
@@ -40,6 +42,7 @@ class TextMessageEntity extends Equatable {
     isViewOnce,
     mediaUrl,
     reactions,
+    replyToId,
     senderId,
     type,
     encryptionMetadata,

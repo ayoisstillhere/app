@@ -28,7 +28,8 @@ class PostDetailsScreen extends StatefulWidget {
 
 class _PostDetailsScreenState extends State<PostDetailsScreen> {
   Post? post;
-  List<Comment> comments = []; // Changed to List to accumulate comments
+  Post? parentPost; // Add parent post
+  List<Comment> comments = [];
   bool isPostLoaded = false;
   bool isLoadingComments = false;
   bool hasMoreComments = true;
@@ -66,8 +67,15 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
-      post = PostModel.fromJson(jsonDecode(response.body)["post"]);
-      await _getComments(); // Load first page of comments
+      final responseData = jsonDecode(response.body);
+      post = PostModel.fromJson(responseData["post"]);
+
+      // If this is a reply/comment, fetch the parent post
+      if (post!.isComment && post!.parentPostId != null) {
+        await _getParentPost(post!.parentPostId!);
+      }
+
+      await _getComments();
       setState(() {
         isPostLoaded = true;
       });
@@ -83,6 +91,19 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _getParentPost(String parentPostId) async {
+    final token = await AuthManager.getToken();
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/v1/posts/$parentPostId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      parentPost = PostModel.fromJson(responseData["post"]);
     }
   }
 
@@ -119,15 +140,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
           comments.addAll(commentsResponse.comments);
         }
 
-        // Check if there are more comments to load
-        // Adjust this logic based on your API response structure
-        hasMoreComments =
-            commentsResponse.comments.length == 10; // Assuming 10 is the limit
-        // Or if your API returns pagination info:
-        // hasMoreComments = responseData['hasNextPage'] ?? false;
-        // Or check total count vs current loaded count:
-        // hasMoreComments = comments.length < (responseData['totalCount'] ?? 0);
-
+        hasMoreComments = commentsResponse.comments.length == 10;
         isLoadingComments = false;
       });
     } else {
@@ -164,9 +177,45 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
       setState(() {
         dropDownValue = newValue;
       });
-      // Reset pagination and reload comments with new sorting
       _refreshComments();
     }
+  }
+
+  Widget _buildReplyConnection() {
+    return Container(
+      margin: EdgeInsets.only(
+        left: getProportionateScreenWidth(37),
+        bottom: getProportionateScreenHeight(5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: getProportionateScreenWidth(2),
+            height: getProportionateScreenHeight(20),
+            color: Colors.grey.withOpacity(0.3),
+          ),
+          SizedBox(width: getProportionateScreenWidth(10)),
+          Expanded(
+            child: Container(height: 1, color: Colors.grey.withOpacity(0.3)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalReplyLine() {
+    return Container(
+      margin: EdgeInsets.only(
+        left: getProportionateScreenWidth(52),
+        top: getProportionateScreenHeight(5),
+        bottom: getProportionateScreenHeight(5),
+      ),
+      child: Container(
+        width: getProportionateScreenWidth(2),
+        height: getProportionateScreenHeight(15),
+        color: Colors.grey.withOpacity(0.3),
+      ),
+    );
   }
 
   @override
@@ -179,13 +228,14 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
         MediaQuery.of(context).platformBrightness == Brightness.dark
         ? kWhite
         : kBlack;
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(getProportionateScreenHeight(70)),
         child: SafeArea(
           child: AppBar(
             title: Text(
-              "Post",
+              post?.isComment == true ? "Reply" : "Post",
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 fontSize: getProportionateScreenHeight(20),
@@ -225,6 +275,32 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Show parent post if this is a reply
+                      if (parentPost != null) ...[
+                        PostCard(
+                          dividerColor: Colors.transparent,
+                          iconColor: iconColor,
+                          authorName: parentPost!.author.fullName,
+                          authorHandle: parentPost!.author.username,
+                          imageUrl: parentPost!.author.profileImage,
+                          postTime: parentPost!.createdAt,
+                          likes: parentPost!.count.likes,
+                          comments: parentPost!.count.comments,
+                          reposts: parentPost!.count.reposts,
+                          bookmarks: parentPost!.count.saves,
+                          content: parentPost!.content,
+                          pictures: parentPost!.media,
+                          currentUser: widget.currentUser,
+                          postId: parentPost!.id,
+                          notClickable: false,
+                          isLiked: parentPost!.isLiked,
+                          isReposted: parentPost!.isReposted,
+                          isSaved: parentPost!.isSaved,
+                        ),
+                        _buildVerticalReplyLine(),
+                      ],
+
+                      // Main post (or reply)
                       PostCard(
                         dividerColor: dividerColor,
                         iconColor: iconColor,
@@ -244,7 +320,10 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                         isLiked: post!.isLiked,
                         isReposted: post!.isReposted,
                         isSaved: post!.isSaved,
+                        isReply: post!.isComment,
+                        replyingToHandle: parentPost?.author.username,
                       ),
+
                       SizedBox(height: getProportionateScreenHeight(11.09)),
                       Container(
                         padding: EdgeInsets.only(
@@ -276,7 +355,6 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                         itemCount: comments.length + (hasMoreComments ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == comments.length) {
-                            // Show loading indicator at the end
                             return Padding(
                               padding: EdgeInsets.all(
                                 getProportionateScreenHeight(16),
@@ -301,7 +379,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                             content: comments[index].post.content,
                             pictures: comments[index].post.media,
                             authorHandle: comments[index].post.author.username,
-                            isReply: comments[index].post.isReply,
+                            isReply: comments[index].post.isComment,
                             replyingToHandle: post!.author.username,
                             authorName: comments[index].post.author.fullName,
                             currentUser: widget.currentUser,

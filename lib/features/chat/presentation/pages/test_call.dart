@@ -1,5 +1,6 @@
 import 'package:app/constants.dart';
 import 'package:app/features/chat/presentation/pages/voice_call_screen.dart';
+import 'package:app/services/auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
@@ -17,10 +18,7 @@ class _TestCallState extends State<TestCall> {
   final client = StreamVideo(
     getStreamKey,
     user: const User(
-      info: UserInfo(
-        name: 'Ayodele Fagbami',
-        id: 'ayoisstillhere',
-      ),
+      info: UserInfo(name: 'Ayodele Fagbami', id: 'ayoisstillhere'),
     ),
     userToken:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYXlvaXNzdGlsbGhlcmUifQ.G4B_u7XNOV-jThatS2MklGnW885CZpZE5hDdNx0ahlw',
@@ -57,6 +55,7 @@ class _TestCallState extends State<TestCall> {
   }
 
   Future<void> _createCallRoom() async {
+    final currentUser = await AuthManager.getCurrentUser();
     try {
       var call = StreamVideo.instance.makeCall(
         callType: StreamCallType.defaultType(),
@@ -68,7 +67,15 @@ class _TestCallState extends State<TestCall> {
       // Created ahead
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => CallScreen(call: call)),
+        MaterialPageRoute(
+          builder: (context) => VoiceCallScreen(
+            call: call,
+            image: '',
+            name: 'Ayo',
+            currentUser: currentUser!,
+            callId: 'default_3aad4a99-c649-406c-82e5-f72dc54fd8a5',
+          ),
+        ),
       );
     } catch (e) {
       debugPrint('Error joining or creating call: $e');
@@ -124,7 +131,12 @@ class _TestCallState extends State<TestCall> {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => LiveStreamScreen(livestreamCall: call),
+        builder: (context) => LiveStreamScreen(
+          livestreamCall: call,
+          userName: "Chief",
+          liveStreamId: 'HWhhNtSfj80H',
+          isScreenshotAllowed: true,
+        ),
       ),
     );
   }

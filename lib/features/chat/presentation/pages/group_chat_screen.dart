@@ -190,8 +190,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         onTap: () => toggleUserSelection(user),
                         child: ChatSuggestionTile(
                           dividerColor: dividerColor,
-                          image: user.profileImage,
-                          name: user.fullName,
+                          image: user.profileImage ?? defaultAvatar,
+                          name: user.fullName ?? user.username,
                           handle: user.username,
                           isSelected: isSelected,
                           showCheckbox: true,
@@ -264,9 +264,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: user.profileImage.isEmpty
+                  image: user.profileImage != null
                       ? NetworkImage(defaultAvatar)
-                      : NetworkImage(user.profileImage),
+                      : NetworkImage(user.profileImage!),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -288,7 +288,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         SizedBox(
           width: getProportionateScreenWidth(62),
           child: Text(
-            user.fullName,
+            user.fullName ?? user.username,
             style: TextStyle(
               fontSize: getProportionateScreenHeight(12),
               fontWeight: FontWeight.w500,
@@ -363,19 +363,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final url = Uri.parse('$baseUrl/api/v1/chat/conversations');
     final token = await AuthManager.getToken();
 
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
+    // Create multipart request
+    final request = http.MultipartRequest('POST', url);
 
-    final body = jsonEncode({
-      "participantUserIds": selectedUsers,
-      "type": "GROUP",
-      "name": groupName,
-    });
+    // Add headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add form fields
+    request.fields['participantUserIds'] = jsonEncode(selectedUsers);
+    request.fields['type'] = 'GROUP';
+    request.fields['name'] = groupName;
 
     try {
-      final response = await http.post(url, headers: headers, body: body);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         Navigator.pushReplacement(
@@ -421,9 +422,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            jsonDecode(
-              "$e",
-            )['message'].toString().replaceAll(RegExp(r'\[|\]'), ''),
+            'Error: ${e.toString()}',
             style: TextStyle(color: Colors.white),
           ),
         ),

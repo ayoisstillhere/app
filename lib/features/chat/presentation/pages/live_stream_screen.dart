@@ -4,10 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
+import '../widgets/custom_livestream_widget.dart';
+import '../widgets/live_stream_ended_widget.dart';
+
 class LiveStreamScreen extends StatefulWidget {
-  const LiveStreamScreen({super.key, required this.livestreamCall});
+  const LiveStreamScreen({
+    super.key,
+    required this.livestreamCall,
+    required this.userName,
+    required this.liveStreamId,
+    required this.isScreenshotAllowed,
+  });
 
   final Call livestreamCall;
+  final String userName;
+  final String liveStreamId;
+  final bool isScreenshotAllowed;
 
   @override
   State<LiveStreamScreen> createState() => _LiveStreamScreenState();
@@ -20,13 +32,40 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
   void initState() {
     super.initState();
 
-    _callStateSubscription = widget.livestreamCall.state.valueStream
-        .distinct((previous, current) => previous.status != current.status)
-        .listen((event) {
-          if (event.status is CallStatusDisconnected) {
-            // Prompt the user to check their internet connection
-          }
-        });
+    // Check if user is host and automatically start livestream
+    _checkAndStartLivestream();
+
+    _callStateSubscription = widget.livestreamCall.state.valueStream.listen((
+      event,
+    ) {
+      final status = event.status;
+
+      if (status is CallStatusDisconnected) {
+        // Navigate to LivestreamEndedWidget
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) =>
+                  LivestreamEndedWidget(call: widget.livestreamCall),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  void _checkAndStartLivestream() {
+    // Get the current call state
+    final callState = widget.livestreamCall.state.value;
+    final isHost = callState.localParticipant?.roles.contains('host') ?? false;
+
+    // If user is host and livestream is in backstage, start it immediately
+    if (isHost && callState.isBackstage) {
+      // Start the livestream after a brief delay to ensure everything is initialized
+      Future.delayed(const Duration(milliseconds: 500), () {
+        widget.livestreamCall.goLive();
+      });
+    }
   }
 
   @override
@@ -45,15 +84,46 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
         return Scaffold(
           body: Builder(
             builder: (context) {
+              // Show a loading screen while transitioning from backstage to live for hosts
               if (callState.isBackstage) {
-                return BackstageWidget(call: widget.livestreamCall);
+                final isHost =
+                    widget.livestreamCall.state.value.localParticipant?.roles
+                        .contains('host') ??
+                    false;
+
+                if (isHost) {
+                  // Show loading screen for host while livestream starts
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text(
+                          'Starting livestream...',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  // Show waiting screen for viewers
+                  return WaitingForLivestreamWidget(
+                    call: widget.livestreamCall,
+                  );
+                }
               }
 
               if (callState.endedAt != null) {
                 return LivestreamEndedWidget(call: widget.livestreamCall);
               }
 
-              return LivestreamLiveWidget(call: widget.livestreamCall);
+              return CustomLivestreamWidget(
+                call: widget.livestreamCall,
+                userName: widget.userName,
+                liveStreamId: widget.liveStreamId,
+                isScreenshotAllowed: widget.isScreenshotAllowed,
+              );
             },
           ),
         );
@@ -62,8 +132,9 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
   }
 }
 
-class BackstageWidget extends StatelessWidget {
-  const BackstageWidget({super.key, required this.call});
+// New widget to show viewers that livestream hasn't started yet
+class WaitingForLivestreamWidget extends StatelessWidget {
+  const WaitingForLivestreamWidget({super.key, required this.call});
 
   final Call call;
 
@@ -79,6 +150,8 @@ class BackstageWidget extends StatelessWidget {
             spacing: 8,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
               PartialCallStateBuilder(
                 call: call,
                 selector: (state) => state.startsAt,
@@ -86,154 +159,23 @@ class BackstageWidget extends StatelessWidget {
                   return Text(
                     startsAt != null
                         ? 'Livestream starting at ${DateFormat('HH:mm').format(startsAt.toLocal())}'
-                        : 'Livestream starting soon',
+                        : 'Waiting for livestream to start...',
                     style: Theme.of(context).textTheme.titleLarge,
                   );
                 },
               ),
               if (waitingParticipantsCount > 0)
                 Text('$waitingParticipantsCount participants waiting'),
-              ElevatedButton(
-                onPressed: () {
-                  call.goLive();
-                },
-                child: const Text('Go Live'),
-              ),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
                   call.leave();
                   Navigator.pop(context);
                 },
-                child: const Text('Leave Livestream'),
+                child: const Text('Leave'),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-class LivestreamEndedWidget extends StatefulWidget {
-  const LivestreamEndedWidget({super.key, required this.call});
-
-  final Call call;
-
-  @override
-  State<LivestreamEndedWidget> createState() => _LivestreamEndedWidgetState();
-}
-
-class _LivestreamEndedWidgetState extends State<LivestreamEndedWidget> {
-  late Future<Result<List<CallRecording>>> _recordingsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _recordingsFuture = widget.call.listRecordings();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            widget.call.leave();
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Livestream has ended'),
-            FutureBuilder(
-              future: _recordingsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data!.isSuccess) {
-                  final recordings = snapshot.requireData.getDataOrNull();
-
-                  if (recordings == null || recordings.isEmpty) {
-                    return const Text('No recordings found');
-                  }
-
-                  return Column(
-                    children: [
-                      const Text('Watch recordings'),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: recordings.length,
-                        itemBuilder: (context, index) {
-                          final recording = recordings[index];
-                          return ListTile(
-                            title: Text(recording.url),
-                            onTap: () {
-                              // open
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                }
-
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LivestreamLiveWidget extends StatelessWidget {
-  const LivestreamLiveWidget({super.key, required this.call});
-
-  final Call call;
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamCallContainer(
-      onBackPressed: () {
-        call.end();
-      },
-      call: call,
-      callContentWidgetBuilder: (context, call) {
-        return PartialCallStateBuilder(
-          call: call,
-          selector: (state) => state.callParticipants
-              .where((e) => e.roles.contains('host'))
-              .toList(),
-          builder: (context, hosts) {
-            if (hosts.isEmpty) {
-              return const Center(
-                child: Text("The host's video is not available"),
-              );
-            }
-
-            return StreamCallContent(
-              call: call,
-              callAppBarWidgetBuilder: (context, call) => CallAppBar(
-                call: call,
-                showBackButton: false,
-                title: PartialCallStateBuilder(
-                  call: call,
-                  selector: (state) => state.callParticipants.length,
-                  builder: (context, count) => Text('Viewers: $count'),
-                ),
-                onLeaveCallTap: () {
-                  call.stopLive();
-                },
-              ),
-              callParticipantsWidgetBuilder: (context, call) {
-                return StreamCallParticipants(call: call, participants: hosts);
-              },
-            );
-          },
         );
       },
     );

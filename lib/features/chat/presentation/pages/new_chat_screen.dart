@@ -299,8 +299,8 @@ class _NewChatScreenState extends State<NewChatScreen> {
                           ),
                           child: ChatSuggestionTile(
                             dividerColor: dividerColor,
-                            image: allFollowing[index].profileImage,
-                            name: allFollowing[index].fullName,
+                            image: allFollowing[index].profileImage ?? defaultAvatar,
+                            name: allFollowing[index].fullName ?? "",
                             handle: allFollowing[index].username,
                             isSelected: false,
                             currentUser: widget.currentUser,

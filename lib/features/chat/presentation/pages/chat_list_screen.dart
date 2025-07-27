@@ -78,9 +78,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   bool isAllMessagesLoaded = false;
   bool isSecretMessagesLoaded = false;
+  bool isArchivedMessagesLoaded = false;
+  bool isRequestsMessagesLoaded = false;
   bool isLoading = false;
 
   static const int _pageSize = 20;
+
+  List<String> archiveSelectedConersations = [];
+  bool showCheckbox = false;
 
   @override
   void initState() {
@@ -94,6 +99,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
     _encryptionService.setSecretKey(
       '967f042a1b97cb7ec81f7b7825deae4b05a661aae329b738d7068b044de6f56a',
     );
+  }
+
+  void toggleConversationSelection(String conversationId) {
+    setState(() {
+      if (archiveSelectedConersations.contains(conversationId)) {
+        archiveSelectedConersations.remove(conversationId);
+      } else {
+        archiveSelectedConersations.add(conversationId);
+      }
+    });
+  }
+
+  void removeSelectedConversation(String conversationId) {
+    setState(() {
+      archiveSelectedConersations.remove(conversationId);
+    });
   }
 
   @override
@@ -119,6 +140,48 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Future<void> _archiveChats() async {
+    if (archiveSelectedConersations.isEmpty) return;
+
+    try {
+      final token = await AuthManager.getToken();
+      // Join the selected user IDs with commas
+      final commaSeparatedIds = archiveSelectedConersations.join(',');
+
+      final http.Response response;
+      if (selectedChip != 'Archived') {
+        response = await http.put(
+          Uri.parse(
+            '$baseUrl/api/v1/chat/conversations/$commaSeparatedIds/archive',
+          ),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+      } else {
+        response = await http.put(
+          Uri.parse(
+            '$baseUrl/api/v1/chat/conversations/$commaSeparatedIds/unarchive',
+          ),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+      }
+
+      if (response.statusCode == 200) {
+        // Clear selected users after successful archive
+        setState(() {
+          archiveSelectedConersations.clear();
+          showCheckbox = false;
+        });
+
+        // Reload conversations
+        await _loadInitialConversations();
+      } else {
+        _showErrorSnackBar('Failed to archive chats: ${response.body}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error archiving chats: $e');
+    }
+  }
+
   Future<void> _loadInitialConversations() async {
     setState(() => isLoading = true);
 
@@ -130,6 +193,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     await Future.wait([
       _fetchConversations(false, 1),
       _fetchConversations(true, 1),
+      _fetchArchivedConversations(1),
+      _fetchRequestsConversations(1),
     ]);
 
     _processGroupMessages();
@@ -161,7 +226,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         case 'Groups':
           await _fetchConversations(false, nextPage, isLoadMore: true);
           break;
-        // Add cases for Archived and Requests when implemented
+        case 'Archived':
+          await _fetchArchivedConversations(nextPage, isLoadMore: true);
+          break;
+        case 'Requests':
+          await _fetchRequestsConversations(nextPage, isLoadMore: true);
+          break;
       }
 
       _currentPages[currentFilter] = nextPage;
@@ -234,6 +304,90 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Future<void> _fetchArchivedConversations(
+    int page, {
+    bool isLoadMore = false,
+  }) async {
+    try {
+      final token = await AuthManager.getToken();
+      String url =
+          '$baseUrl/api/v1/chat/conversations?page=$page&limit=$_pageSize&isArchived=true';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = GetMessageResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        if (isLoadMore) {
+          // Append to existing conversations
+          _allConversations['Archived']!.addAll(responseData.conversations);
+          archivedMessagesResponse = GetMessageResponse(
+            conversations: _allConversations['Archived']!,
+            pagination: responseData.pagination,
+          );
+        } else {
+          // Replace conversations (initial load)
+          _allConversations['Archived'] = responseData.conversations;
+          archivedMessagesResponse = responseData;
+        }
+
+        _hasMore['Archived'] = responseData.pagination.hasMore;
+        setState(() => isArchivedMessagesLoaded = true);
+      } else {
+        _showErrorSnackBar(response.body);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load archived conversations: $e');
+    }
+  }
+
+  Future<void> _fetchRequestsConversations(
+    int page, {
+    bool isLoadMore = false,
+  }) async {
+    try {
+      final token = await AuthManager.getToken();
+      String url =
+          '$baseUrl/api/v1/chat/conversations?page=$page&limit=$_pageSize&isRequest=true';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = GetMessageResponseModel.fromJson(
+          jsonDecode(response.body),
+        );
+
+        if (isLoadMore) {
+          // Append to existing conversations
+          _allConversations['Requests']!.addAll(responseData.conversations);
+          requestsMessagesResponse = GetMessageResponse(
+            conversations: _allConversations['Requests']!,
+            pagination: responseData.pagination,
+          );
+        } else {
+          // Replace conversations (initial load)
+          _allConversations['Requests'] = responseData.conversations;
+          requestsMessagesResponse = responseData;
+        }
+
+        _hasMore['Requests'] = responseData.pagination.hasMore;
+        setState(() => isRequestsMessagesLoaded = true);
+      } else {
+        _showErrorSnackBar(response.body);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load requests conversations: $e');
+    }
+  }
+
   void _processGroupMessages() {
     if (_allConversations['All']!.isEmpty) return;
 
@@ -256,7 +410,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   void _updateFilterCounts() {
     final allCount = _allConversations['All']!
-        .where((conversation) => conversation.lastMessage != null)
+        .where(
+          (conversation) =>
+              conversation.lastMessage != null &&
+              !conversation.isConversationArchivedForMe,
+        )
         .length;
     final groupCount = _allConversations['Groups']!
         .where((conversation) => conversation.lastMessage != null)
@@ -264,12 +422,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final secretCount = _allConversations['Secret']!
         .where((conversation) => conversation.lastMessage != null)
         .length;
+    final archivedCount = _allConversations['Archived']!
+        .where((conversation) => conversation.lastMessage != null)
+        .length;
+    final requestsCount = _allConversations['Requests']!
+        .where((conversation) => conversation.lastMessage != null)
+        .length;
 
     setState(() {
       filters[0]['count'] = allCount;
       filters[1]['count'] = groupCount;
       filters[2]['count'] = secretCount;
-      // Update other counts as needed
+      filters[3]['count'] = archivedCount;
+      filters[4]['count'] = requestsCount;
     });
   }
 
@@ -344,24 +509,41 @@ class _ChatListScreenState extends State<ChatListScreen> {
       leading: Container(),
       centerTitle: false,
       actions: [
-        Padding(
-          padding: EdgeInsets.only(right: getProportionateScreenWidth(22)),
-          child: InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    NewChatScreen(currentUser: widget.currentUser),
+        showCheckbox
+            ? Padding(
+                padding: EdgeInsets.only(
+                  right: getProportionateScreenWidth(22),
+                ),
+                child: InkWell(
+                  onTap: _archiveChats,
+                  child: SvgPicture.asset(
+                    "assets/icons/archive-restore.svg",
+                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
+                ),
+              )
+            : Padding(
+                padding: EdgeInsets.only(
+                  right: getProportionateScreenWidth(22),
+                ),
+                child: InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          NewChatScreen(currentUser: widget.currentUser),
+                    ),
+                  ),
+                  child: SvgPicture.asset(
+                    "assets/icons/edit.svg",
+                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    width: getProportionateScreenWidth(24),
+                    height: getProportionateScreenHeight(24),
+                  ),
+                ),
               ),
-            ),
-            child: SvgPicture.asset(
-              "assets/icons/edit.svg",
-              colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-              width: getProportionateScreenWidth(24),
-              height: getProportionateScreenHeight(24),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -539,42 +721,65 @@ class _ChatListScreenState extends State<ChatListScreen> {
             (participant) =>
                 participant.user.username != widget.currentUser.username,
           );
+    bool isSelected = isGroupChat
+        ? false
+        : archiveSelectedConersations.contains(conversation.id);
 
     return conversation.lastMessage?.content == null
         ? Container()
-        : ChatTile(
-            dividerColor: dividerColor,
-            image: isGroupChat
-                ? "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                : otherParticipant?.user.profileImage,
-            name: isGroupChat
-                ? conversation.name ?? 'Group Chat'
-                : otherParticipant?.user.fullName ?? 'Unknown User',
-            lastMessage: conversation.isSecret
-                ? '[Secret Message]'
-                : conversation.lastMessage?.type == "TEXT"
-                ? _decryptMessageContent(
-                    conversation.lastMessage!.content,
-                    conversation.encryptionKey,
+        : conversation.isConversationArchivedForMe && selectedChip != 'Archived'
+        ? Container()
+        : GestureDetector(
+            onLongPress: () {
+              setState(() {
+                showCheckbox = !showCheckbox;
+              });
+            },
+            child: ChatTile(
+              dividerColor: dividerColor,
+              image: isGroupChat
+                  ? conversation.groupImage ?? ''
+                  : otherParticipant?.user.profileImage ?? defaultAvatar,
+              name: isGroupChat
+                  ? conversation.name ?? 'Group Chat'
+                  : otherParticipant?.user.fullName ?? 'Unknown User',
+              lastMessage: conversation.isSecret
+                  ? '[Secret Message]'
+                  : conversation.lastMessage?.type == "TEXT"
+                  ? _decryptMessageContent(
+                      conversation.lastMessage!.content,
+                      conversation.encryptionKey,
+                    )
+                  : conversation.lastMessage.type.toString(),
+              time: conversation.lastMessage?.createdAt ?? DateTime.now(),
+              unreadMessages: conversation.unreadCount ?? 0,
+              chatId: conversation.id,
+              currentUser: widget.currentUser,
+              encryptionKey: conversation.encryptionKey,
+              chatHandle: conversation.participants
+                  .firstWhere(
+                    (participant) =>
+                        participant.user.username !=
+                        widget.currentUser.username,
                   )
-                : conversation.lastMessage.type.toString(),
-            time: conversation.lastMessage?.createdAt ?? DateTime.now(),
-            unreadMessages: conversation.unreadCount ?? 0,
-            chatId: conversation.id,
-            currentUser: widget.currentUser,
-            encryptionKey: conversation.encryptionKey,
-            chatHandle: conversation.participants
-                .firstWhere(
-                  (participant) =>
-                      participant.user.username != widget.currentUser.username,
-                )
-                .user
-                .username,
-            isGroup: conversation.type == "GROUP",
-            participants: conversation.participants,
-            isConversationMuted: conversation.isConversationMutedForMe,
-            isSecretChat: conversation.isSecret,
-            isConversationBlockedForMe: conversation.isConversationBlockedForMe,
+                  .user
+                  .username,
+              isGroup: conversation.type == "GROUP",
+              participants: conversation.participants,
+              isConversationMuted: conversation.isConversationMutedForMe,
+              isSecretChat: conversation.isSecret,
+              isConversationBlockedForMe:
+                  conversation.isConversationBlockedForMe,
+              isSelected: isSelected,
+              showCheckbox: isGroupChat ? false : showCheckbox,
+              onSelectionChanged: (selected) {
+                if (selected) {
+                  toggleConversationSelection(conversation.id);
+                } else {
+                  removeSelectedConversation(conversation.id);
+                }
+              },
+            ),
           );
   }
 
