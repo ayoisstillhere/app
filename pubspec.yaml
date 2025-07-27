@@ -49,6 +49,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   flutter_sound: ^9.28.0
   flutter_svg: ^2.2.0
+  flutter_windowmanager: ^0.2.0
   get_it: ^8.0.3
   google_sign_in: ^6.0.2
   http: ^1.4.0

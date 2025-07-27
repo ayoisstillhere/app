@@ -5,6 +5,7 @@ import 'package:app/features/chat/presentation/cubit/live_stream_reaction_cubit.
 import 'package:app/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:no_screenshot/no_screenshot.dart';
@@ -73,11 +74,15 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
   void disableScreenshot() async {
     if (widget.isScreenshotAllowed) return;
     bool result = await _noScreenshot.screenshotOff();
+    if (!widget.isScreenshotAllowed) {
+      FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+    }
     debugPrint('Screenshot Off: $result');
   }
 
   void enableScreenshot() async {
     bool result = await _noScreenshot.screenshotOn();
+    FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
     debugPrint('Enable Screenshot: $result');
   }
 

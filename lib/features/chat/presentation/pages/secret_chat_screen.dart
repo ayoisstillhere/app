@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:no_screenshot/no_screenshot.dart';
@@ -208,11 +209,13 @@ class _SecretChatScreenState extends State<SecretChatScreen> {
 
   void disableScreenshot() async {
     bool result = await _noScreenshot.screenshotOff();
+    FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
     debugPrint('Screenshot Off: $result');
   }
 
   void enableScreenshot() async {
     bool result = await _noScreenshot.screenshotOn();
+    FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
     debugPrint('Enable Screenshot: $result');
   }
 
