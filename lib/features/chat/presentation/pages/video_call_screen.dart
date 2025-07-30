@@ -953,6 +953,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Widget _buildControlButtons(Call call) {
+    final isVideoEnabled =
+                      call
+                          .state
+                          .valueOrNull
+                          ?.localParticipant
+                          ?.isVideoEnabled ??
+                      false;
     return Positioned(
       bottom: 40,
       left: 0,
@@ -1051,17 +1058,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
             // Camera toggle
             _buildControlButton(
-              icon: Icons.videocam,
+              icon: isVideoEnabled
+                  ? Icons.videocam
+                  : Icons.videocam_off,
               onPressed: () async {
                 try {
-                  final isVideoEnabled =
-                      call
-                          .state
-                          .valueOrNull
-                          ?.localParticipant
-                          ?.isVideoEnabled ??
-                      false;
-
                   if (isVideoEnabled) {
                     await call.setCameraEnabled(enabled: false);
                   } else {
