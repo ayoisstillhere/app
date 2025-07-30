@@ -444,7 +444,6 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                                         response.statusCode == 201) {
                                       widget.call.stopLive();
                                       widget.call.end();
-                                      Navigator.pop(context);
                                     } else {
                                       _showErrorSnackBar(
                                         'Live stream ended but failed to notify server',
