@@ -296,6 +296,18 @@ class _NavPageState extends State<NavPage> {
     final UserEntity? user = await AuthManager.getCurrentUser();
     if (user == null) return;
 
+    // Handle isScreenshotAllowed that might come as a string or boolean
+    bool isScreenshotAllowed = true;
+    final screenshotValue = data['isScreenshotAllowed'];
+    if (screenshotValue != null) {
+      if (screenshotValue is bool) {
+        isScreenshotAllowed = screenshotValue;
+      } else if (screenshotValue is String) {
+        // Convert string to boolean
+        isScreenshotAllowed = screenshotValue.toLowerCase() == 'true';
+      }
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -309,7 +321,7 @@ class _NavPageState extends State<NavPage> {
           imageUrl:
               data['initiatorProfileImage'] ?? data['streamerImage'] ?? '',
           streamerUsername: data['initiatorUsername'] ?? '',
-          isScreenshotAllowed: data['isScreenshotAllowed'] ?? true,
+          isScreenshotAllowed: isScreenshotAllowed,
         ),
       ),
     );
