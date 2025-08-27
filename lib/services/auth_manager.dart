@@ -163,6 +163,10 @@ class AuthManager {
     }
   }
 
+  static Future<UserEntity?> fetchCurrentUser() async {
+    return await _fetchCurrentUser();
+  }
+
   // ───── USER PRIVATE KEY ─────────────────────────────────────────────────────
 
   static Future<void> setUserPrivateKey(

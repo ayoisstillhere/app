@@ -48,27 +48,22 @@ class NotificationTile extends StatelessWidget {
           ),
         ),
         SizedBox(width: getProportionateScreenWidth(10)),
-        username == null
-            ? const Spacer()
-            : Text(
-                username!,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: getProportionateScreenWidth(13),
-                ),
-              ),
+        // username == null
+        //     ? const Spacer()
+        //     : Text(
+        //         username!,
+        //         style: TextStyle(
+        //           fontWeight: FontWeight.w500,
+        //           fontSize: getProportionateScreenWidth(13),
+        //         ),
+        //       ),
         SizedBox(width: getProportionateScreenWidth(2)),
         SizedBox(
-          width: getProportionateScreenWidth(180),
-          child: Text(
-            action,
-            style: TextStyle(
-              fontWeight: FontWeight.normal,
-              fontSize: getProportionateScreenWidth(13),
-              color: kGreyHandleText,
-            ),
+          width: getProportionateScreenWidth(230),
+          child: RichText(
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            text: TextSpan(children: _buildTextSpans(action)),
           ),
         ),
         SizedBox(width: getProportionateScreenWidth(6)),
@@ -148,4 +143,72 @@ String _formatTime(DateTime timestamp) {
   } else {
     return '${difference.inDays}d';
   }
+}
+
+// Helper method to build text spans with handle styling
+List<TextSpan> _buildTextSpans(String text) {
+  final List<TextSpan> spans = [];
+  final RegExp handleRegex = RegExp(r'@\w+');
+
+  int start = 0;
+
+  for (final Match match in handleRegex.allMatches(text)) {
+    // Add text before the handle
+    if (match.start > start) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start, match.start),
+          style: TextStyle(
+            fontWeight: FontWeight.normal,
+            fontSize: getProportionateScreenWidth(13),
+            color: kGreyHandleText,
+          ),
+        ),
+      );
+    }
+
+    // Add the handle with special styling
+    spans.add(
+      TextSpan(
+        text: match.group(0),
+        // style: TextStyle(
+        //   fontWeight: FontWeight.w500,
+        //   fontSize: getProportionateScreenWidth(13),
+        //   // You can add color here if needed, e.g., color: Colors.blue,
+        // ),
+      ),
+    );
+
+    start = match.end;
+  }
+
+  // Add remaining text after the last handle
+  if (start < text.length) {
+    spans.add(
+      TextSpan(
+        text: text.substring(start),
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: getProportionateScreenWidth(13),
+          color: kGreyHandleText,
+        ),
+      ),
+    );
+  }
+
+  // If no handles were found, return the original text with normal styling
+  if (spans.isEmpty) {
+    spans.add(
+      TextSpan(
+        text: text,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: getProportionateScreenWidth(13),
+          color: kGreyHandleText,
+        ),
+      ),
+    );
+  }
+
+  return spans;
 }

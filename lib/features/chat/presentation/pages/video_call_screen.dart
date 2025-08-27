@@ -66,7 +66,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   void initState() {
     super.initState();
     // Join the call when the screen is initialized
-    widget.call.join();
+    widget.call.join(
+      connectOptions: CallConnectOptions(
+        microphone: TrackOption.enabled(),
+        camera: TrackOption.enabled(),
+        speakerDefaultOn: true,
+      ),
+    );
     _startNoParticipantsTimer();
 
     // Listen for call state changes
@@ -954,12 +960,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Widget _buildControlButtons(Call call) {
     final isVideoEnabled =
-                      call
-                          .state
-                          .valueOrNull
-                          ?.localParticipant
-                          ?.isVideoEnabled ??
-                      false;
+        call.state.valueOrNull?.localParticipant?.isVideoEnabled ?? false;
     return Positioned(
       bottom: 40,
       left: 0,
@@ -1058,9 +1059,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
             // Camera toggle
             _buildControlButton(
-              icon: isVideoEnabled
-                  ? Icons.videocam
-                  : Icons.videocam_off,
+              icon: isVideoEnabled ? Icons.videocam : Icons.videocam_off,
               onPressed: () async {
                 try {
                   if (isVideoEnabled) {

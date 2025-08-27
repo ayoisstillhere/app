@@ -123,17 +123,40 @@ class SocialText extends StatelessWidget {
       formattedUrl = 'https://$url';
     }
 
-    final Uri uri = Uri.parse(formattedUrl);
-
     try {
+      final Uri uri = Uri.parse(formattedUrl);
+
+      // Try different launch modes
+      bool launched = false;
+
+      // First try with external application
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        // Handle error - could show a snackbar or toast
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+
+      // If that fails, try with system default
+      if (!launched && await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+
+      // If still not launched, try in-app web view as fallback
+      if (!launched && await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+      }
+
+      if (!launched) {
         debugPrint('Could not launch $formattedUrl');
+        // Show user-friendly error message
+        _showErrorMessage('Unable to open link');
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
+      _showErrorMessage('Error opening link: ${e.toString()}');
     }
+  }
+
+  void _showErrorMessage(String message) {
+    // Implement your preferred way to show errors
+    // e.g., ScaffoldMessenger, Toast, etc.
   }
 }

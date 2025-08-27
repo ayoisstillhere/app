@@ -250,6 +250,24 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
     );
   }
 
+  void _showAPIErrorSnackBar(String errorBody) {
+    final errorMessage = jsonDecode(
+      errorBody,
+    )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            errorMessage,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -487,19 +505,7 @@ class _CustomLivestreamWidgetState extends State<CustomLivestreamWidget>
                                         if (response.statusCode == 200) {
                                           _fetchUser();
                                         } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor: Colors.red,
-                                              content: Text(
-                                                "Failed to follow user. Please try again.",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          );
+                                          _showAPIErrorSnackBar(response.body);
                                         }
                                       },
                                       style: ElevatedButton.styleFrom(

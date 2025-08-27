@@ -56,7 +56,13 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void initState() {
     super.initState();
-    widget.call.join();
+    widget.call.join(
+      connectOptions: CallConnectOptions(
+        microphone: TrackOption.enabled(),
+        camera: TrackOption.disabled(),
+        speakerDefaultOn: false,
+      ),
+    );
     _startNoParticipantsTimer();
 
     // Listen for call state changes
