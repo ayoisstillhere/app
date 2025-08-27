@@ -23,10 +23,14 @@ class FollowersAndFollowingScreen extends StatefulWidget {
     required this.index,
     required this.userName,
     required this.userId,
+    required this.followerCount,
+    required this.followingCount,
   });
   final int index;
   final String userName;
   final String userId;
+  final int followerCount;
+  final int followingCount;
 
   @override
   State<FollowersAndFollowingScreen> createState() =>
@@ -197,7 +201,8 @@ class _FollowersAndFollowingScreenState
     filteredFollowers = followers.where((follower) {
       final name = follower.fullName?.toLowerCase();
       final username = follower.username.toLowerCase();
-      return name != null && name.contains(searchQuery) || username.contains(searchQuery);
+      return name != null && name.contains(searchQuery) ||
+          username.contains(searchQuery);
     }).toList();
   }
 
@@ -253,67 +258,64 @@ class _FollowersAndFollowingScreenState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(follower.fullName ?? '', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  follower.fullName ?? '',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Text('@${follower.username}'),
               ],
             ),
             Spacer(),
             (follower.followsYou && !follower.youFollow)
-                ? InkWell(
-                    onTap: () async {
-                      final token = await AuthManager.getToken();
-                      final response = await http.post(
-                        Uri.parse("$baseUrl/api/v1/user/follow"),
-                        headers: {
-                          "Authorization": "Bearer $token",
-                          "Content-Type": "application/json",
-                        },
-                        body: jsonEncode({"userId": follower.id}),
-                      );
+                ? follower.username == currentUser.username
+                      ? Container()
+                      : InkWell(
+                          onTap: () async {
+                            final token = await AuthManager.getToken();
+                            final response = await http.post(
+                              Uri.parse("$baseUrl/api/v1/user/follow"),
+                              headers: {
+                                "Authorization": "Bearer $token",
+                                "Content-Type": "application/json",
+                              },
+                              body: jsonEncode({"userId": follower.id}),
+                            );
 
-                      if (response.statusCode == 200) {
-                        if (mounted) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => ProfileScreen(
-                                isVerified: true,
-                                userName: follower.username,
-                                currentUser: currentUser,
+                            if (response.statusCode == 200) {
+                              if (mounted) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => ProfileScreen(
+                                      isVerified: true,
+                                      userName: follower.username,
+                                      currentUser: currentUser,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              _showAPIErrorSnackBar(response.body);
+                            }
+                          },
+                          child: Container(
+                            width: getProportionateScreenWidth(90),
+                            height: getProportionateScreenHeight(37),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: kAccentColor,
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Follow Back',
+                                style: TextStyle(
+                                  color: kBlack,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: getProportionateScreenHeight(12),
+                                ),
                               ),
                             ),
-                          );
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Colors.red,
-                            content: Text(
-                              "Failed to follow user. Please try again.",
-                              style: TextStyle(color: Colors.white),
-                            ),
                           ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: getProportionateScreenWidth(90),
-                      height: getProportionateScreenHeight(37),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: kAccentColor,
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Follow Back',
-                          style: TextStyle(
-                            color: kBlack,
-                            fontWeight: FontWeight.w500,
-                            fontSize: getProportionateScreenHeight(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
+                        )
                 : InkWell(
                     onTap: () {
                       _goToMessage(
@@ -347,6 +349,24 @@ class _FollowersAndFollowingScreenState
         ),
       ),
     );
+  }
+
+    void _showAPIErrorSnackBar(String errorBody) {
+    final errorMessage = jsonDecode(
+      errorBody,
+    )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            errorMessage,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildFollowingCard(Following followingUser) {
@@ -717,9 +737,9 @@ class _FollowersAndFollowingScreenState
                 width: getProportionateScreenWidth(143),
                 child: Center(
                   child: Text(
-                    currentUser.followerCount == 1
+                    widget.followerCount == 1
                         ? "1 follower"
-                        : "${NumberFormat.compact().format(currentUser.followerCount)} followers",
+                        : "${NumberFormat.compact().format(widget.followerCount)} followers",
                   ),
                 ),
               ),
@@ -729,7 +749,7 @@ class _FollowersAndFollowingScreenState
                 width: getProportionateScreenWidth(143),
                 child: Center(
                   child: Text(
-                    "${NumberFormat.compact().format(currentUser.followingCount)} following",
+                    "${NumberFormat.compact().format(widget.followingCount)} following",
                   ),
                 ),
               ),

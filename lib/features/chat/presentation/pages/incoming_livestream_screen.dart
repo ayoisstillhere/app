@@ -107,7 +107,8 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Live indicator
+                  // Live indicator with more top spacing
+                  SizedBox(height: 40),
                   AnimatedBuilder(
                     animation: _liveAnimation,
                     builder: (context, child) {
@@ -141,13 +142,13 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                       );
                     },
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 30), // Increased spacing
 
                   Text(
                     'You\'re invited to join',
                     style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 12), // Increased spacing
 
                   Text(
                     '${widget.streamerName}\'s Livestream',
@@ -158,8 +159,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 30),
-
+                  SizedBox(height: 50), // Increased spacing before avatar
                   // Animated avatar with pulsing effect
                   AnimatedBuilder(
                     animation: _pulseAnimation,
@@ -186,7 +186,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                       );
                     },
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 24), // Increased spacing after avatar
 
                   Text(
                     widget.streamerName,
@@ -196,7 +196,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 16), // Increased spacing
 
                   if (widget.streamTitle.isNotEmpty)
                     Container(
@@ -209,29 +209,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  SizedBox(height: 12),
-
-                  // Viewer count
-                  // Container(
-                  //   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  //   decoration: BoxDecoration(
-                  //     color: Colors.white.withOpacity(0.1),
-                  //     borderRadius: BorderRadius.circular(15),
-                  //   ),
-                  //   child: Row(
-                  //     mainAxisSize: MainAxisSize.min,
-                  //     children: [
-                  //       Icon(Icons.visibility, color: Colors.white70, size: 16),
-                  // SizedBox(width: 4),
-                  // Text(
-                  //   '${} watching',
-                  //   style: TextStyle(color: Colors.white70, fontSize: 12),
-                  // ),
-                  //     ],
-                  //   ),
-                  // ),
-                  SizedBox(height: 50),
-
+                  SizedBox(height: 80), // Increased spacing before buttons
                   // Action buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -298,8 +276,7 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                       ),
                     ],
                   ),
-                  SizedBox(height: 30),
-
+                  SizedBox(height: 20), // Consistent spacing before labels
                   // Action labels
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -319,50 +296,67 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
                       ),
                     ],
                   ),
+                  SizedBox(height: 40), // Bottom spacing
                 ],
               ),
 
-              // Loading overlay
+              // Enhanced loading overlay with better visibility
               if (_isConnecting)
                 AnimatedBuilder(
                   animation: _loadingAnimation,
                   builder: (context, child) {
                     return Container(
                       color: Colors.black.withOpacity(
-                        0.3 * _loadingAnimation.value,
+                        0.7 *
+                            _loadingAnimation
+                                .value, // Increased opacity for better visibility
                       ),
                       child: Center(
                         child: FadeTransition(
                           opacity: _loadingAnimation,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 50,
-                                height: 50,
-                                child: CircularProgressIndicator(
-                                  color: Colors.purple.shade300,
-                                  strokeWidth: 4,
-                                ),
+                          child: Container(
+                            padding: EdgeInsets.all(40),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(
+                                0.8,
+                              ), // Added background container
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.purple.withOpacity(0.3),
+                                width: 1,
                               ),
-                              SizedBox(height: 20),
-                              Text(
-                                'Connecting to livestream...',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 60, // Slightly larger spinner
+                                  height: 60,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.purple.shade300,
+                                    strokeWidth: 4,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Please wait while we connect you',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
+                                SizedBox(height: 30), // Increased spacing
+                                Text(
+                                  'Connecting to livestream...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18, // Slightly larger text
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                SizedBox(height: 12), // Increased spacing
+                                Text(
+                                  'Please wait while we connect you',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -449,11 +443,13 @@ class _IncomingLivestreamScreenState extends State<IncomingLivestreamScreen>
           );
         } else {
           _showErrorDialog(
-            'Failed to create livestream connection. Please try again.',
+            'Failed to create livestream connection. Please check your internet connection and try again.',
           );
         }
       } else {
-        _showErrorDialog('Failed to join livestream. Please try again.');
+        _showErrorDialog(
+          'Failed to join livestream. Please check your internet connection and try again.',
+        );
       }
     } catch (e) {
       debugPrint('Error joining livestream: $e');

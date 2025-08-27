@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:app/components/default_button.dart';
 import 'package:app/components/nav_page.dart';
+import 'package:app/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
@@ -89,7 +90,7 @@ class _EditFieldScreenState extends State<EditFieldScreen> {
           context,
           MaterialPageRoute(
             builder: (context) {
-              return NavPage();
+              return EditProfileScreen();
             },
           ),
         );

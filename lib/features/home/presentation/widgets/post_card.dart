@@ -554,23 +554,33 @@ class _PostCardState extends State<PostCard> {
                       )
                     : Row(
                         children: [
-                          Text(
-                            widget.authorName,
-                            style: Theme.of(context).textTheme.bodyMedium!
-                                .copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: getProportionateScreenHeight(15),
-                                ),
+                          SizedBox(
+                            width: getProportionateScreenWidth(150),
+                            child: Text(
+                              widget.authorName,
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: getProportionateScreenHeight(15),
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           SizedBox(width: getProportionateScreenWidth(2)),
-                          Text(
-                            '@${widget.authorHandle}',
-                            style: Theme.of(context).textTheme.bodyMedium!
-                                .copyWith(
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: getProportionateScreenHeight(13),
-                                  color: kGreyHandleText,
-                                ),
+                          SizedBox(
+                            width: getProportionateScreenWidth(80),
+                            child: Text(
+                              '@${widget.authorHandle}',
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(
+                                    fontWeight: FontWeight.normal,
+                                    fontSize: getProportionateScreenHeight(13),
+                                    color: kGreyHandleText,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           SizedBox(width: getProportionateScreenWidth(2)),
                           Text(

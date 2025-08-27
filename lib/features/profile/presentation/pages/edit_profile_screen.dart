@@ -32,6 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> getCurrentUser() async {
+    await AuthManager.fetchCurrentUser();
     UserEntity? user = await AuthManager.getCurrentUser();
     if (mounted) {
       setState(() {

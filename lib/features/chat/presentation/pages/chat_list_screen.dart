@@ -175,10 +175,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         // Reload conversations
         await _loadInitialConversations();
       } else {
-        _showErrorSnackBar('Failed to archive chats: ${response.body}');
+        // _showErrorSnackBar('Failed to archive chats: ${response.body}');
+        debugPrint(response.body);
       }
     } catch (e) {
-      _showErrorSnackBar('Error archiving chats: $e');
+      // _showErrorSnackBar('Error archiving chats: $e');
+      debugPrint(e.toString());
     }
   }
 
@@ -237,7 +239,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
       _currentPages[currentFilter] = nextPage;
       _updateFilterCounts();
     } catch (e) {
-      _showErrorSnackBar('Failed to load more conversations: $e');
+      // _showErrorSnackBar('Failed to load more conversations: $e');
+      debugPrint(e.toString());
     } finally {
       setState(() => _isLoadingMore[currentFilter] = false);
     }
@@ -297,10 +300,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
           setState(() => isAllMessagesLoaded = true);
         }
       } else {
-        _showErrorSnackBar(response.body);
+        // _showErrorSnackBar(response.body);
+        debugPrint(response.body);
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to load conversations: $e');
+      // _showErrorSnackBar('Failed to load conversations: ${e.toString()}');
+      debugPrint(e.toString());
     }
   }
 
@@ -339,10 +344,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         _hasMore['Archived'] = responseData.pagination.hasMore;
         setState(() => isArchivedMessagesLoaded = true);
       } else {
-        _showErrorSnackBar(response.body);
+        // _showErrorSnackBar(response.body);
+        debugPrint(response.body);
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to load archived conversations: $e');
+      // _showErrorSnackBar('Failed to load archived conversations: $e');
+      debugPrint(e.toString());
     }
   }
 
@@ -381,10 +388,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
         _hasMore['Requests'] = responseData.pagination.hasMore;
         setState(() => isRequestsMessagesLoaded = true);
       } else {
-        _showErrorSnackBar(response.body);
+        // _showErrorSnackBar(response.body);
+        debugPrint(response.body);
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to load requests conversations: $e');
+      // _showErrorSnackBar('Failed to load requests conversations: $e');
+      debugPrint(e.toString());
     }
   }
 
@@ -438,25 +447,25 @@ class _ChatListScreenState extends State<ChatListScreen> {
     });
   }
 
-  void _showErrorSnackBar(String errorBody) {
-    final errorMessage = jsonDecode(
-      errorBody,
-    )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
+  // void _showErrorSnackBar(String errorBody) {
+  //   final errorMessage = jsonDecode(
+  //     errorBody,
+  //   )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            errorMessage,
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-  }
+  //   if (mounted) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         backgroundColor: Colors.red,
+  //         content: Text(
+  //           errorMessage,
+  //           style: const TextStyle(color: Colors.white),
+  //         ),
+  //       ),
+  //     );
+  //   }
+  // }
 
-  List<dynamic> _getSelectedConversations() {
+  List<Conversation> _getSelectedConversations() {
     switch (selectedChip) {
       case "All":
         return _allConversations['All']!;
@@ -713,7 +722,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  Widget _buildChatTile(dynamic conversation, Color dividerColor) {
+  Widget _buildChatTile(Conversation conversation, Color dividerColor) {
     final isGroupChat = conversation.type == "GROUP";
     final otherParticipant = isGroupChat
         ? null
@@ -748,9 +757,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   : conversation.lastMessage?.type == "TEXT"
                   ? _decryptMessageContent(
                       conversation.lastMessage!.content,
-                      conversation.encryptionKey,
+                      conversation.encryptionKey!,
                     )
-                  : conversation.lastMessage.type.toString(),
+                  : conversation.lastMessage!.type.toString(),
               time: conversation.lastMessage?.createdAt ?? DateTime.now(),
               unreadMessages: conversation.unreadCount ?? 0,
               chatId: conversation.id,

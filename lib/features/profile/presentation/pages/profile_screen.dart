@@ -598,11 +598,14 @@ class _ProfileScreenState extends State<ProfileScreen>
             children: [
               Row(
                 children: [
-                  Text(
-                    user!.fullName,
-                    style: TextStyle(
-                      fontSize: getProportionateScreenHeight(16),
-                      fontWeight: FontWeight.bold,
+                  SizedBox(
+                    width: getProportionateScreenWidth(100),
+                    child: Text(
+                      user!.fullName,
+                      style: TextStyle(
+                        fontSize: getProportionateScreenHeight(16),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   if (widget.isVerified)
@@ -632,6 +635,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     index: 0,
                     userName: user!.username,
                     userId: user!.id,
+                    followerCount: user!.followerCount,
+                    followingCount: user!.followingCount,
                   ),
                 ),
               );
@@ -667,6 +672,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     index: 1,
                     userName: user!.username,
                     userId: user!.id,
+                    followerCount: user!.followerCount,
+                    followingCount: user!.followingCount,
                   ),
                 ),
               );
@@ -1006,12 +1013,22 @@ class _ProfileScreenState extends State<ProfileScreen>
         );
       }
     } else {
+      _showAPIErrorSnackBar(response.body);
+    }
+  }
+
+  void _showAPIErrorSnackBar(String errorBody) {
+    final errorMessage = jsonDecode(
+      errorBody,
+    )['message'].toString().replaceAll(RegExp(r'\[|\]'), '');
+
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            "Failed to follow user. Please try again.",
-            style: TextStyle(color: Colors.white),
+            errorMessage,
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       );

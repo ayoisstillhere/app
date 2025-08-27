@@ -103,11 +103,14 @@ class FollowSuggestion extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name.isEmpty ? "User" : name,
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        fontSize: getProportionateScreenHeight(13),
-                        fontWeight: FontWeight.w500,
+                    SizedBox(
+                      width: getProportionateScreenWidth(120),
+                      child: Text(
+                        name.isEmpty ? "User" : name,
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          fontSize: getProportionateScreenHeight(13),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     Text(
