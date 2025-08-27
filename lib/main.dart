@@ -21,7 +21,7 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
-  Firebase.initializeApp();
+  await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -35,9 +35,7 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   di.init();
-  if (Platform.isAndroid) {
-    await initFCM();
-  }
+  if (Platform.isAndroid) await initFCM();
   runApp(const MyApp());
   // Initialize deep link handling
   DeepLinkNavigationService.initialize();
@@ -87,6 +85,25 @@ Future<void> _requestNotificationPermission() async {
 
 Future<void> getFcmToken() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // For iOS, explicitly get APNs token first
+  if (Platform.isIOS) {
+    String? apnsToken = await messaging.getAPNSToken();
+    if (apnsToken != null) {
+      debugPrint('🍎 APNs Token: $apnsToken');
+    } else {
+      // Wait a bit and try again
+      debugPrint('⏳ APNs token not available, retrying...');
+      await Future.delayed(Duration(seconds: 3));
+      apnsToken = await messaging.getAPNSToken();
+      if (apnsToken != null) {
+        debugPrint('🍎 APNs Token (retry): $apnsToken');
+      } else {
+        debugPrint('⚠️ Failed to get APNs token after retry');
+      }
+    }
+  }
+
   String? token = await messaging.getToken();
 
   if (token != null) {
@@ -115,16 +132,14 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-
-    if (Platform.isAndroid) {
-      _setupFCM();
-    }
+    // Setup FCM for both platforms
+    if (Platform.isAndroid) _setupFCM();
   }
 
   void _setupFCM() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // Request permissions
+    // Request permissions (works for both iOS and Android)
     NotificationSettings settings = await messaging.requestPermission(
       alert: true,
       announcement: false,
@@ -139,6 +154,11 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
+    // For iOS, ensure APNs token is available
+    if (Platform.isIOS) {
+      await _ensureAPNsToken();
+    }
+
     // Get device token (for debugging or sending test messages)
     String? token = await messaging.getToken();
     debugPrint('📲 FCM Token: $token');
@@ -146,23 +166,41 @@ class _MyAppState extends State<MyApp> {
     // Foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
-      AndroidNotification? android = message.notification?.android;
 
-      if (notification != null && android != null) {
-        flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              'default_channel',
-              'Default',
-              channelDescription: 'Default notification channel',
-              importance: Importance.max,
-              priority: Priority.high,
+      if (notification != null) {
+        if (Platform.isAndroid) {
+          AndroidNotification? android = message.notification?.android;
+          if (android != null) {
+            flutterLocalNotificationsPlugin.show(
+              notification.hashCode,
+              notification.title,
+              notification.body,
+              NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'default_channel',
+                  'Default',
+                  channelDescription: 'Default notification channel',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                ),
+              ),
+            );
+          }
+        } else if (Platform.isIOS) {
+          // For iOS, show local notification
+          flutterLocalNotificationsPlugin.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+              iOS: DarwinNotificationDetails(
+                presentAlert: true,
+                presentBadge: true,
+                presentSound: true,
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     });
 
@@ -171,6 +209,32 @@ class _MyAppState extends State<MyApp> {
       debugPrint('🟡 Notification tapped: ${message.data}');
       // Navigate or handle the tap
     });
+  }
+
+  Future<void> _ensureAPNsToken() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Try to get APNs token with retries
+    String? apnsToken;
+    int maxRetries = 5;
+    int retryCount = 0;
+
+    while (apnsToken == null && retryCount < maxRetries) {
+      apnsToken = await messaging.getAPNSToken();
+      if (apnsToken == null) {
+        debugPrint(
+          '⏳ Waiting for APNs token... (attempt ${retryCount + 1}/$maxRetries)',
+        );
+        await Future.delayed(Duration(seconds: 2));
+        retryCount++;
+      }
+    }
+
+    if (apnsToken != null) {
+      debugPrint('🍎 APNs Token obtained: $apnsToken');
+    } else {
+      debugPrint('⚠️ Failed to obtain APNs token after $maxRetries attempts');
+    }
   }
 
   // This widget is the root of your application.
